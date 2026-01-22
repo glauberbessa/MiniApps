@@ -1,3 +1,6 @@
+// Ignorar erro de patch do lockfile - define antes da importação do Next.js
+process.env.NEXT_IGNORE_LOCKFILE_PATCH = 'true';
+
 /** @type {import('next').NextConfig} */
 const nextConfig = {
   // Configuração para apps em diferentes portas

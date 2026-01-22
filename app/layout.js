@@ -3,7 +3,6 @@ import './globals.css'
 export const metadata = {
   title: 'MiniApps - Sua Central de Aplicativos',
   description: 'Acesse todos os seus mini aplicativos em um só lugar',
-  themeColor: '#0f172a',
   icons: {
     icon: '/favicon.ico',
   },
@@ -14,6 +13,7 @@ export const viewport = {
   initialScale: 1,
   maximumScale: 1,
   userScalable: false,
+  themeColor: '#0f172a',
 }
 
 export default function RootLayout({ children }) {

@@ -1,5 +1,8 @@
 /** @type {import('next').NextConfig} */
 const nextConfig = {
+  // Serve o app em /ytpm em produção
+  basePath: '/ytpm',
+
   images: {
     remotePatterns: [
       {

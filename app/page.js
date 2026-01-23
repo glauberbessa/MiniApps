@@ -55,14 +55,14 @@ function AppsIcon({ className }) {
 }
 
 // Componente de Card de App
-function AppCard({ title, description, icon: Icon, href, gradient, hoverGradient, iconBg }) {
+function AppCard({ title, description, icon: Icon, href, gradient, hoverGradient, iconBg, openInNewTab }) {
   const [isHovered, setIsHovered] = useState(false)
 
   return (
     <a
       href={href}
-      target="_blank"
-      rel="noopener noreferrer"
+      target={openInNewTab ? "_blank" : "_self"}
+      rel={openInNewTab ? "noopener noreferrer" : undefined}
       className={`
         relative block p-6 rounded-2xl border border-slate-700/50
         transition-all duration-300 ease-out
@@ -119,9 +119,12 @@ function AppCard({ title, description, icon: Icon, href, gradient, hoverGradient
 }
 
 export default function Home() {
-  // URLs dos apps - usa variáveis de ambiente para Vercel, fallback para localhost
-  const ytpmUrl = process.env.NEXT_PUBLIC_YTPM_URL || 'http://localhost:3001'
-  const scannerUrl = process.env.NEXT_PUBLIC_SCANNER_URL || 'http://localhost:3002'
+  // URLs dos apps
+  // Em desenvolvimento: usa localhost com portas diferentes
+  // Em produção (Vercel): usa paths relativos (/ytpm e /scanner)
+  const isDev = process.env.NODE_ENV === 'development'
+  const ytpmUrl = isDev ? 'http://localhost:3001' : '/ytpm'
+  const scannerUrl = isDev ? 'http://localhost:3002' : '/scanner'
 
   const apps = [
     {
@@ -132,6 +135,7 @@ export default function Home() {
       gradient: 'bg-slate-800/50',
       hoverGradient: 'bg-slate-800/80',
       iconBg: 'from-red-500 to-red-700',
+      openInNewTab: isDev, // Abre em nova aba apenas em dev
     },
     {
       title: 'ScanQRCodeBar',
@@ -141,6 +145,7 @@ export default function Home() {
       gradient: 'bg-slate-800/50',
       hoverGradient: 'bg-slate-800/80',
       iconBg: 'from-emerald-500 to-teal-600',
+      openInNewTab: isDev, // Abre em nova aba apenas em dev
     },
   ]
 

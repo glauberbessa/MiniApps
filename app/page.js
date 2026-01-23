@@ -119,12 +119,16 @@ function AppCard({ title, description, icon: Icon, href, gradient, hoverGradient
 }
 
 export default function Home() {
+  // URLs dos apps - usa variáveis de ambiente para Vercel, fallback para localhost
+  const ytpmUrl = process.env.NEXT_PUBLIC_YTPM_URL || 'http://localhost:3001'
+  const scannerUrl = process.env.NEXT_PUBLIC_SCANNER_URL || 'http://localhost:3002'
+
   const apps = [
     {
       title: 'YT Playlist Manager Pro',
       description: 'Gerencie suas playlists do YouTube de forma profissional. Organize, configure e monitore suas playlists e canais favoritos.',
       icon: YouTubeIcon,
-      href: 'http://localhost:3001',
+      href: ytpmUrl,
       gradient: 'bg-slate-800/50',
       hoverGradient: 'bg-slate-800/80',
       iconBg: 'from-red-500 to-red-700',
@@ -133,7 +137,7 @@ export default function Home() {
       title: 'ScanQRCodeBar',
       description: 'Escaneie QR Codes e códigos de barras com facilidade usando a câmera do seu dispositivo. Rápido e simples.',
       icon: QRCodeIcon,
-      href: 'http://localhost:3002',
+      href: scannerUrl,
       gradient: 'bg-slate-800/50',
       hoverGradient: 'bg-slate-800/80',
       iconBg: 'from-emerald-500 to-teal-600',

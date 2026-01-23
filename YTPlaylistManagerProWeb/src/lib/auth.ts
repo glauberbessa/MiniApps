@@ -150,8 +150,8 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
         });
       }
     },
-    warn() {},
-    debug() {},
+    warn() { },
+    debug() { },
   },
   session: {
     strategy: "jwt", // Use JWT strategy for better serverless compatibility
@@ -220,7 +220,7 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
       authorization: {
         params: {
           scope:
-            "openid email profile https://www.googleapis.com/auth/youtube",
+            "openid email profile https://www.googleapis.com/auth/youtube https://www.googleapis.com/auth/youtube.readonly",
           access_type: "offline",
           prompt: "consent",
         },

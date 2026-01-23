@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { auth } from "@/lib/auth";
+import { prisma } from "@/lib/prisma";
 
 export const dynamic = "force-dynamic";
 
@@ -19,6 +20,26 @@ export async function GET() {
           hasDatabaseUrl: !!process.env.DATABASE_URL,
         },
       });
+    }
+
+    const email = (session.user?.email as string) || (session as any).email;
+    let dbInfo = null;
+
+    if (email) {
+      try {
+        const user = await prisma.user.findUnique({
+          where: { email },
+          include: { accounts: { where: { provider: "google" } } },
+        });
+        if (user) {
+          dbInfo = {
+            userUpdated: user.updatedAt,
+            hasRefreshToken: !!user.accounts[0]?.refresh_token,
+          };
+        }
+      } catch (err) {
+        // DB error
+      }
     }
 
     if (!session.user?.id) {
@@ -45,6 +66,41 @@ export async function GET() {
           hasYoutubeChannelId: !!session.user.youtubeChannelId,
         },
       });
+    }
+
+    if (session.accessToken) {
+      try {
+        const tokenInfoResponse = await fetch(
+          `https://oauth2.googleapis.com/tokeninfo?access_token=${session.accessToken}`
+        );
+        const tokenInfo = await tokenInfoResponse.json();
+
+        return NextResponse.json({
+          status: "ok",
+          message: "Sessão válida.",
+          debug: {
+            hasSession: true,
+            hasUserId: true,
+            hasAccessToken: true,
+            accessTokenLength: session.accessToken.length,
+            tokenInfo: {
+              scopes: tokenInfo.scope,
+              email: tokenInfo.email,
+              azp: tokenInfo.azp,
+              sub: tokenInfo.sub,
+              expires_in: tokenInfo.expires_in,
+              error: tokenInfo.error,
+              error_description: tokenInfo.error_description,
+            },
+            envClientId: process.env.GOOGLE_CLIENT_ID?.substring(0, 10) + "...",
+            hasYoutubeScope: tokenInfo.scope?.includes("youtube") || false,
+            hasYoutubeChannelId: !!session.user.youtubeChannelId,
+            userId: session.user.id.substring(0, 8) + "...",
+          },
+        });
+      } catch (err) {
+        // Fallback if tokeninfo fails
+      }
     }
 
     return NextResponse.json({

@@ -1,6 +1,6 @@
 {
   "$schema": "https://openapi.vercel.sh/vercel.json",
-  "buildCommand": "npm install && npm run build && cd YTPlaylistManagerProWeb && npm install && npm run build && cd ../ScanQRCodeBar && npm install && npm run build",
+  "buildCommand": "bash build-all.sh",
   "installCommand": "npm install",
   "framework": "nextjs",
   "regions": ["iad1"],

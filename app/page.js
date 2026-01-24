@@ -10,7 +10,7 @@ function YouTubeIcon({ className }) {
       viewBox="0 0 24 24"
       fill="currentColor"
     >
-      <path d="M23.498 6.186a3.016 3.016 0 0 0-2.122-2.136C19.505 3.545 12 3.545 12 3.545s-7.505 0-9.377.505A3.017 3.017 0 0 0 .502 6.186C0 8.07 0 12 0 12s0 3.93.502 5.814a3.016 3.016 0 0 0 2.122 2.136c1.871.505 9.376.505 9.376.505s7.505 0 9.377-.505a3.015 3.015 0 0 0 2.122-2.136C24 15.93 24 12 24 12s0-3.93-.502-5.814zM9.545 15.568V8.432L15.818 12l-6.273 3.568z"/>
+      <path d="M23.498 6.186a3.016 3.016 0 0 0-2.122-2.136C19.505 3.545 12 3.545 12 3.545s-7.505 0-9.377.505A3.017 3.017 0 0 0 .502 6.186C0 8.07 0 12 0 12s0 3.93.502 5.814a3.016 3.016 0 0 0 2.122 2.136c1.871.505 9.376.505 9.376.505s7.505 0 9.377-.505a3.015 3.015 0 0 0 2.122-2.136C24 15.93 24 12 24 12s0-3.93-.502-5.814zM9.545 15.568V8.432L15.818 12l-6.273 3.568z" />
     </svg>
   )
 }
@@ -27,13 +27,13 @@ function QRCodeIcon({ className }) {
       strokeLinecap="round"
       strokeLinejoin="round"
     >
-      <rect x="3" y="3" width="7" height="7"/>
-      <rect x="14" y="3" width="7" height="7"/>
-      <rect x="3" y="14" width="7" height="7"/>
-      <rect x="14" y="14" width="3" height="3"/>
-      <rect x="18" y="14" width="3" height="3"/>
-      <rect x="14" y="18" width="3" height="3"/>
-      <rect x="18" y="18" width="3" height="3"/>
+      <rect x="3" y="3" width="7" height="7" />
+      <rect x="14" y="3" width="7" height="7" />
+      <rect x="3" y="14" width="7" height="7" />
+      <rect x="14" y="14" width="3" height="3" />
+      <rect x="18" y="14" width="3" height="3" />
+      <rect x="14" y="18" width="3" height="3" />
+      <rect x="18" y="18" width="3" height="3" />
     </svg>
   )
 }
@@ -46,10 +46,10 @@ function AppsIcon({ className }) {
       viewBox="0 0 24 24"
       fill="currentColor"
     >
-      <rect x="3" y="3" width="7" height="7" rx="1"/>
-      <rect x="14" y="3" width="7" height="7" rx="1"/>
-      <rect x="3" y="14" width="7" height="7" rx="1"/>
-      <rect x="14" y="14" width="7" height="7" rx="1"/>
+      <rect x="3" y="3" width="7" height="7" rx="1" />
+      <rect x="14" y="3" width="7" height="7" rx="1" />
+      <rect x="3" y="14" width="7" height="7" rx="1" />
+      <rect x="14" y="14" width="7" height="7" rx="1" />
     </svg>
   )
 }
@@ -79,7 +79,7 @@ function AppCard({ title, description, icon: Icon, href, gradient, hoverGradient
         ${isHovered ? 'opacity-20' : ''}
         bg-gradient-to-r ${iconBg}
         blur-xl
-      `}/>
+      `} />
 
       <div className="relative z-10">
         {/* Ícone */}
@@ -123,8 +123,8 @@ export default function Home() {
   // Em desenvolvimento: usa localhost com portas diferentes
   // Em produção (Vercel): usa paths relativos (/ytpm e /scanner)
   const isDev = process.env.NODE_ENV === 'development'
-  const ytpmUrl = isDev ? 'http://localhost:3001' : '/ytpm'
-  const scannerUrl = isDev ? 'http://localhost:3002' : '/scanner'
+  const ytpmUrl = isDev ? 'http://localhost:3001/ytpm' : '/ytpm'
+  const scannerUrl = isDev ? 'http://localhost:3002/scanner' : '/scanner'
 
   const apps = [
     {

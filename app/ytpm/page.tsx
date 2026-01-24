@@ -5,8 +5,8 @@ export default async function HomePage() {
   const session = await auth();
 
   if (session) {
-    redirect("/playlists");
+    redirect("/ytpm/playlists");
   } else {
-    redirect("/login");
+    redirect("/ytpm/login");
   }
 }

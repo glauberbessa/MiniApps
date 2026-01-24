@@ -237,8 +237,8 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
     }),
   ],
   pages: {
-    signIn: "/login",
-    error: "/login",
+    signIn: "/ytpm/login",
+    error: "/ytpm/login",
   },
   callbacks: {
     async signIn({ user, account }) {

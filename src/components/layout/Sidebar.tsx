@@ -27,27 +27,27 @@ import {
 const navigation = [
   {
     name: UI_TEXT.nav.playlists,
-    href: "/playlists",
+    href: "/ytpm/playlists",
     icon: ListVideo,
   },
   {
     name: UI_TEXT.nav.channels,
-    href: "/channels",
+    href: "/ytpm/channels",
     icon: Radio,
   },
   {
     name: UI_TEXT.nav.configPlaylists,
-    href: "/config/playlists",
+    href: "/ytpm/config/playlists",
     icon: Settings,
   },
   {
     name: UI_TEXT.nav.configChannels,
-    href: "/config/channels",
+    href: "/ytpm/config/channels",
     icon: Settings2,
   },
   {
     name: UI_TEXT.nav.quota,
-    href: "/quota",
+    href: "/ytpm/quota",
     icon: Gauge,
   },
 ];

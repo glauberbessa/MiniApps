@@ -32,7 +32,7 @@ export function middleware(request: NextRequest) {
   const url = new URL(request.url);
 
   // Only process auth-related routes
-  if (!url.pathname.startsWith('/api/auth')) {
+  if (!url.pathname.includes('/api/auth')) {
     return NextResponse.next();
   }
 
@@ -79,5 +79,5 @@ export function middleware(request: NextRequest) {
 
 // Configure middleware to only run on auth routes
 export const config = {
-  matcher: ['/api/auth/:path*'],
+  matcher: ['/ytpm/api/auth/:path*', '/api/auth/:path*'],
 };

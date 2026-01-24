@@ -78,6 +78,6 @@ export function middleware(request: NextRequest) {
 }
 
 // Configure middleware to only run on auth routes
-export const config = {
-  matcher: ['/api/auth/:path*'],
-};
+// export const config = {
+//   matcher: ['/api/auth/:path*'],
+// };

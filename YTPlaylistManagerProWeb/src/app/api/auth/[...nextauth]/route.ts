@@ -172,19 +172,24 @@ function createPkceClearingRedirectResponse(request: NextRequest): NextResponse 
 /**
  * Add PKCE cookie deletion headers to an existing response.
  */
-function addPkceClearingHeaders(response: Response | NextResponse, request: NextRequest): NextResponse {
+function addPkceClearingHeaders(response: Response | NextResponse, request: NextRequest): Response | NextResponse {
   // Get PKCE cookies from the request
   const pkceCookies = request.cookies.getAll().filter(c => isPkceCookie(c.name));
 
   if (pkceCookies.length === 0) {
-    return response instanceof NextResponse ? response : NextResponse.json(null, { status: response.status, headers: response.headers });
+    return response;
   }
 
   // Clone response and add cookie clearing headers
-  const newResponse = new NextResponse(response.body, {
+  // Use NextAuth compatible Response construction
+  const newHeaders = new Headers(response.headers);
+
+  // Clear each PKCE cookie found by setting Set-Cookie header
+  // logic requires constructing a new Response/NextResponse with modified headers
+  const newResponse = new NextResponse(response.body as BodyInit, {
     status: response.status,
     statusText: response.statusText,
-    headers: new Headers(response.headers),
+    headers: newHeaders,
   });
 
   // Clear each PKCE cookie found
@@ -199,32 +204,20 @@ function addPkceClearingHeaders(response: Response | NextResponse, request: Next
   return newResponse;
 }
 
-// Wrap GET handler with logging, PKCE cookie stripping, and error recovery
+// Wrap GET handler with stripping and error recovery
 export async function GET(request: NextRequest) {
   try {
-    // Strip PKCE cookies from callback requests to prevent parsing errors
-    // Cast to NextRequest for type compatibility - Auth.js handlers accept standard Request objects
-    const sanitizedRequest = stripPkceCookies(request) as NextRequest;
-    const response = await handlers.GET(sanitizedRequest);
+    const url = new URL(request.url);
 
-    // Add PKCE clearing headers to the response to prevent future issues
-    const enhancedResponse = addPkceClearingHeaders(response, request);
+    // Ensure URL has the /ytpm prefix for NextAuth validation compatibility
+    if (!url.pathname.startsWith("/ytpm")) {
+      url.pathname = `/ytpm${url.pathname}`;
+    }
 
-    return enhancedResponse;
+    const modifiedRequest = new NextRequest(url.toString(), request);
+    return await handlers.GET(modifiedRequest);
   } catch (error) {
-    if (error instanceof Error) {
-      logger.error("AUTH_ROUTE", "GET /api/auth failed", error);
-    }
-
-    // If this is a PKCE error, return a response that clears the cookies
-    // and redirects the user to retry authentication
-    if (isPkceError(error)) {
-      logger.warn("AUTH_PKCE", "Caught PKCE error, returning cookie-clearing redirect", {
-        errorMessage: error instanceof Error ? error.message : String(error),
-      });
-      return createPkceClearingRedirectResponse(request);
-    }
-
+    console.error("Auth GET error:", error);
     throw error;
   }
 }
@@ -232,28 +225,15 @@ export async function GET(request: NextRequest) {
 // Wrap POST handler with logging, PKCE cookie stripping, and error recovery
 export async function POST(request: NextRequest) {
   try {
-    // Strip PKCE cookies to prevent parsing errors
-    // Cast to NextRequest for type compatibility - Auth.js handlers accept standard Request objects
-    const sanitizedRequest = stripPkceCookies(request) as NextRequest;
-    const response = await handlers.POST(sanitizedRequest);
+    const url = new URL(request.url);
+    if (!url.pathname.startsWith("/ytpm")) {
+      url.pathname = `/ytpm${url.pathname}`;
+    }
+    const modifiedRequest = new NextRequest(url.toString(), request);
 
-    // Add PKCE clearing headers to the response
-    const enhancedResponse = addPkceClearingHeaders(response, request);
-
-    return enhancedResponse;
+    return await handlers.POST(modifiedRequest);
   } catch (error) {
-    if (error instanceof Error) {
-      logger.error("AUTH_ROUTE", "POST /api/auth failed", error);
-    }
-
-    // If this is a PKCE error, return a response that clears the cookies
-    if (isPkceError(error)) {
-      logger.warn("AUTH_PKCE", "Caught PKCE error, returning cookie-clearing redirect", {
-        errorMessage: error instanceof Error ? error.message : String(error),
-      });
-      return createPkceClearingRedirectResponse(request);
-    }
-
+    console.error("CRITICAL AUTH ERROR (POST):", error);
     throw error;
   }
 }

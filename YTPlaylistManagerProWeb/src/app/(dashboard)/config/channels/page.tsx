@@ -20,7 +20,7 @@ import { formatNumber, formatDate } from "@/lib/utils";
 import { Settings2, ArrowUp, ArrowDown } from "lucide-react";
 
 async function fetchChannels(): Promise<ChannelWithConfig[]> {
-  const res = await fetch("/api/channels", { credentials: "include" });
+  const res = await fetch("/ytpm/api/channels", { credentials: "include" });
   if (!res.ok) throw new Error("Erro ao buscar canais");
   return res.json();
 }
@@ -28,7 +28,7 @@ async function fetchChannels(): Promise<ChannelWithConfig[]> {
 async function saveChannelConfigs(
   configs: Array<{ channelId: string; title: string; isEnabled: boolean }>
 ) {
-  const res = await fetch("/api/config/channels", {
+  const res = await fetch("/ytpm/api/config/channels", {
     method: "PUT",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify(configs),

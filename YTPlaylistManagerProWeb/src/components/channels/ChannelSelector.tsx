@@ -20,7 +20,7 @@ interface ChannelSelectorProps {
 }
 
 async function fetchChannels(): Promise<ChannelWithConfig[]> {
-  const res = await fetch(`/api/channels?t=${Date.now()}`);
+  const res = await fetch(`/ytpm/api/channels?t=${Date.now()}`);
   if (!res.ok) {
     const text = await res.text();
     throw new Error(`Erro ${res.status}: ${text}`);

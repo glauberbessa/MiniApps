@@ -4,7 +4,7 @@ import { useQuery } from "@tanstack/react-query";
 import { Video } from "@/types";
 
 async function fetchChannelVideos(channelId: string): Promise<Video[]> {
-  const res = await fetch(`/api/channels/${channelId}/videos`);
+  const res = await fetch(`/ytpm/api/channels/${channelId}/videos`);
   if (!res.ok) throw new Error("Erro ao buscar vídeos");
   return res.json();
 }

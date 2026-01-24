@@ -159,8 +159,8 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
     updateAge: 24 * 60 * 60, // Update session every 24 hours
   },
   cookies: {
-    sessionToken: {
-      name: `${cookiePrefix}next-auth.session-token`,
+    state: {
+      name: `${cookiePrefix}next-auth.state`,
       options: {
         httpOnly: true,
         sameSite: "lax",
@@ -175,43 +175,7 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
         path: "/",
         secure: useSecureCookies,
       },
-    },
-    csrfToken: {
-      name: `${useSecureCookies ? "__Host-" : ""}next-auth.csrf-token`,
-      options: {
-        httpOnly: true,
-        sameSite: "lax",
-        path: "/",
-        secure: useSecureCookies,
-      },
-    },
-    // PKCE code verifier cookie configuration.
-    // Even though we use checks: ["state"] (PKCE disabled), we explicitly configure
-    // the PKCE cookie with maxAge: 0 to ensure any stale cookies are immediately deleted.
-    // This helps prevent "pkceCodeVerifier could not be parsed" errors caused by:
-    // 1. Old cookies encrypted with a previous AUTH_SECRET
-    // 2. Cookies from previous auth attempts when PKCE was enabled
-    // 3. Cookies that couldn't be properly removed during callback
-    pkceCodeVerifier: {
-      name: `${cookiePrefix}authjs.pkce.code_verifier`,
-      options: {
-        httpOnly: true,
-        sameSite: "lax",
-        path: "/",
-        secure: useSecureCookies,
-        maxAge: 0, // Immediately expire - we don't use PKCE
-      },
-    },
-    state: {
-      name: `${cookiePrefix}next-auth.state`,
-      options: {
-        httpOnly: true,
-        sameSite: "lax",
-        path: "/",
-        secure: useSecureCookies,
-        maxAge: 60 * 15, // 15 minutes
-      },
-    },
+    }
   },
   providers: [
     GoogleProvider({
@@ -226,13 +190,7 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
         },
       },
       // IMPORTANT: PKCE is disabled to fix "Invalid code verifier" error in serverless environments.
-      // In serverless/edge environments, the PKCE code_verifier cookie can be lost between
-      // the authorization request and callback due to cold starts or cookie handling issues.
       // Google OAuth supports but doesn't require PKCE - the state parameter provides CSRF protection.
-      // Requirements for this fix:
-      // - Use checks: ["state"] (not ["pkce"] or ["state", "pkce"])
-      // - Remove pkceCodeVerifier cookie configuration from cookies object above
-      // - Use next-auth >= 5.0.0-beta.25 which has improved PKCE handling
       checks: ["state"],
     }),
   ],

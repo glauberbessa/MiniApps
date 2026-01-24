@@ -19,6 +19,26 @@ const nextConfig = {
       },
     ],
   },
+  async rewrites() {
+    return [
+      {
+        source: '/ytpm',
+        destination: 'http://localhost:3001/ytpm',
+      },
+      {
+        source: '/ytpm/:path*',
+        destination: 'http://localhost:3001/ytpm/:path*',
+      },
+      {
+        source: '/scanner',
+        destination: 'http://localhost:3002',
+      },
+      {
+        source: '/scanner/:path*',
+        destination: 'http://localhost:3002/:path*',
+      },
+    ];
+  },
 }
 
 module.exports = nextConfig

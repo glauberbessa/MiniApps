@@ -13,7 +13,7 @@ import { formatNumber, formatDuration } from "@/lib/utils";
 import { Settings } from "lucide-react";
 
 async function fetchPlaylists(): Promise<PlaylistWithConfig[]> {
-  const res = await fetch("/api/playlists", { credentials: "include" });
+  const res = await fetch("/ytpm/api/playlists", { credentials: "include" });
   if (!res.ok) throw new Error("Erro ao buscar playlists");
   return res.json();
 }
@@ -21,7 +21,7 @@ async function fetchPlaylists(): Promise<PlaylistWithConfig[]> {
 async function savePlaylistConfigs(
   configs: Array<{ playlistId: string; title: string; isEnabled: boolean }>
 ) {
-  const res = await fetch("/api/config/playlists", {
+  const res = await fetch("/ytpm/api/config/playlists", {
     method: "PUT",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify(configs),

@@ -23,7 +23,7 @@ interface TransferResponse {
 }
 
 async function transferVideos(data: TransferRequest): Promise<TransferResponse> {
-  const res = await fetch("/api/playlists/transfer", {
+  const res = await fetch("/ytpm/api/playlists/transfer", {
     method: "POST",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify(data),
@@ -74,7 +74,7 @@ interface AssignResponse {
 }
 
 async function assignVideos(data: AssignRequest): Promise<AssignResponse> {
-  const res = await fetch("/api/channels/assign", {
+  const res = await fetch("/ytpm/api/channels/assign", {
     method: "POST",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify(data),
@@ -127,7 +127,7 @@ interface RemoveResponse {
 async function removeVideosFromPlaylist(
   data: RemoveRequest
 ): Promise<RemoveResponse> {
-  const res = await fetch("/api/playlists/remove", {
+  const res = await fetch("/ytpm/api/playlists/remove", {
     method: "POST",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify(data),

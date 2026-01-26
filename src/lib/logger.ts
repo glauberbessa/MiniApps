@@ -157,10 +157,10 @@ export function log(
     traceId: currentTraceId || undefined,
     error: error
       ? {
-          name: error.name,
-          message: error.message,
-          stack: error.stack,
-        }
+        name: error.name,
+        message: error.message,
+        stack: error.stack,
+      }
       : undefined,
   };
 
@@ -257,7 +257,7 @@ export const logger = {
       `[${success ? "SUCCESS" : "FAILED"}] ${operation}`,
       details,
       error
-  ),
+    ),
 };
 
 /**
@@ -353,3 +353,5 @@ export function logEnvironmentInfo(): void {
 }
 
 // Environment info is available via logEnvironmentInfo when needed.
+console.log("[ROOT_LOGGER] Initializing root logger and capturing environment info...");
+logEnvironmentInfo();

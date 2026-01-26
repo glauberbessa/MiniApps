@@ -201,17 +201,29 @@ function addPkceClearingHeaders(response: Response | NextResponse, request: Next
 
 // Wrap GET handler with logging, PKCE cookie stripping, and error recovery
 export async function GET(request: NextRequest) {
+  console.log(">>>>>>>> ROOT AUTH DEBUG START: GET <<<<<<<<");
+  console.log(`[ROOT_AUTH_ROUTE] Incoming URL: ${request.url}`);
+  console.log(`[ROOT_AUTH_ROUTE] Headers: ${JSON.stringify(Object.fromEntries(request.headers.entries()))}`);
+
   try {
     // Strip PKCE cookies from callback requests to prevent parsing errors
     // Cast to NextRequest for type compatibility - Auth.js handlers accept standard Request objects
     const sanitizedRequest = stripPkceCookies(request) as NextRequest;
+
+    console.log(`[ROOT_AUTH_ROUTE] Calling handlers.GET...`);
     const response = await handlers.GET(sanitizedRequest);
+
+    console.log(`[ROOT_AUTH_ROUTE] handlers.GET returned status: ${response.status}`);
+    console.log(">>>>>>>> ROOT AUTH DEBUG END: GET <<<<<<<<");
 
     // Add PKCE clearing headers to the response to prevent future issues
     const enhancedResponse = addPkceClearingHeaders(response, request);
 
     return enhancedResponse;
   } catch (error) {
+    console.error("CRITICAL ROOT AUTH ERROR (GET):", error);
+    console.log(">>>>>>>> ROOT AUTH DEBUG FAILED: GET <<<<<<<<");
+
     if (error instanceof Error) {
       logger.error("AUTH_ROUTE", "GET /api/auth failed", error);
     }
@@ -231,17 +243,28 @@ export async function GET(request: NextRequest) {
 
 // Wrap POST handler with logging, PKCE cookie stripping, and error recovery
 export async function POST(request: NextRequest) {
+  console.log(">>>>>>>> ROOT AUTH DEBUG START: POST <<<<<<<<");
+  console.log(`[ROOT_AUTH_ROUTE] Incoming URL: ${request.url}`);
+
   try {
     // Strip PKCE cookies to prevent parsing errors
     // Cast to NextRequest for type compatibility - Auth.js handlers accept standard Request objects
     const sanitizedRequest = stripPkceCookies(request) as NextRequest;
+
+    console.log(`[ROOT_AUTH_ROUTE] Calling handlers.POST...`);
     const response = await handlers.POST(sanitizedRequest);
+
+    console.log(`[ROOT_AUTH_ROUTE] handlers.POST returned status: ${response.status}`);
+    console.log(">>>>>>>> ROOT AUTH DEBUG END: POST <<<<<<<<");
 
     // Add PKCE clearing headers to the response
     const enhancedResponse = addPkceClearingHeaders(response, request);
 
     return enhancedResponse;
   } catch (error) {
+    console.error("CRITICAL ROOT AUTH ERROR (POST):", error);
+    console.log(">>>>>>>> ROOT AUTH DEBUG FAILED: POST <<<<<<<<");
+
     if (error instanceof Error) {
       logger.error("AUTH_ROUTE", "POST /api/auth failed", error);
     }

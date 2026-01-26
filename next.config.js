@@ -20,6 +20,15 @@ const nextConfig = {
     ],
   },
   async rewrites() {
+    // Only apply rewrites in development
+    // In production (Vercel), the app runs as a single deployment
+    // and rewrites to localhost would cause 404 errors
+    if (process.env.NODE_ENV === 'production') {
+      console.log('[next.config.js] Production mode - skipping localhost rewrites');
+      return [];
+    }
+
+    console.log('[next.config.js] Development mode - applying localhost rewrites');
     return [
       {
         source: '/ytpm',

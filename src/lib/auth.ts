@@ -9,10 +9,13 @@ import { logger } from "./logger";
 function getAuthSecret(): string {
   const secret = process.env.AUTH_SECRET || process.env.NEXTAUTH_SECRET;
 
-  console.log(`[ROOT_AUTH_INIT] Checking secrets: AUTH_SECRET=${process.env.AUTH_SECRET ? 'SET' : 'NOT_SET'}, NEXTAUTH_SECRET=${process.env.NEXTAUTH_SECRET ? 'SET' : 'NOT_SET'}`);
+  logger.debug("AUTH", "Checking secrets", {
+    AUTH_SECRET: process.env.AUTH_SECRET ? "SET" : "NOT_SET",
+    NEXTAUTH_SECRET: process.env.NEXTAUTH_SECRET ? "SET" : "NOT_SET",
+  });
 
   if (secret) {
-    console.log(`[ROOT_AUTH_INIT] Using ${process.env.AUTH_SECRET ? 'AUTH_SECRET' : 'NEXTAUTH_SECRET'}`);
+    logger.debug("AUTH", `Using ${process.env.AUTH_SECRET ? "AUTH_SECRET" : "NEXTAUTH_SECRET"}`);
     return secret;
   }
 
@@ -20,10 +23,9 @@ function getAuthSecret(): string {
   if (process.env.NODE_ENV === "production" || process.env.VERCEL) {
     // Log the error but provide a fallback to prevent crashes
     // This allows the app to at least load and show meaningful errors
-    console.error(
-      "[Auth] CRITICAL: AUTH_SECRET or NEXTAUTH_SECRET environment variable is not set! " +
-      "Authentication will not work properly. Please set AUTH_SECRET in your Vercel environment variables."
-    );
+    logger.critical("AUTH", "AUTH_SECRET or NEXTAUTH_SECRET not set", undefined, {
+      guidance: "Set AUTH_SECRET in your Vercel environment variables",
+    });
     // Use VERCEL_URL or a hash of other env vars as an emergency fallback
     // This is NOT secure but prevents complete app failure
     const emergencyFallback = process.env.VERCEL_URL || process.env.VERCEL_GIT_COMMIT_SHA || "insecure-fallback-please-set-auth-secret";
@@ -31,7 +33,7 @@ function getAuthSecret(): string {
   }
 
   // In development, use a default secret (not secure, but acceptable for dev)
-  console.warn("[Auth] Warning: No AUTH_SECRET set. Using development fallback.");
+  logger.warn("AUTH", "No AUTH_SECRET set, using development fallback");
   return "development-secret-please-set-auth-secret-in-production";
 }
 
@@ -245,11 +247,14 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
   },
   callbacks: {
     async signIn({ user, account }) {
-      console.log(`[ROOT_AUTH_CALLBACK:signIn] User: ${user.email}, Provider: ${account?.provider}`);
+      logger.info("AUTH_CALLBACK", "User sign-in", {
+        email: user.email,
+        provider: account?.provider,
+      });
 
       if (account?.provider === "google" && account.access_token) {
         try {
-          console.log(`[ROOT_AUTH_CALLBACK:signIn] Fetching YouTube Channel ID...`);
+          logger.debug("AUTH_CALLBACK", "Fetching YouTube Channel ID");
           const oauth2Client = new google.auth.OAuth2();
           oauth2Client.setCredentials({ access_token: account.access_token });
 
@@ -260,14 +265,16 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
           });
 
           const channelId = response.data.items?.[0]?.id;
-          console.log(`[ROOT_AUTH_CALLBACK:signIn] YouTube Channel ID: ${channelId || 'NOT_FOUND'}`);
+          logger.info("AUTH_CALLBACK", "YouTube Channel ID fetched", {
+            channelId: channelId || "NOT_FOUND",
+          });
 
           if (channelId && user.email) {
             await prisma.user.update({
               where: { email: user.email },
               data: { youtubeChannelId: channelId },
             });
-            console.log(`[ROOT_AUTH_CALLBACK:signIn] DB Updated with Channel ID`);
+            logger.info("AUTH_CALLBACK", "DB updated with Channel ID");
           }
         } catch (error) {
           logger.error(
@@ -282,7 +289,11 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
       return true;
     },
     async jwt({ token, user, account }) {
-      console.log(`[ROOT_AUTH_CALLBACK:jwt] Token exists: ${!!token}, User exists: ${!!user}, Account exists: ${!!account}`);
+      logger.debug("AUTH_JWT", "JWT callback invoked", {
+        tokenExists: !!token,
+        userExists: !!user,
+        accountExists: !!account,
+      });
 
       // Initial sign in - persist user data in token
       if (user) {
@@ -306,7 +317,7 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
         token.refreshToken = account.refresh_token;
         token.expiresAt = account.expires_at;
         token.accountId = account.providerAccountId;
-        console.log(`[ROOT_AUTH_CALLBACK:jwt] Account data persisted to token`);
+        logger.debug("AUTH_JWT", "Account data persisted to token");
       }
 
       // If we still don't have userId but have email, try to fetch from DB
@@ -317,7 +328,7 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
           });
           if (dbUser) {
             token.userId = dbUser.id;
-            console.log(`[ROOT_AUTH_CALLBACK:jwt] userId fetched from DB by email`);
+            logger.debug("AUTH_JWT", "userId fetched from DB by email");
           }
         } catch (error) {
           logger.error(
@@ -332,7 +343,7 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
       // Fallback: use token.sub as userId if still missing
       if (!token.userId && token.sub) {
         token.userId = token.sub;
-        console.log(`[ROOT_AUTH_CALLBACK:jwt] userId set from token.sub`);
+        logger.debug("AUTH_JWT", "userId set from token.sub");
       }
 
       // Check if token needs refresh
@@ -341,7 +352,7 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
         const isExpired = token.expiresAt < now - 60;
 
         if (isExpired && token.refreshToken) {
-          console.log(`[ROOT_AUTH_CALLBACK:jwt] Token expired, attempting refresh...`);
+          logger.info("AUTH_JWT", "Token expired, attempting refresh");
           try {
             // Find the account in DB to get its ID for update
             const dbAccount = await prisma.account.findFirst({
@@ -361,7 +372,7 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
                 token.accessToken = newAccessToken;
                 // Update expiry (Google tokens typically last 1 hour)
                 token.expiresAt = Math.floor(Date.now() / 1000) + 3600;
-                console.log(`[ROOT_AUTH_CALLBACK:jwt] Token refreshed successfully`);
+                logger.info("AUTH_JWT", "Token refreshed successfully");
               }
             } else {
               logger.error("AUTH_JWT", "Account not found in database for refresh", undefined, {
@@ -381,7 +392,9 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
       return token;
     },
     async session({ session, token }) {
-      console.log(`[ROOT_AUTH_CALLBACK:session] Session requested. User ID in token: ${token.userId}`);
+      logger.debug("AUTH_SESSION", "Session requested", {
+        userIdInToken: token.userId,
+      });
       // CRITICAL: Ensure session.user object exists before assigning properties
       // In NextAuth v5 with JWT strategy, session.user may be undefined or empty
       if (!session.user) {
@@ -418,7 +431,7 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
       // STRATEGY 1: Use userId from JWT token (primary method)
       if (token.userId) {
         session.user.id = token.userId as string;
-        console.log(`[ROOT_AUTH_CALLBACK:session] Using userId from token: ${session.user.id}`);
+        logger.debug("AUTH_SESSION", "Using userId from token", { userId: session.user.id });
 
         // Fetch additional user data from DB
         const dbUser = await fetchUserWithAccount({ id: token.userId as string });
@@ -437,7 +450,7 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
       // STRATEGY 1.5: Use token.sub as userId if userId is missing
       // In NextAuth v5 with JWT strategy, token.sub often contains the user ID
       if (token.sub && !token.userId) {
-        console.log(`[ROOT_AUTH_CALLBACK:session] userId missing in token, trying token.sub: ${token.sub}`);
+        logger.debug("AUTH_SESSION", "userId missing, trying token.sub", { sub: token.sub });
         const subUser = await fetchUserWithAccount({ id: token.sub });
         if (subUser) {
           session.user.id = subUser.id;
@@ -458,7 +471,7 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
       // STRATEGY 2: Fallback - fetch by email from token or session
       const email = (token.email as string) || session?.user?.email;
       if (email) {
-        console.log(`[ROOT_AUTH_CALLBACK:session] Falling back to fetch by email: ${email}`);
+        logger.debug("AUTH_SESSION", "Falling back to fetch by email", { email });
         const emailUser = await fetchUserWithAccount({ email });
 
         if (emailUser) {
@@ -492,7 +505,7 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
 
       // STRATEGY 3: Last resort - try to find any recent user with Google account
       try {
-        console.log(`[ROOT_AUTH_CALLBACK:session] Last resort strategy...`);
+        logger.debug("AUTH_SESSION", "Last resort strategy");
         const recentUser = await prisma.user.findFirst({
           where: {
             accounts: {
@@ -568,22 +581,22 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
   },
 });
 
-console.log("[ROOT_AUTH_INIT] NextAuth initialization COMPLETE");
+logger.info("AUTH", "NextAuth initialization complete");
 
 // Helper para obter sessão autenticada
 export async function getAuthSession() {
-  console.log(`[ROOT_AUTH_HELPER:getAuthSession] Checking session...`);
+  logger.debug("AUTH", "getAuthSession checking session");
   const session = await auth();
   return session;
 }
 
 // Helper para verificar se usuário está autenticado
 export async function requireAuth() {
-  console.log(`[ROOT_AUTH_HELPER:requireAuth] Checking session...`);
+  logger.debug("AUTH", "requireAuth checking session");
   const session = await auth();
 
   if (!session?.user) {
-    console.warn(`[ROOT_AUTH_HELPER:requireAuth] No session found, throwing error`);
+    logger.warn("AUTH", "No session found in requireAuth");
     throw new Error("Não autenticado");
   }
 

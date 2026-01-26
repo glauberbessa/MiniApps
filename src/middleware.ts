@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import type { NextRequest } from "next/server";
+import { logger, generateTraceId, setTraceId } from "./lib/logger";
 
 /**
  * Check if a cookie name is PKCE-related.
@@ -31,20 +32,25 @@ function isPkceCookie(cookieName: string): boolean {
 export function middleware(request: NextRequest) {
   const url = new URL(request.url);
 
-  // [PING] Log every single request that hits the middleware
-  console.log(`[ROOT_MIDDLEWARE:PING] ${request.method} ${url.pathname}${url.search}`);
+  // Set trace ID for request correlation
+  const traceId = generateTraceId();
+  setTraceId(traceId);
 
-  // [DEBUG] Log every request hitting the ROOT middleware in production
-  console.log(`[ROOT_MIDDLEWARE] >>> ${request.method} ${url.pathname}${url.search}`);
+  // Log incoming request
+  logger.debug("AUTH_ROUTE", "Middleware request", {
+    method: request.method,
+    path: url.pathname,
+    search: url.search,
+  });
 
   // Detailed logging for auth-related routes
   const isAuthRoute = url.pathname.includes('/api/auth') || url.pathname.includes('/callback');
   if (isAuthRoute) {
-    console.log(`[ROOT_MIDDLEWARE] [AUTH_DEBUG] Headers:`, JSON.stringify({
+    logger.debug("AUTH_ROUTE", "Auth route headers", {
       host: request.headers.get('host'),
       'x-forwarded-proto': request.headers.get('x-forwarded-proto'),
       referer: request.headers.get('referer'),
-    }));
+    });
   }
 
   // Only process auth-related routes
@@ -57,12 +63,15 @@ export function middleware(request: NextRequest) {
   const pkceCookies = allCookies.filter(c => isPkceCookie(c.name));
 
   if (pkceCookies.length === 0) {
-    console.log(`[ROOT_MIDDLEWARE] [AUTH_DEBUG] No PKCE cookies found for path: ${url.pathname}`);
+    logger.debug("AUTH_PKCE", "No PKCE cookies found", { path: url.pathname });
     return NextResponse.next();
   }
 
   // Log detection of PKCE cookies (this runs before the route handler logging)
-  console.log(`[MIDDLEWARE] Detected ${pkceCookies.length} PKCE cookie(s):`, pkceCookies.map(c => c.name));
+  logger.info("AUTH_PKCE", "Detected PKCE cookies", {
+    count: pkceCookies.length,
+    cookies: pkceCookies.map(c => c.name),
+  });
 
   // Create response that will delete the PKCE cookies from the browser
   // This is a "belt and suspenders" approach - we delete them from the response
@@ -71,7 +80,7 @@ export function middleware(request: NextRequest) {
 
   // Delete PKCE cookies by setting them with maxAge=0
   for (const cookie of pkceCookies) {
-    console.log(`[MIDDLEWARE] Scheduling deletion of PKCE cookie: ${cookie.name}`);
+    logger.debug("AUTH_PKCE", "Scheduling deletion of PKCE cookie", { cookie: cookie.name });
 
     // Delete with multiple configurations to ensure removal across different cookie settings
     // Standard deletion

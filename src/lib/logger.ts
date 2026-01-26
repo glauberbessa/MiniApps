@@ -352,6 +352,5 @@ export function logEnvironmentInfo(): void {
   logger.info("SYSTEM", "Environment Configuration", env);
 }
 
-// Environment info is available via logEnvironmentInfo when needed.
-console.log("[ROOT_LOGGER] Initializing root logger and capturing environment info...");
-logEnvironmentInfo();
+// Environment info is available via logEnvironmentInfo() when needed.
+// To log environment info, call logEnvironmentInfo() explicitly.

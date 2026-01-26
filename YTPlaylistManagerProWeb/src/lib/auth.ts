@@ -9,7 +9,10 @@ import { logger } from "./logger";
 function getAuthSecret(): string {
   const secret = process.env.AUTH_SECRET || process.env.NEXTAUTH_SECRET;
 
+  console.log(`[AUTH_INIT] Checking secrets: AUTH_SECRET=${process.env.AUTH_SECRET ? 'SET' : 'NOT_SET'}, NEXTAUTH_SECRET=${process.env.NEXTAUTH_SECRET ? 'SET' : 'NOT_SET'}`);
+
   if (secret) {
+    console.log(`[AUTH_INIT] Using ${process.env.AUTH_SECRET ? 'AUTH_SECRET' : 'NEXTAUTH_SECRET'}`);
     return secret;
   }
 
@@ -200,8 +203,11 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
   },
   callbacks: {
     async signIn({ user, account }) {
+      console.log(`[AUTH_CALLBACK:signIn] User: ${user.email}, Provider: ${account?.provider}`);
+
       if (account?.provider === "google" && account.access_token) {
         try {
+          console.log(`[AUTH_CALLBACK:signIn] Fetching YouTube Channel ID...`);
           const oauth2Client = new google.auth.OAuth2();
           oauth2Client.setCredentials({ access_token: account.access_token });
 
@@ -212,12 +218,14 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
           });
 
           const channelId = response.data.items?.[0]?.id;
+          console.log(`[AUTH_CALLBACK:signIn] YouTube Channel ID: ${channelId || 'NOT_FOUND'}`);
 
           if (channelId && user.email) {
             await prisma.user.update({
               where: { email: user.email },
               data: { youtubeChannelId: channelId },
             });
+            console.log(`[AUTH_CALLBACK:signIn] DB Updated with Channel ID`);
           }
         } catch (error) {
           logger.error(
@@ -232,6 +240,8 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
       return true;
     },
     async jwt({ token, user, account }) {
+      console.log(`[AUTH_CALLBACK:jwt] Token exists: ${!!token}, User exists: ${!!user}, Account exists: ${!!account}`);
+
       // Initial sign in - persist user data in token
       if (user) {
         if (user.id) {
@@ -254,6 +264,7 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
         token.refreshToken = account.refresh_token;
         token.expiresAt = account.expires_at;
         token.accountId = account.providerAccountId;
+        console.log(`[AUTH_CALLBACK:jwt] Account data persisted to token`);
       }
 
       // If we still don't have userId but have email, try to fetch from DB
@@ -264,6 +275,7 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
           });
           if (dbUser) {
             token.userId = dbUser.id;
+            console.log(`[AUTH_CALLBACK:jwt] userId fetched from DB by email`);
           }
         } catch (error) {
           logger.error(
@@ -278,6 +290,7 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
       // Fallback: use token.sub as userId if still missing
       if (!token.userId && token.sub) {
         token.userId = token.sub;
+        console.log(`[AUTH_CALLBACK:jwt] userId set from token.sub`);
       }
 
       // Check if token needs refresh
@@ -286,6 +299,7 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
         const isExpired = token.expiresAt < now - 60;
 
         if (isExpired && token.refreshToken) {
+          console.log(`[AUTH_CALLBACK:jwt] Token expired, attempting refresh...`);
           try {
             // Find the account in DB to get its ID for update
             const dbAccount = await prisma.account.findFirst({
@@ -305,6 +319,7 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
                 token.accessToken = newAccessToken;
                 // Update expiry (Google tokens typically last 1 hour)
                 token.expiresAt = Math.floor(Date.now() / 1000) + 3600;
+                console.log(`[AUTH_CALLBACK:jwt] Token refreshed successfully`);
               }
             } else {
               logger.error("AUTH_JWT", "Account not found in database for refresh", undefined, {
@@ -324,6 +339,7 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
       return token;
     },
     async session({ session, token }) {
+      console.log(`[AUTH_CALLBACK:session] Session requested. User ID in token: ${token.userId}`);
       // CRITICAL: Ensure session.user object exists before assigning properties
       // In NextAuth v5 with JWT strategy, session.user may be undefined or empty
       if (!session.user) {
@@ -360,6 +376,7 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
       // STRATEGY 1: Use userId from JWT token (primary method)
       if (token.userId) {
         session.user.id = token.userId as string;
+        console.log(`[AUTH_CALLBACK:session] Using userId from token: ${session.user.id}`);
 
         // Fetch additional user data from DB
         const dbUser = await fetchUserWithAccount({ id: token.userId as string });
@@ -378,6 +395,7 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
       // STRATEGY 1.5: Use token.sub as userId if userId is missing
       // In NextAuth v5 with JWT strategy, token.sub often contains the user ID
       if (token.sub && !token.userId) {
+        console.log(`[AUTH_CALLBACK:session] userId missing in token, trying token.sub: ${token.sub}`);
         const subUser = await fetchUserWithAccount({ id: token.sub });
         if (subUser) {
           session.user.id = subUser.id;
@@ -398,6 +416,7 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
       // STRATEGY 2: Fallback - fetch by email from token or session
       const email = (token.email as string) || session?.user?.email;
       if (email) {
+        console.log(`[AUTH_CALLBACK:session] Falling back to fetch by email: ${email}`);
         const emailUser = await fetchUserWithAccount({ email });
 
         if (emailUser) {
@@ -431,6 +450,7 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
 
       // STRATEGY 3: Last resort - try to find any recent user with Google account
       try {
+        console.log(`[AUTH_CALLBACK:session] Last resort strategy...`);
         const recentUser = await prisma.user.findFirst({
           where: {
             accounts: {

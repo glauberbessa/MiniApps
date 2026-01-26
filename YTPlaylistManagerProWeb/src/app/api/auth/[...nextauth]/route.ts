@@ -206,34 +206,62 @@ function addPkceClearingHeaders(response: Response | NextResponse, request: Next
 
 // Wrap GET handler with stripping and error recovery
 export async function GET(request: NextRequest) {
+  console.log(">>>>>>>> AUTH DEBUG START: GET <<<<<<<<");
+  console.log(`[AUTH_ROUTE] Incoming URL: ${request.url}`);
+  console.log(`[AUTH_ROUTE] Headers: ${JSON.stringify(Object.fromEntries(request.headers.entries()))}`);
+
   try {
     const url = new URL(request.url);
 
     // Ensure URL has the /ytpm prefix for NextAuth validation compatibility
     if (!url.pathname.startsWith("/ytpm")) {
+      console.log(`[AUTH_ROUTE] Path missing /ytpm prefix, current: ${url.pathname}`);
       url.pathname = `/ytpm${url.pathname}`;
+      console.log(`[AUTH_ROUTE] Added /ytpm prefix, new path: ${url.pathname}`);
+    } else {
+      console.log(`[AUTH_ROUTE] Path already has /ytpm prefix: ${url.pathname}`);
     }
 
     const modifiedRequest = new NextRequest(url.toString(), request);
-    return await handlers.GET(modifiedRequest);
+    console.log(`[AUTH_ROUTE] Calling handlers.GET with: ${url.toString()}`);
+
+    const response = await handlers.GET(modifiedRequest);
+
+    console.log(`[AUTH_ROUTE] handlers.GET returned status: ${response.status}`);
+    console.log(">>>>>>>> AUTH DEBUG END: GET <<<<<<<<");
+
+    return response;
   } catch (error) {
-    console.error("Auth GET error:", error);
+    console.error("CRITICAL AUTH ERROR (GET):", error);
+    console.log(">>>>>>>> AUTH DEBUG FAILED: GET <<<<<<<<");
     throw error;
   }
 }
 
 // Wrap POST handler with logging, PKCE cookie stripping, and error recovery
 export async function POST(request: NextRequest) {
+  console.log(">>>>>>>> AUTH DEBUG START: POST <<<<<<<<");
+  console.log(`[AUTH_ROUTE] Incoming URL: ${request.url}`);
+
   try {
     const url = new URL(request.url);
     if (!url.pathname.startsWith("/ytpm")) {
+      console.log(`[AUTH_ROUTE] Path missing /ytpm prefix, current: ${url.pathname}`);
       url.pathname = `/ytpm${url.pathname}`;
+      console.log(`[AUTH_ROUTE] Added /ytpm prefix, new path: ${url.pathname}`);
     }
     const modifiedRequest = new NextRequest(url.toString(), request);
 
-    return await handlers.POST(modifiedRequest);
+    console.log(`[AUTH_ROUTE] Calling handlers.POST with: ${url.toString()}`);
+    const response = await handlers.POST(modifiedRequest);
+
+    console.log(`[AUTH_ROUTE] handlers.POST returned status: ${response.status}`);
+    console.log(">>>>>>>> AUTH DEBUG END: POST <<<<<<<<");
+
+    return response;
   } catch (error) {
     console.error("CRITICAL AUTH ERROR (POST):", error);
+    console.log(">>>>>>>> AUTH DEBUG FAILED: POST <<<<<<<<");
     throw error;
   }
 }

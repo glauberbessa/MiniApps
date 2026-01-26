@@ -31,7 +31,21 @@ function isPkceCookie(cookieName: string): boolean {
 export function middleware(request: NextRequest) {
   const url = new URL(request.url);
 
-  // Only process auth-related routes
+  // [DEBUG] Log every request hitting the middleware in production
+  console.log(`[MIDDLEWARE] >>> ${request.method} ${url.pathname}${url.search}`);
+
+  // Detailed logging for auth-related routes
+  const isAuthRoute = url.pathname.startsWith('/api/auth') || url.pathname.includes('/callback');
+  if (isAuthRoute) {
+    console.log(`[MIDDLEWARE] [AUTH_DEBUG] Headers:`, JSON.stringify({
+      host: request.headers.get('host'),
+      'x-forwarded-proto': request.headers.get('x-forwarded-proto'),
+      'x-url': request.headers.get('x-url'),
+      referer: request.headers.get('referer'),
+    }));
+  }
+
+  // Only process auth-related routes for cookie cleaning
   if (!url.pathname.startsWith('/api/auth')) {
     return NextResponse.next();
   }
@@ -41,6 +55,7 @@ export function middleware(request: NextRequest) {
   const pkceCookies = allCookies.filter(c => isPkceCookie(c.name));
 
   if (pkceCookies.length === 0) {
+    console.log(`[MIDDLEWARE] [AUTH_DEBUG] No PKCE cookies found for path: ${url.pathname}`);
     return NextResponse.next();
   }
 

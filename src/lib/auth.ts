@@ -568,17 +568,22 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
   },
 });
 
+console.log("[ROOT_AUTH_INIT] NextAuth initialization COMPLETE");
+
 // Helper para obter sessão autenticada
 export async function getAuthSession() {
+  console.log(`[ROOT_AUTH_HELPER:getAuthSession] Checking session...`);
   const session = await auth();
   return session;
 }
 
 // Helper para verificar se usuário está autenticado
 export async function requireAuth() {
+  console.log(`[ROOT_AUTH_HELPER:requireAuth] Checking session...`);
   const session = await auth();
 
   if (!session?.user) {
+    console.warn(`[ROOT_AUTH_HELPER:requireAuth] No session found, throwing error`);
     throw new Error("Não autenticado");
   }
 

@@ -214,6 +214,7 @@ export async function GET(request: NextRequest) {
     const response = await handlers.GET(sanitizedRequest);
 
     console.log(`[ROOT_AUTH_ROUTE] handlers.GET returned status: ${response.status}`);
+    console.log(`[ROOT_AUTH_ROUTE] Response Headers: ${JSON.stringify(Object.fromEntries(response.headers.entries()))}`);
     console.log(">>>>>>>> ROOT AUTH DEBUG END: GET <<<<<<<<");
 
     // Add PKCE clearing headers to the response to prevent future issues
@@ -255,6 +256,7 @@ export async function POST(request: NextRequest) {
     const response = await handlers.POST(sanitizedRequest);
 
     console.log(`[ROOT_AUTH_ROUTE] handlers.POST returned status: ${response.status}`);
+    console.log(`[ROOT_AUTH_ROUTE] Response Headers: ${JSON.stringify(Object.fromEntries(response.headers.entries()))}`);
     console.log(">>>>>>>> ROOT AUTH DEBUG END: POST <<<<<<<<");
 
     // Add PKCE clearing headers to the response

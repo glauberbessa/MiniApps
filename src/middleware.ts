@@ -31,6 +31,9 @@ function isPkceCookie(cookieName: string): boolean {
 export function middleware(request: NextRequest) {
   const url = new URL(request.url);
 
+  // [PING] Log every single request that hits the middleware
+  console.log(`[ROOT_MIDDLEWARE:PING] ${request.method} ${url.pathname}${url.search}`);
+
   // [DEBUG] Log every request hitting the ROOT middleware in production
   console.log(`[ROOT_MIDDLEWARE] >>> ${request.method} ${url.pathname}${url.search}`);
 
@@ -93,5 +96,6 @@ export function middleware(request: NextRequest) {
 
 // Configure middleware to only run on auth routes
 export const config = {
-  matcher: ['/ytpm/api/auth/:path*', '/api/auth/:path*'],
+  // Broad matcher for debugging - capture EVERYTHING to see if server is alive
+  matcher: ['/:path*'],
 };

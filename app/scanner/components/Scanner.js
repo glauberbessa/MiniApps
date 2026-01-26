@@ -20,13 +20,16 @@
  */
 
 import { useState, useRef, useEffect, useCallback } from 'react'
-import { Html5Qrcode } from 'html5-qrcode'
+import { Html5Qrcode, Html5QrcodeSupportedFormats } from 'html5-qrcode'
+import Tesseract from 'tesseract.js'
 
 // Constantes para os estados/telas do app
 const SCREENS = {
   HOME: 'home',
   SCANNING: 'scanning',
-  RESULT: 'result'
+  RESULT: 'result',
+  OCR_CAMERA: 'ocr_camera',
+  OCR_PROCESSING: 'ocr_processing'
 }
 
 // Mensagens de erro amigáveis em português
@@ -57,6 +60,7 @@ export default function Scanner() {
   // =====================================================================
   
   const scannerRef = useRef(null)
+  const ocrVideoRef = useRef(null)
   const scannerElementId = 'qr-reader'
 
   // =====================================================================
@@ -79,6 +83,18 @@ export default function Scanner() {
       console.error('Clipboard error:', err)
       setError(ERROR_MESSAGES.CLIPBOARD_ERROR)
       return false
+    }
+  }, [])
+
+  // =====================================================================
+  // FUNÇÃO: Parar OCR (libera câmera)
+  // =====================================================================
+  
+  const stopOcr = useCallback(() => {
+    if (ocrVideoRef.current && ocrVideoRef.current.srcObject) {
+      const tracks = ocrVideoRef.current.srcObject.getTracks()
+      tracks.forEach(track => track.stop())
+      ocrVideoRef.current.srcObject = null
     }
   }, [])
 
@@ -135,6 +151,76 @@ export default function Scanner() {
       // Ignora se áudio não funcionar
     }
   }, [stopScanner, copyToClipboard])
+
+  // =====================================================================
+  // FUNÇÃO: Iniciar OCR (Câmera)
+  // =====================================================================
+  
+  const startOcr = useCallback(async () => {
+    setError(null)
+    setIsLoading(true)
+    
+    try {
+      await stopScanner()
+      
+      setCurrentScreen(SCREENS.OCR_CAMERA)
+      // Pequeno delay para renderizar o elemento de vídeo
+      await new Promise(resolve => setTimeout(resolve, 300))
+      
+      const stream = await navigator.mediaDevices.getUserMedia({
+        video: { facingMode: 'environment' }
+      })
+      
+      if (ocrVideoRef.current) {
+        ocrVideoRef.current.srcObject = stream
+        ocrVideoRef.current.play()
+      }
+    } catch (err) {
+      console.error('Erro ao iniciar câmera OCR:', err)
+      setError(ERROR_MESSAGES.GENERIC + ' (Câmera OCR)')
+      setCurrentScreen(SCREENS.HOME)
+    } finally {
+      setIsLoading(false)
+    }
+  }, [stopScanner])
+
+  // =====================================================================
+  // FUNÇÃO: Capturar Foto e Processar OCR
+  // =====================================================================
+  
+  const captureOcr = useCallback(async () => {
+    if (!ocrVideoRef.current) return
+    
+    try {
+      const video = ocrVideoRef.current
+      const canvas = document.createElement('canvas')
+      canvas.width = video.videoWidth
+      canvas.height = video.videoHeight
+      const ctx = canvas.getContext('2d')
+      ctx.drawImage(video, 0, 0)
+      
+      // Stop camera
+      stopOcr()
+      
+      setCurrentScreen(SCREENS.OCR_PROCESSING)
+      
+      const { data: { text } } = await Tesseract.recognize(
+        canvas.toDataURL('image/png'),
+        'eng', 
+        { logger: m => console.log(m) }
+      )
+      
+      setScannedResult(text)
+      setCurrentScreen(SCREENS.RESULT)
+      
+      await copyToClipboard(text)
+      
+    } catch (err) {
+      console.error('Erro no OCR:', err)
+      setError('Falha ao processar imagem. Tente novamente.')
+      setCurrentScreen(SCREENS.HOME)
+    }
+  }, [stopOcr, copyToClipboard])
 
   // =====================================================================
   // FUNÇÃO: Iniciar o Scanner
@@ -224,11 +310,12 @@ export default function Scanner() {
   
   const goHome = useCallback(async () => {
     await stopScanner()
+    stopOcr()
     setCurrentScreen(SCREENS.HOME)
     setScannedResult('')
     setError(null)
     setCopyFeedback(false)
-  }, [stopScanner])
+  }, [stopScanner, stopOcr])
 
   // =====================================================================
   // EFFECT: Cleanup ao desmontar componente
@@ -237,8 +324,9 @@ export default function Scanner() {
   useEffect(() => {
     return () => {
       stopScanner()
+      stopOcr()
     }
-  }, [stopScanner])
+  }, [stopScanner, stopOcr])
 
   // =====================================================================
   // RENDERIZAÇÃO (JSX)
@@ -326,9 +414,69 @@ export default function Scanner() {
                   </span>
                 )}
               </button>
+
+              <div className="w-full flex justify-center mt-6">
+                 <button
+                  onClick={startOcr}
+                  disabled={isLoading}
+                  className="px-8 py-4 bg-slate-700 hover:bg-slate-600 text-slate-200 font-bold text-lg rounded-2xl shadow-lg transition-all duration-300 hover:scale-105 flex items-center gap-3"
+                >
+                  <svg className="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 9a2 2 0 012-2h.93a2 2 0 001.664-.89l.812-1.22A2 2 0 0110.07 4h3.86a2 2 0 011.664.89l.812 1.22A2 2 0 0018.07 7H19a2 2 0 012 2v9a2 2 0 01-2 2H5a2 2 0 01-2-2V9z" />
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 13a3 3 0 11-6 0 3 3 0 016 0z" />
+                  </svg>
+                  OCR / Foto
+                </button>
+              </div>
               
               <p className="text-slate-500 text-sm mt-6 text-center">
                 Aponte a câmera para um QR Code<br/>ou código de barras
+              </p>
+            </div>
+          )}
+
+          {/* TELA OCR CAMERA */}
+          {currentScreen === SCREENS.OCR_CAMERA && (
+            <div className="animate-fadeIn">
+              <div className="relative rounded-2xl overflow-hidden bg-black aspect-[3/4] md:aspect-square mb-6">
+                <video
+                  ref={ocrVideoRef}
+                  autoPlay
+                  playsInline
+                  className="w-full h-full object-cover"
+                />
+              </div>
+              
+              <button
+                onClick={captureOcr}
+                className="w-full py-4 bg-emerald-600 hover:bg-emerald-500 text-white font-bold text-xl rounded-xl shadow-lg transition-all flex items-center justify-center gap-2 mb-3"
+              >
+                <svg className="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 9a2 2 0 012-2h.93a2 2 0 001.664-.89l.812-1.22A2 2 0 0110.07 4h3.86a2 2 0 011.664.89l.812 1.22A2 2 0 0018.07 7H19a2 2 0 012 2v9a2 2 0 01-2 2H5a2 2 0 01-2-2V9z" />
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 13a3 3 0 11-6 0 3 3 0 016 0z" />
+                </svg>
+                Capturar e Ler Texto
+              </button>
+              
+              <button
+                onClick={goHome}
+                className="w-full py-3 bg-slate-700 hover:bg-slate-600 text-slate-300 font-medium rounded-xl transition-colors"
+              >
+                Cancelar
+              </button>
+            </div>
+          )}
+
+          {/* TELA OCR PROCESSING */}
+          {currentScreen === SCREENS.OCR_PROCESSING && (
+            <div className="flex flex-col items-center justify-center py-12 animate-fadeIn">
+              <div className="relative w-24 h-24 mb-8">
+                <div className="absolute inset-0 border-4 border-slate-700 rounded-full"></div>
+                <div className="absolute inset-0 border-4 border-emerald-500 rounded-full border-t-transparent animate-spin"></div>
+              </div>
+              <h3 className="text-xl font-bold text-white mb-2">Processando Imagem...</h3>
+              <p className="text-slate-400 text-sm text-center max-w-xs">
+                Utilizando inteligência artificial para ler o texto da foto.
               </p>
             </div>
           )}

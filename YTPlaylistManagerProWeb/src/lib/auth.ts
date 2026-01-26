@@ -290,7 +290,6 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
       // Fallback: use token.sub as userId if still missing
       if (!token.userId && token.sub) {
         token.userId = token.sub;
-        console.log(`[AUTH_CALLBACK:jwt] userId set from token.sub`);
       }
 
       // Check if token needs refresh

@@ -152,8 +152,19 @@ export default function Scanner() {
       
       await stopScanner()
       
-      // Cria instância do scanner (agora importado como módulo)
-      scannerRef.current = new Html5Qrcode(scannerElementId)
+      // Muda tela e aguarda renderização do container
+      setCurrentScreen(SCREENS.SCANNING)
+      await new Promise(resolve => setTimeout(resolve, 300))
+      
+      // Verifica se o elemento existe antes de instanciar
+      if (!document.getElementById(scannerElementId)) {
+        throw new Error('Elemento do scanner não encontrado')
+      }
+
+      // Cria instância do scanner
+      if (!scannerRef.current) {
+        scannerRef.current = new Html5Qrcode(scannerElementId)
+      }
       
       // Configuração
       const config = {
@@ -162,18 +173,24 @@ export default function Scanner() {
         aspectRatio: 1.0,
       }
       
-      setCurrentScreen(SCREENS.SCANNING)
-      
-      // Aguarda o elemento DOM existir
-      await new Promise(resolve => setTimeout(resolve, 100))
-      
-      // Inicia com câmera traseira
-      await scannerRef.current.start(
-        { facingMode: 'environment' },
-        config,
-        onScanSuccess,
-        () => {} // Ignora erros por frame
-      )
+      try {
+        // Tenta iniciar com câmera traseira
+        await scannerRef.current.start(
+          { facingMode: 'environment' },
+          config,
+          onScanSuccess,
+          () => {} // Ignora erros por frame
+        )
+      } catch (startError) {
+        console.warn('Erro ao iniciar com câmera traseira, tentando câmera padrão...', startError)
+        // Fallback: Tenta iniciar sem preferência de câmera
+        await scannerRef.current.start(
+          {}, 
+          config,
+          onScanSuccess,
+          () => {}
+        )
+      }
       
     } catch (err) {
       console.error('Erro ao iniciar scanner:', err)
@@ -186,10 +203,14 @@ export default function Scanner() {
         errorMessage = ERROR_MESSAGES.PERMISSION_DENIED
       } else if (err.name === 'NotFoundError' || err.message?.includes('not found')) {
         errorMessage = ERROR_MESSAGES.CAMERA_NOT_FOUND
+      } else {
+        // Inclui mensagem técnica para debug se não for um erro mapeado
+        errorMessage = `${ERROR_MESSAGES.GENERIC} (${err.message || 'Erro desconhecido'})`
       }
       
       setError(errorMessage)
-      setCurrentScreen(SCREENS.HOME)
+      // Não volta para HOME imediatamente para que o usuário possa ler o erro
+      // Mas fazemos cleanup do scanner
       await stopScanner()
       
     } finally {

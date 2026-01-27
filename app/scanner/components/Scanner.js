@@ -21,7 +21,7 @@
 
 import { useState, useRef, useEffect, useCallback } from 'react'
 import { Html5Qrcode, Html5QrcodeSupportedFormats } from 'html5-qrcode'
-import Tesseract from 'tesseract.js'
+import { createWorker } from 'tesseract.js'
 
 // Constantes para os estados/telas do app
 const SCREENS = {
@@ -194,21 +194,32 @@ export default function Scanner() {
     try {
       const video = ocrVideoRef.current
       const canvas = document.createElement('canvas')
+      
+      // Capturar apenas a faixa central (aprox 20-25% da altura)
+      // para corresponder ao que o usuário vê na "faixa" da UI
+      const cropHeight = video.videoHeight * 0.25 // 25% central
+      const startY = (video.videoHeight - cropHeight) / 2
+      
       canvas.width = video.videoWidth
-      canvas.height = video.videoHeight
+      canvas.height = cropHeight
+      
       const ctx = canvas.getContext('2d')
-      ctx.drawImage(video, 0, 0)
+      
+      // drawImage(image, sx, sy, sWidth, sHeight, dx, dy, dWidth, dHeight)
+      ctx.drawImage(
+        video, 
+        0, startY, video.videoWidth, cropHeight, // Source
+        0, 0, video.videoWidth, cropHeight       // Destination
+      )
       
       // Stop camera
       stopOcr()
       
       setCurrentScreen(SCREENS.OCR_PROCESSING)
       
-      const { data: { text } } = await Tesseract.recognize(
-        canvas.toDataURL('image/png'),
-        'eng', 
-        { logger: m => console.log(m) }
-      )
+      const worker = await createWorker('eng')
+      const { data: { text } } = await worker.recognize(canvas.toDataURL('image/png'))
+      await worker.terminate()
       
       setScannedResult(text)
       setCurrentScreen(SCREENS.RESULT)
@@ -438,13 +449,18 @@ export default function Scanner() {
           {/* TELA OCR CAMERA */}
           {currentScreen === SCREENS.OCR_CAMERA && (
             <div className="animate-fadeIn">
-              <div className="relative rounded-2xl overflow-hidden bg-black aspect-[3/4] md:aspect-square mb-6">
+              <p className="text-slate-400 text-center mb-4 text-sm">
+                Centralize o texto na área abaixo
+              </p>
+              <div className="relative rounded-2xl overflow-hidden bg-black h-32 md:h-40 mb-6 border-2 border-emerald-500/50 shadow-[0_0_20px_rgba(16,185,129,0.2)]">
                 <video
                   ref={ocrVideoRef}
                   autoPlay
                   playsInline
                   className="w-full h-full object-cover"
                 />
+                {/* Linha central para guia */}
+                <div className="absolute top-1/2 left-0 right-0 h-0.5 bg-emerald-500/30 w-full" />
               </div>
               
               <button

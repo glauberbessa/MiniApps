@@ -23,16 +23,16 @@ export function Header() {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
 
   return (
-    <header className="flex h-16 items-center justify-between border-b border-neutral-800 bg-neutral-950 px-4 md:px-6">
+    <header className="flex h-16 items-center justify-between border-b bg-background px-4 md:px-6">
       {/* Mobile Menu */}
       <Sheet open={isMenuOpen} onOpenChange={setIsMenuOpen}>
         <SheetTrigger asChild>
-          <Button variant="ghost" size="icon" className="md:hidden text-white hover:bg-neutral-900 rounded-none">
+          <Button variant="ghost" size="icon" className="md:hidden">
             <Menu className="h-5 w-5" />
             <span className="sr-only">Menu</span>
           </Button>
         </SheetTrigger>
-        <SheetContent side="left" className="p-0 w-64 bg-neutral-950 border-r border-neutral-800">
+        <SheetContent side="left" className="p-0 w-64">
           <Sidebar showToggle={false} onNavigate={() => setIsMenuOpen(false)} />
         </SheetContent>
       </Sheet>
@@ -50,33 +50,33 @@ export function Header() {
           <DropdownMenuTrigger asChild>
             <Button
               variant="ghost"
-              className="relative h-10 w-10 rounded-none hover:bg-neutral-900"
+              className="relative h-10 w-10 rounded-full"
             >
               {session?.user?.image ? (
                 <Image
                   src={session.user.image}
                   alt={session.user.name || "Avatar"}
                   fill
-                  className="rounded-none object-cover"
+                  className="rounded-full object-cover"
                 />
               ) : (
-                <User className="h-5 w-5 text-white" />
+                <User className="h-5 w-5" />
               )}
             </Button>
           </DropdownMenuTrigger>
-          <DropdownMenuContent align="end" className="w-56 bg-neutral-950 border border-neutral-800 text-white rounded-none">
+          <DropdownMenuContent align="end" className="w-56">
             <DropdownMenuLabel>
               <div className="flex flex-col space-y-1">
                 <p className="text-sm font-medium">{session?.user?.name}</p>
-                <p className="text-xs text-neutral-400">
+                <p className="text-xs text-muted-foreground">
                   {session?.user?.email}
                 </p>
               </div>
             </DropdownMenuLabel>
-            <DropdownMenuSeparator className="bg-neutral-800" />
+            <DropdownMenuSeparator />
             <DropdownMenuItem
               onClick={() => signOut({ callbackUrl: "/login" })}
-              className="text-red-500 focus:text-red-400 focus:bg-neutral-900 rounded-none cursor-pointer"
+              className="text-destructive focus:text-destructive"
             >
               <LogOut className="mr-2 h-4 w-4" />
               {UI_TEXT.nav.logout}

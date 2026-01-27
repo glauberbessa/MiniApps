@@ -13,18 +13,17 @@ import { signInWithGoogle } from "./actions";
 export default function LoginPage() {
   return (
     <div className="w-full max-w-md">
-      <div className="border border-neutral-800 bg-neutral-950 p-8">
-        <div className="text-center mb-8">
-          <div className="mx-auto mb-6 flex h-20 w-20 items-center justify-center bg-white">
-            <Youtube className="h-10 w-10 text-black" />
+      <Card className="border-2">
+        <CardHeader className="text-center">
+          <div className="mx-auto mb-4 flex h-16 w-16 items-center justify-center rounded-full bg-primary">
+            <Youtube className="h-8 w-8 text-primary-foreground" />
           </div>
-          <h1 className="text-3xl font-bold tracking-tighter mb-2">{UI_TEXT.auth.loginTitle}</h1>
-          <p className="text-neutral-400">{UI_TEXT.auth.loginSubtitle}</p>
-        </div>
-        
-        <div className="space-y-8 mb-8">
+          <CardTitle className="text-2xl">{UI_TEXT.auth.loginTitle}</CardTitle>
+          <CardDescription>{UI_TEXT.auth.loginSubtitle}</CardDescription>
+        </CardHeader>
+        <CardContent className="space-y-6">
           {/* Features */}
-          <div className="space-y-6">
+          <div className="space-y-3">
             <Feature
               icon={ListVideo}
               title="Gerenciar Playlists"
@@ -46,7 +45,7 @@ export default function LoginPage() {
           <form action={signInWithGoogle}>
             <Button
               type="submit"
-              className="w-full rounded-none bg-white text-black hover:bg-neutral-200 h-12 font-bold tracking-tight"
+              className="w-full"
               size="lg"
             >
               <svg
@@ -75,11 +74,11 @@ export default function LoginPage() {
             </Button>
           </form>
 
-          <p className="text-center text-xs text-neutral-500">
+          <p className="text-center text-xs text-muted-foreground">
             {UI_TEXT.auth.loginDescription}
           </p>
-        </div>
-      </div>
+        </CardContent>
+      </Card>
     </div>
   );
 }
@@ -94,13 +93,13 @@ function Feature({
   description: string;
 }) {
   return (
-    <div className="flex items-start gap-4 group">
-      <div className="flex h-10 w-10 shrink-0 items-center justify-center bg-neutral-900 border border-neutral-800 group-hover:border-neutral-700 transition-colors">
-        <Icon className="h-5 w-5 text-white" />
+    <div className="flex items-start gap-3">
+      <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-primary/10">
+        <Icon className="h-4 w-4 text-primary" />
       </div>
       <div>
-        <p className="text-sm font-bold text-white">{title}</p>
-        <p className="text-xs text-neutral-400">{description}</p>
+        <p className="text-sm font-medium">{title}</p>
+        <p className="text-xs text-muted-foreground">{description}</p>
       </div>
     </div>
   );

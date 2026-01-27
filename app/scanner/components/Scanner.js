@@ -477,15 +477,15 @@ export default function Scanner() {
   // =====================================================================
   
   return (
-    <div className="min-h-screen bg-neutral-950 flex flex-col items-center justify-center p-4 font-sans text-white">
+    <div className="min-h-screen bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900 flex flex-col items-center justify-center p-4 font-sans">
       <div className="w-full max-w-md">
         
         {/* HEADER */}
-        <header className="text-center mb-12">
-          <div className="flex items-center justify-center gap-4 mb-4 relative">
+        <header className="text-center mb-8">
+          <div className="flex items-center justify-center gap-3 mb-2 relative">
             <Link 
               href="/"
-              className="absolute left-0 p-2 text-neutral-500 hover:text-white transition-colors"
+              className="absolute left-0 p-2 text-slate-400 hover:text-emerald-400 transition-colors"
               title="Voltar ao Menu Principal"
             >
               <svg className="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -494,41 +494,41 @@ export default function Scanner() {
             </Link>
             
             <svg 
-              className="w-10 h-10 text-white" 
+              className="w-10 h-10 text-emerald-400" 
               fill="none" 
               viewBox="0 0 24 24" 
               stroke="currentColor"
             >
               <path 
-                strokeLinecap="square" 
-                strokeLinejoin="miter" 
-                strokeWidth={2} 
+                strokeLinecap="round" 
+                strokeLinejoin="round" 
+                strokeWidth={1.5} 
                 d="M3 4a1 1 0 011-1h4a1 1 0 011 1v4a1 1 0 01-1 1H4a1 1 0 01-1-1V4zm0 12a1 1 0 011-1h4a1 1 0 011 1v4a1 1 0 01-1 1H4a1 1 0 01-1-1v-4zm12-12a1 1 0 011-1h4a1 1 0 011 1v4a1 1 0 01-1 1h-4a1 1 0 01-1-1V4zm0 8h2v2h-2v-2zm0 4h2v2h-2v-2zm4-4h2v2h-2v-2zm0 4h2v2h-2v-2zm-8 0h2v2h-2v-2zm0-4h2v2h-2v-2z" 
               />
             </svg>
-            <h1 className="text-3xl font-bold tracking-tighter uppercase">
-              Scan<span className="text-neutral-500">QR</span>Code<span className="text-neutral-500">Bar</span>
+            <h1 className="text-3xl font-bold text-white tracking-tight">
+              Scan<span className="text-emerald-400">QR</span>Code<span className="text-amber-400">Bar</span>
             </h1>
           </div>
-          <p className="text-neutral-500 text-sm tracking-wide uppercase">
+          <p className="text-slate-400 text-sm">
             Scanner de QR Code e Código de Barras
           </p>
         </header>
 
         {/* ÁREA DE CONTEÚDO */}
-        <div className="bg-black border border-neutral-800 p-8">
+        <div className="bg-slate-800/50 backdrop-blur-sm rounded-3xl p-6 shadow-2xl border border-slate-700/50">
           
           {/* MENSAGEM DE ERRO */}
           {error && (
-            <div className="mb-6 p-4 bg-red-950 border border-red-800 flex items-start gap-3">
-              <svg className="w-5 h-5 text-red-500 mt-0.5 flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                <path strokeLinecap="square" strokeLinejoin="miter" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+            <div className="mb-6 p-4 bg-red-500/20 border border-red-500/30 rounded-xl flex items-start gap-3">
+              <svg className="w-5 h-5 text-red-400 mt-0.5 flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
               </svg>
               <div>
-                <p className="text-red-200 text-sm font-bold uppercase">{error}</p>
+                <p className="text-red-300 text-sm font-medium">{error}</p>
                 <button 
                   onClick={() => setError(null)}
-                  className="text-red-400 text-xs mt-2 hover:text-white uppercase font-bold transition-colors"
+                  className="text-red-400/70 text-xs mt-1 hover:text-red-300 transition-colors"
                 >
                   Dispensar
                 </button>
@@ -538,20 +538,20 @@ export default function Scanner() {
 
           {/* TELA HOME */}
           {currentScreen === SCREENS.HOME && (
-            <div className="flex flex-col items-center py-8 animate-fadeIn">
-              <div className="w-40 h-40 mb-8 border border-neutral-800 bg-neutral-900 flex items-center justify-center">
-                <svg className="w-20 h-20 text-neutral-700" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                  <path strokeLinecap="square" strokeLinejoin="miter" strokeWidth={1} d="M12 4v1m6 11h2m-6 0h-2v4m0-11v3m0 0h.01M12 12h4.01M16 20h4M4 12h4m12 0h.01M5 8h2a1 1 0 001-1V5a1 1 0 00-1-1H5a1 1 0 00-1 1v2a1 1 0 001 1zm12 0h2a1 1 0 001-1V5a1 1 0 00-1-1h-2a1 1 0 00-1 1v2a1 1 0 001 1zM5 20h2a1 1 0 001-1v-2a1 1 0 00-1-1H5a1 1 0 00-1 1v2a1 1 0 001 1z" />
+            <div className="flex flex-col items-center py-12 animate-fadeIn">
+              <div className="w-40 h-40 mb-8 rounded-2xl bg-gradient-to-br from-emerald-500/20 to-amber-500/20 flex items-center justify-center border-2 border-dashed border-slate-600">
+                <svg className="w-20 h-20 text-slate-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1} d="M12 4v1m6 11h2m-6 0h-2v4m0-11v3m0 0h.01M12 12h4.01M16 20h4M4 12h4m12 0h.01M5 8h2a1 1 0 001-1V5a1 1 0 00-1-1H5a1 1 0 00-1 1v2a1 1 0 001 1zm12 0h2a1 1 0 001-1V5a1 1 0 00-1-1h-2a1 1 0 00-1 1v2a1 1 0 001 1zM5 20h2a1 1 0 001-1v-2a1 1 0 00-1-1H5a1 1 0 00-1 1v2a1 1 0 001 1z" />
                 </svg>
               </div>
               
               <button
                 onClick={startScanner}
                 disabled={isLoading}
-                className="group w-full relative px-8 py-6 bg-white hover:bg-neutral-200 text-black font-bold text-xl uppercase tracking-wider transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed border border-transparent hover:border-white"
+                className="group relative px-12 py-5 bg-gradient-to-r from-emerald-500 to-emerald-600 hover:from-emerald-400 hover:to-emerald-500 text-white font-bold text-xl rounded-2xl shadow-lg shadow-emerald-500/30 transition-all duration-300 hover:scale-105 hover:shadow-emerald-500/50 disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:scale-100 active:scale-95"
               >
                 {isLoading ? (
-                  <span className="flex items-center justify-center gap-3">
+                  <span className="flex items-center gap-3">
                     <svg className="w-6 h-6 animate-spin" fill="none" viewBox="0 0 24 24">
                       <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
                       <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" />
@@ -559,32 +559,32 @@ export default function Scanner() {
                     Iniciando...
                   </span>
                 ) : (
-                  <span className="flex items-center justify-center gap-3">
-                    <svg className="w-7 h-7" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                      <path strokeLinecap="square" strokeLinejoin="miter" strokeWidth={2} d="M3 9a2 2 0 012-2h.93a2 2 0 001.664-.89l.812-1.22A2 2 0 0110.07 4h3.86a2 2 0 011.664.89l.812 1.22A2 2 0 0018.07 7H19a2 2 0 012 2v9a2 2 0 01-2 2H5a2 2 0 01-2-2V9z" />
-                      <path strokeLinecap="square" strokeLinejoin="miter" strokeWidth={2} d="M15 13a3 3 0 11-6 0 3 3 0 016 0z" />
+                  <span className="flex items-center gap-3">
+                    <svg className="w-7 h-7 group-hover:animate-pulse" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 9a2 2 0 012-2h.93a2 2 0 001.664-.89l.812-1.22A2 2 0 0110.07 4h3.86a2 2 0 011.664.89l.812 1.22A2 2 0 0018.07 7H19a2 2 0 012 2v9a2 2 0 01-2 2H5a2 2 0 01-2-2V9z" />
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 13a3 3 0 11-6 0 3 3 0 016 0z" />
                     </svg>
                     SCAN
                   </span>
                 )}
               </button>
 
-              <div className="w-full flex justify-center mt-4">
+              <div className="w-full flex justify-center mt-6">
                  <button
                   onClick={startOcr}
                   disabled={isLoading}
-                  className="w-full px-8 py-4 bg-neutral-900 hover:bg-neutral-800 text-neutral-300 font-bold text-lg border border-neutral-800 transition-all duration-200 flex items-center justify-center gap-3 uppercase tracking-wide"
+                  className="px-8 py-4 bg-slate-700 hover:bg-slate-600 text-slate-200 font-bold text-lg rounded-2xl shadow-lg transition-all duration-300 hover:scale-105 flex items-center gap-3"
                 >
                   <svg className="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                    <path strokeLinecap="square" strokeLinejoin="miter" strokeWidth={2} d="M3 9a2 2 0 012-2h.93a2 2 0 001.664-.89l.812-1.22A2 2 0 0110.07 4h3.86a2 2 0 011.664.89l.812 1.22A2 2 0 0018.07 7H19a2 2 0 012 2v9a2 2 0 01-2 2H5a2 2 0 01-2-2V9z" />
-                    <path strokeLinecap="square" strokeLinejoin="miter" strokeWidth={2} d="M15 13a3 3 0 11-6 0 3 3 0 016 0z" />
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 9a2 2 0 012-2h.93a2 2 0 001.664-.89l.812-1.22A2 2 0 0110.07 4h3.86a2 2 0 011.664.89l.812 1.22A2 2 0 0018.07 7H19a2 2 0 012 2v9a2 2 0 01-2 2H5a2 2 0 01-2-2V9z" />
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 13a3 3 0 11-6 0 3 3 0 016 0z" />
                   </svg>
                   OCR / Foto
                 </button>
               </div>
               
-              <p className="text-neutral-600 text-xs mt-8 text-center uppercase tracking-widest">
-                Aponte a câmera para um QR Code ou código de barras
+              <p className="text-slate-500 text-sm mt-6 text-center">
+                Aponte a câmera para um QR Code<br/>ou código de barras
               </p>
             </div>
           )}
@@ -592,10 +592,10 @@ export default function Scanner() {
           {/* TELA OCR CAMERA */}
           {currentScreen === SCREENS.OCR_CAMERA && (
             <div className="animate-fadeIn">
-              <p className="text-neutral-500 text-center mb-4 text-xs uppercase tracking-widest">
+              <p className="text-slate-400 text-center mb-4 text-sm">
                 Centralize o texto na área abaixo
               </p>
-              <div className="relative overflow-hidden bg-black h-32 md:h-40 mb-6 border-2 border-white">
+              <div className="relative rounded-2xl overflow-hidden bg-black h-32 md:h-40 mb-6 border-2 border-emerald-500/50 shadow-[0_0_20px_rgba(16,185,129,0.2)]">
                 <video
                   ref={ocrVideoRef}
                   autoPlay
@@ -607,7 +607,7 @@ export default function Scanner() {
                   className="w-full h-full object-cover transition-transform duration-300"
                 />
                 {/* Linha central para guia */}
-                <div className="absolute top-1/2 left-0 right-0 h-px bg-white/50 w-full" />
+                <div className="absolute top-1/2 left-0 right-0 h-0.5 bg-emerald-500/30 w-full" />
                 
                 {/* Botão de Zoom Flutuante */}
                 <button
@@ -615,10 +615,10 @@ export default function Scanner() {
                     e.stopPropagation()
                     cycleZoom()
                   }}
-                  className="absolute bottom-2 right-2 bg-black text-white border border-white px-2 py-1 font-mono text-xs font-bold hover:bg-neutral-900 transition-all flex items-center gap-1 z-10"
+                  className="absolute bottom-2 right-2 bg-black/60 backdrop-blur-md text-emerald-400 border border-emerald-500/30 px-3 py-1.5 rounded-lg font-mono text-sm font-bold hover:bg-black/80 transition-all flex items-center gap-1 z-10"
                 >
-                  <svg className="w-3 h-3" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                    <path strokeLinecap="square" strokeLinejoin="miter" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0zM10 7v3m0 0v3m0-3h3m-3 0H7" />
+                  <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0zM10 7v3m0 0v3m0-3h3m-3 0H7" />
                   </svg>
                   {zoomLevel}x
                 </button>
@@ -626,18 +626,18 @@ export default function Scanner() {
               
               <button
                 onClick={captureOcr}
-                className="w-full py-4 bg-white hover:bg-neutral-200 text-black font-bold text-xl transition-all flex items-center justify-center gap-2 mb-3 uppercase tracking-wide"
+                className="w-full py-4 bg-emerald-600 hover:bg-emerald-500 text-white font-bold text-xl rounded-xl shadow-lg transition-all flex items-center justify-center gap-2 mb-3"
               >
                 <svg className="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                  <path strokeLinecap="square" strokeLinejoin="miter" strokeWidth={2} d="M3 9a2 2 0 012-2h.93a2 2 0 001.664-.89l.812-1.22A2 2 0 0110.07 4h3.86a2 2 0 011.664.89l.812 1.22A2 2 0 0018.07 7H19a2 2 0 012 2v9a2 2 0 01-2 2H5a2 2 0 01-2-2V9z" />
-                  <path strokeLinecap="square" strokeLinejoin="miter" strokeWidth={2} d="M15 13a3 3 0 11-6 0 3 3 0 016 0z" />
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 9a2 2 0 012-2h.93a2 2 0 001.664-.89l.812-1.22A2 2 0 0110.07 4h3.86a2 2 0 011.664.89l.812 1.22A2 2 0 0018.07 7H19a2 2 0 012 2v9a2 2 0 01-2 2H5a2 2 0 01-2-2V9z" />
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 13a3 3 0 11-6 0 3 3 0 016 0z" />
                 </svg>
-                Capturar e Ler
+                Capturar e Ler Texto
               </button>
               
               <button
                 onClick={goHome}
-                className="w-full py-3 bg-neutral-900 hover:bg-neutral-800 text-neutral-400 font-medium transition-colors uppercase text-sm border border-neutral-800"
+                className="w-full py-3 bg-slate-700 hover:bg-slate-600 text-slate-300 font-medium rounded-xl transition-colors"
               >
                 Cancelar
               </button>
@@ -648,12 +648,12 @@ export default function Scanner() {
           {currentScreen === SCREENS.OCR_PROCESSING && (
             <div className="flex flex-col items-center justify-center py-12 animate-fadeIn">
               <div className="relative w-24 h-24 mb-8">
-                <div className="absolute inset-0 border-4 border-neutral-800"></div>
-                <div className="absolute inset-0 border-4 border-white border-t-transparent animate-spin"></div>
+                <div className="absolute inset-0 border-4 border-slate-700 rounded-full"></div>
+                <div className="absolute inset-0 border-4 border-emerald-500 rounded-full border-t-transparent animate-spin"></div>
               </div>
-              <h3 className="text-xl font-bold text-white mb-2 uppercase tracking-wider">Processando...</h3>
-              <p className="text-neutral-500 text-sm text-center max-w-xs">
-                Utilizando inteligência artificial para ler o texto.
+              <h3 className="text-xl font-bold text-white mb-2">Processando Imagem...</h3>
+              <p className="text-slate-400 text-sm text-center max-w-xs">
+                Utilizando inteligência artificial para ler o texto da foto.
               </p>
             </div>
           )}
@@ -663,28 +663,28 @@ export default function Scanner() {
             <div className="animate-fadeIn">
               <div className="relative">
                 {/* Bordas decorativas */}
-                <div className="absolute top-0 left-0 w-8 h-8 border-t-2 border-l-2 border-white z-10" />
-                <div className="absolute top-0 right-0 w-8 h-8 border-t-2 border-r-2 border-white z-10" />
-                <div className="absolute bottom-0 left-0 w-8 h-8 border-b-2 border-l-2 border-white z-10" />
-                <div className="absolute bottom-0 right-0 w-8 h-8 border-b-2 border-r-2 border-white z-10" />
+                <div className="absolute top-0 left-0 w-8 h-8 border-t-4 border-l-4 border-emerald-400 rounded-tl-lg z-10" />
+                <div className="absolute top-0 right-0 w-8 h-8 border-t-4 border-r-4 border-emerald-400 rounded-tr-lg z-10" />
+                <div className="absolute bottom-0 left-0 w-8 h-8 border-b-4 border-l-4 border-emerald-400 rounded-bl-lg z-10" />
+                <div className="absolute bottom-0 right-0 w-8 h-8 border-b-4 border-r-4 border-emerald-400 rounded-br-lg z-10" />
                 
                 {/* Container do scanner */}
                 <div 
                   id={scannerElementId}
-                  className="w-full aspect-square bg-black overflow-hidden"
+                  className="w-full aspect-square bg-black rounded-2xl overflow-hidden"
                 />
                 
                 {/* Linha de scan animada */}
-                <div className="absolute inset-x-4 top-1/2 h-px bg-white animate-scanLine opacity-50" />
+                <div className="absolute inset-x-4 top-1/2 h-0.5 bg-gradient-to-r from-transparent via-emerald-400 to-transparent animate-scanLine" />
               </div>
               
-              <p className="text-neutral-500 text-center mt-6 text-xs uppercase tracking-widest animate-pulse">
-                Posicione o código na área demarcada
+              <p className="text-slate-400 text-center mt-4 text-sm animate-pulse">
+                Posicione o código na área verde
               </p>
               
               <button
                 onClick={goHome}
-                className="w-full mt-6 py-3 bg-neutral-900 hover:bg-neutral-800 text-neutral-400 font-medium transition-colors uppercase text-sm border border-neutral-800"
+                className="w-full mt-6 py-3 bg-slate-700 hover:bg-slate-600 text-slate-300 font-medium rounded-xl transition-colors"
               >
                 Cancelar
               </button>
@@ -694,69 +694,68 @@ export default function Scanner() {
           {/* TELA RESULTADO */}
           {currentScreen === SCREENS.RESULT && (
             <div className="animate-fadeIn">
-              <div className="flex justify-center mb-8">
-                <div className="w-16 h-16 bg-white flex items-center justify-center">
-                  <svg className="w-8 h-8 text-black" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                    <path strokeLinecap="square" strokeLinejoin="miter" strokeWidth={2} d="M5 13l4 4L19 7" />
+              <div className="flex justify-center mb-6">
+                <div className="w-16 h-16 bg-emerald-500/20 rounded-full flex items-center justify-center">
+                  <svg className="w-8 h-8 text-emerald-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
                   </svg>
                 </div>
               </div>
               
-              <h2 className="text-white text-center font-bold text-xl uppercase tracking-wider mb-6">
-                Código Detectado
+              <h2 className="text-slate-300 text-center font-medium mb-4">
+                Código Detectado!
               </h2>
               
-              <div className="relative mb-6">
+              <div className="relative">
                 <textarea
                   readOnly
                   value={scannedResult}
                   onClick={(e) => e.target.select()}
-                  className="w-full p-4 bg-neutral-900 border border-neutral-800 text-white font-mono text-lg resize-none focus:ring-1 focus:ring-white focus:outline-none cursor-text selection:bg-white selection:text-black"
-                  rows={4}
+                  className="w-full p-4 bg-slate-900/50 border border-slate-600 rounded-xl text-white font-mono text-sm resize-none focus:ring-2 focus:ring-emerald-500/50 cursor-text selection:bg-emerald-500/30"
+                  rows={6}
                 />
                 
                 {copyFeedback && (
-                  <div className="absolute -top-3 right-3 px-3 py-1 bg-white text-black text-xs font-bold uppercase tracking-wider shadow-lg">
-                    Copiado
+                  <div className="absolute -top-3 right-3 px-3 py-1 bg-emerald-500 text-white text-xs font-bold rounded-full shadow-lg animate-bounce">
+                    ✓ Copiado!
                   </div>
                 )}
               </div>
               
               <button
                 onClick={() => copyToClipboard(scannedResult)}
-                className="w-full mb-4 py-3 bg-neutral-800 hover:bg-neutral-700 text-white font-medium transition-colors flex items-center justify-center gap-2 border border-neutral-700 uppercase tracking-wide text-sm"
+                className="w-full mt-4 py-3 bg-slate-700 hover:bg-slate-600 text-slate-300 font-medium rounded-xl transition-colors flex items-center justify-center gap-2"
               >
                 <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                  <path strokeLinecap="square" strokeLinejoin="miter" strokeWidth={2} d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z" />
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z" />
                 </svg>
                 Copiar Novamente
               </button>
               
-              <div className="grid grid-cols-2 gap-4">
-                <button
-                  onClick={goHome}
-                  className="py-4 bg-neutral-900 hover:bg-neutral-800 text-neutral-400 font-medium transition-colors uppercase text-sm border border-neutral-800"
-                >
-                  Início
-                </button>
-                <button
-                  onClick={startScanner}
-                  disabled={isLoading}
-                  className="py-4 bg-white hover:bg-neutral-200 text-black font-bold transition-all disabled:opacity-50 flex items-center justify-center gap-2 uppercase tracking-wide text-sm"
-                >
-                  <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                    <path strokeLinecap="square" strokeLinejoin="miter" strokeWidth={2} d="M3 9a2 2 0 012-2h.93a2 2 0 001.664-.89l.812-1.22A2 2 0 0110.07 4h3.86a2 2 0 011.664.89l.812 1.22A2 2 0 0018.07 7H19a2 2 0 012 2v9a2 2 0 01-2 2H5a2 2 0 01-2-2V9z" />
-                    <path strokeLinecap="square" strokeLinejoin="miter" strokeWidth={2} d="M15 13a3 3 0 11-6 0 3 3 0 016 0z" />
-                  </svg>
-                  Scan
-                </button>
-              </div>
+              <button
+                onClick={startScanner}
+                disabled={isLoading}
+                className="w-full mt-3 py-4 bg-gradient-to-r from-emerald-500 to-emerald-600 hover:from-emerald-400 hover:to-emerald-500 text-white font-bold rounded-xl shadow-lg shadow-emerald-500/20 transition-all hover:shadow-emerald-500/40 disabled:opacity-50 flex items-center justify-center gap-2"
+              >
+                <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 9a2 2 0 012-2h.93a2 2 0 001.664-.89l.812-1.22A2 2 0 0110.07 4h3.86a2 2 0 011.664.89l.812 1.22A2 2 0 0018.07 7H19a2 2 0 012 2v9a2 2 0 01-2 2H5a2 2 0 01-2-2V9z" />
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 13a3 3 0 11-6 0 3 3 0 016 0z" />
+                </svg>
+                Nova Leitura
+              </button>
+              
+              <button
+                onClick={goHome}
+                className="w-full mt-3 py-2 text-slate-500 hover:text-slate-300 text-sm transition-colors"
+              >
+                ← Voltar ao início
+              </button>
             </div>
           )}
         </div>
         
         {/* FOOTER */}
-        <footer className="text-center mt-8 text-neutral-600 text-[10px] uppercase tracking-widest">
+        <footer className="text-center mt-6 text-slate-600 text-xs">
           <p>Requer HTTPS para acesso à câmera</p>
         </footer>
       </div>

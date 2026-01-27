@@ -53,6 +53,8 @@ export default function Scanner() {
   const [copyFeedback, setCopyFeedback] = useState(false)
   const [error, setError] = useState(null)
   const [isLoading, setIsLoading] = useState(false)
+  const [zoomLevel, setZoomLevel] = useState(1)
+  const [isHardwareZoom, setIsHardwareZoom] = useState(false)
   
   // =====================================================================
   // REFS (useRef)
@@ -171,6 +173,41 @@ export default function Scanner() {
         video: { facingMode: 'environment' }
       })
       
+      // Configurar Zoom
+      const track = stream.getVideoTracks()[0]
+      const capabilities = track.getCapabilities()
+      const settings = track.getSettings()
+
+      if (capabilities.zoom) {
+        const maxZoom = capabilities.zoom.max || 1
+        // Tenta zoom 4x ou o máximo disponível
+        const targetZoom = Math.min(4, maxZoom)
+        
+        try {
+          await track.applyConstraints({
+            advanced: [{ zoom: targetZoom }]
+          })
+          
+          const appliedZoom = track.getSettings().zoom
+          if (appliedZoom && appliedZoom > 1) {
+            setIsHardwareZoom(true)
+            setZoomLevel(appliedZoom)
+          } else {
+            // Fallback se o browser disser que suporta mas não aplicar
+            setIsHardwareZoom(false)
+            setZoomLevel(4)
+          }
+        } catch (e) {
+          console.warn('Erro ao aplicar zoom de hardware:', e)
+          setIsHardwareZoom(false)
+          setZoomLevel(4)
+        }
+      } else {
+        // Fallback para zoom digital
+        setIsHardwareZoom(false)
+        setZoomLevel(4)
+      }
+
       if (ocrVideoRef.current) {
         ocrVideoRef.current.srcObject = stream
         ocrVideoRef.current.play()
@@ -195,21 +232,43 @@ export default function Scanner() {
       const video = ocrVideoRef.current
       const canvas = document.createElement('canvas')
       
-      // Capturar apenas a faixa central (aprox 20-25% da altura)
-      // para corresponder ao que o usuário vê na "faixa" da UI
-      const cropHeight = video.videoHeight * 0.25 // 25% central
-      const startY = (video.videoHeight - cropHeight) / 2
+      let sx, sy, sWidth, sHeight
+
+      if (isHardwareZoom) {
+        // Se o zoom é de hardware, a imagem já está ampliada
+        // Capturamos a faixa central normalmente
+        sWidth = video.videoWidth
+        sHeight = video.videoHeight * 0.25
+        sx = 0
+        sy = (video.videoHeight - sHeight) / 2
+      } else {
+        // Zoom Digital
+        // Precisamos capturar uma área menor correspondente ao zoom
+        // Se zoomLevel é 4, capturamos 1/4 da largura
+        // E 1/4 da altura da faixa visível
+        
+        sWidth = video.videoWidth / zoomLevel
+        // A altura de captura também escala
+        sHeight = (video.videoHeight * 0.25) / zoomLevel
+        
+        sx = (video.videoWidth - sWidth) / 2
+        sy = (video.videoHeight - sHeight) / 2
+      }
       
-      canvas.width = video.videoWidth
-      canvas.height = cropHeight
+      canvas.width = video.videoWidth // Mantém alta resolução
+      canvas.height = video.videoHeight * 0.25 // Mantém proporção da faixa
       
       const ctx = canvas.getContext('2d')
+      
+      // Melhora qualidade do redimensionamento para zoom digital
+      ctx.imageSmoothingEnabled = true
+      ctx.imageSmoothingQuality = 'high'
       
       // drawImage(image, sx, sy, sWidth, sHeight, dx, dy, dWidth, dHeight)
       ctx.drawImage(
         video, 
-        0, startY, video.videoWidth, cropHeight, // Source
-        0, 0, video.videoWidth, cropHeight       // Destination
+        sx, sy, sWidth, sHeight,     // Source (área calculada)
+        0, 0, canvas.width, canvas.height // Destination (tamanho total da faixa)
       )
       
       // Stop camera
@@ -457,7 +516,11 @@ export default function Scanner() {
                   ref={ocrVideoRef}
                   autoPlay
                   playsInline
-                  className="w-full h-full object-cover"
+                  style={{ 
+                    transform: !isHardwareZoom ? `scale(${zoomLevel})` : 'none',
+                    transformOrigin: 'center center'
+                  }}
+                  className="w-full h-full object-cover transition-transform duration-300"
                 />
                 {/* Linha central para guia */}
                 <div className="absolute top-1/2 left-0 right-0 h-0.5 bg-emerald-500/30 w-full" />

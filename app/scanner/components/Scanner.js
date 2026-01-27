@@ -155,6 +155,59 @@ export default function Scanner() {
   }, [stopScanner, copyToClipboard])
 
   // =====================================================================
+  // FUNÇÃO: Ciclar Zoom (4x -> 8x -> 16x -> 32x -> 4x)
+  // =====================================================================
+  
+  const cycleZoom = useCallback(async () => {
+    const nextZoom = zoomLevel >= 32 ? 4 : zoomLevel * 2
+    
+    // Tenta aplicar hardware zoom primeiro se possível
+    if (ocrVideoRef.current && ocrVideoRef.current.srcObject) {
+      const track = ocrVideoRef.current.srcObject.getVideoTracks()[0]
+      const capabilities = track.getCapabilities()
+      
+      if (capabilities.zoom) {
+        try {
+          // Tenta aplicar o zoom solicitado no hardware
+          // Se o hardware suportar apenas parcialmente (ex: máx 10x), 
+          // aplicamos o máximo possível e completamos com digital depois?
+          // Simplificação: Se hardware suportar o ALVO exato, usa hardware.
+          // Caso contrário, usa fallback para garantir consistência visual.
+          
+          if (capabilities.zoom.max >= nextZoom) {
+            await track.applyConstraints({
+              advanced: [{ zoom: nextZoom }]
+            })
+            setIsHardwareZoom(true)
+            setZoomLevel(nextZoom)
+            return
+          }
+        } catch (e) {
+          console.warn('Falha ao aplicar zoom de hardware:', e)
+        }
+      }
+    }
+    
+    // Fallback: Zoom puramente digital (recorte + scale)
+    // Se o hardware não suporta o nível desejado, reseta o hardware para 1x (ou min)
+    // e aplica tudo via software para garantir que o recorte corresponda
+    try {
+      if (ocrVideoRef.current && ocrVideoRef.current.srcObject) {
+        const track = ocrVideoRef.current.srcObject.getVideoTracks()[0]
+        const capabilities = track.getCapabilities()
+        if (capabilities.zoom) {
+            await track.applyConstraints({
+                advanced: [{ zoom: 1 }]
+            })
+        }
+      }
+    } catch (e) { /* ignore */ }
+
+    setIsHardwareZoom(false)
+    setZoomLevel(nextZoom)
+  }, [zoomLevel])
+
+  // =====================================================================
   // FUNÇÃO: Iniciar OCR (Câmera)
   // =====================================================================
   
@@ -173,11 +226,12 @@ export default function Scanner() {
         video: { facingMode: 'environment' }
       })
       
-      // Configurar Zoom
+      // Configurar Zoom Inicial (Tenta 4x)
       const track = stream.getVideoTracks()[0]
       const capabilities = track.getCapabilities()
-      const settings = track.getSettings()
-
+      
+      let initialZoom = 4
+      
       if (capabilities.zoom) {
         const maxZoom = capabilities.zoom.max || 1
         // Tenta zoom 4x ou o máximo disponível
@@ -189,23 +243,30 @@ export default function Scanner() {
           })
           
           const appliedZoom = track.getSettings().zoom
-          if (appliedZoom && appliedZoom > 1) {
+          if (appliedZoom && appliedZoom >= targetZoom) { // Verifica se aplicou MESMO
             setIsHardwareZoom(true)
             setZoomLevel(appliedZoom)
+            initialZoom = appliedZoom
           } else {
-            // Fallback se o browser disser que suporta mas não aplicar
+            // Se o browser diz que suporta mas não aplica, ou aplica menos
+            // Fallback para digital
             setIsHardwareZoom(false)
             setZoomLevel(4)
+            initialZoom = 4
+            // Tenta resetar hardware para 1x para garantir base limpa para digital
+            await track.applyConstraints({ advanced: [{ zoom: 1 }] }).catch(() => {})
           }
         } catch (e) {
           console.warn('Erro ao aplicar zoom de hardware:', e)
           setIsHardwareZoom(false)
           setZoomLevel(4)
+          initialZoom = 4
         }
       } else {
         // Fallback para zoom digital
         setIsHardwareZoom(false)
         setZoomLevel(4)
+        initialZoom = 4
       }
 
       if (ocrVideoRef.current) {
@@ -277,13 +338,24 @@ export default function Scanner() {
       setCurrentScreen(SCREENS.OCR_PROCESSING)
       
       const worker = await createWorker('eng')
+      
+      // Configura whitelist para aceitar APENAS números
+      await worker.setParameters({
+        tessedit_char_whitelist: '0123456789',
+      })
+      
       const { data: { text } } = await worker.recognize(canvas.toDataURL('image/png'))
       await worker.terminate()
       
-      setScannedResult(text)
+      // Limpeza adicional (regex) para garantir apenas números
+      const onlyNumbers = text.replace(/\D/g, '')
+      
+      setScannedResult(onlyNumbers || 'Nenhum número encontrado')
       setCurrentScreen(SCREENS.RESULT)
       
-      await copyToClipboard(text)
+      if (onlyNumbers) {
+        await copyToClipboard(onlyNumbers)
+      }
       
     } catch (err) {
       console.error('Erro no OCR:', err)
@@ -524,6 +596,20 @@ export default function Scanner() {
                 />
                 {/* Linha central para guia */}
                 <div className="absolute top-1/2 left-0 right-0 h-0.5 bg-emerald-500/30 w-full" />
+                
+                {/* Botão de Zoom Flutuante */}
+                <button
+                  onClick={(e) => {
+                    e.stopPropagation()
+                    cycleZoom()
+                  }}
+                  className="absolute bottom-2 right-2 bg-black/60 backdrop-blur-md text-emerald-400 border border-emerald-500/30 px-3 py-1.5 rounded-lg font-mono text-sm font-bold hover:bg-black/80 transition-all flex items-center gap-1 z-10"
+                >
+                  <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0zM10 7v3m0 0v3m0-3h3m-3 0H7" />
+                  </svg>
+                  {zoomLevel}x
+                </button>
               </div>
               
               <button

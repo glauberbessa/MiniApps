@@ -51,13 +51,13 @@ export function VideoGrid({
             onClick={() => onToggleSelect(video.id)}
             onKeyDown={(event) => handleCardKeyDown(event, video.id)}
             className={cn(
-              "flex flex-col gap-3 rounded-lg border bg-card p-3 shadow-sm transition-colors",
+              "flex flex-col gap-3 rounded-none border bg-card p-3 shadow-sm transition-colors",
               selectedVideos.has(video.id)
                 ? "border-primary/70 ring-1 ring-primary/40"
                 : "border-border hover:border-primary/40"
             )}
           >
-            <div className="relative aspect-video w-full overflow-hidden rounded-md bg-muted">
+            <div className="relative aspect-video w-full overflow-hidden rounded-none bg-muted">
               {video.thumbnailUrl ? (
                 <Image
                   src={video.thumbnailUrl}

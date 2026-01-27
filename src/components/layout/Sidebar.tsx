@@ -125,10 +125,10 @@ export function Sidebar({ showToggle = true, onNavigate }: SidebarProps) {
           })}
         </nav>
 
-        <div className="border-t p-2 space-y-2">
+        <div className="border-t border-neutral-800 p-4 space-y-2">
           <div
             className={cn(
-              "flex items-center justify-between gap-2 rounded-md px-2 py-2 text-sm",
+              "flex items-center justify-between gap-2 px-2 py-2 text-sm text-neutral-400",
               isCollapsed && "justify-center px-0"
             )}
           >

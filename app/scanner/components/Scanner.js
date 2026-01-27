@@ -20,6 +20,7 @@
  */
 
 import { useState, useRef, useEffect, useCallback } from 'react'
+import Link from 'next/link'
 import { Html5Qrcode, Html5QrcodeSupportedFormats } from 'html5-qrcode'
 import { createWorker } from 'tesseract.js'
 
@@ -155,11 +156,12 @@ export default function Scanner() {
   }, [stopScanner, copyToClipboard])
 
   // =====================================================================
-  // FUNÇÃO: Ciclar Zoom (4x -> 8x -> 16x -> 32x -> 4x)
+  // FUNÇÃO: Ciclar Zoom (2x -> 4x -> ... -> 16x -> 2x)
   // =====================================================================
   
   const cycleZoom = useCallback(async () => {
-    const nextZoom = zoomLevel >= 32 ? 4 : zoomLevel * 2
+    // Começa em 2, incrementa de 2 em 2 até 16
+    const nextZoom = zoomLevel >= 16 ? 2 : zoomLevel + 2
     
     // Tenta aplicar hardware zoom primeiro se possível
     if (ocrVideoRef.current && ocrVideoRef.current.srcObject) {
@@ -226,16 +228,16 @@ export default function Scanner() {
         video: { facingMode: 'environment' }
       })
       
-      // Configurar Zoom Inicial (Tenta 4x)
+      // Configurar Zoom Inicial (Tenta 2x)
       const track = stream.getVideoTracks()[0]
       const capabilities = track.getCapabilities()
       
-      let initialZoom = 4
+      let initialZoom = 2
       
       if (capabilities.zoom) {
         const maxZoom = capabilities.zoom.max || 1
-        // Tenta zoom 4x ou o máximo disponível
-        const targetZoom = Math.min(4, maxZoom)
+        // Tenta zoom 2x ou o máximo disponível
+        const targetZoom = Math.min(2, maxZoom)
         
         try {
           await track.applyConstraints({
@@ -251,22 +253,22 @@ export default function Scanner() {
             // Se o browser diz que suporta mas não aplica, ou aplica menos
             // Fallback para digital
             setIsHardwareZoom(false)
-            setZoomLevel(4)
-            initialZoom = 4
+            setZoomLevel(2)
+            initialZoom = 2
             // Tenta resetar hardware para 1x para garantir base limpa para digital
             await track.applyConstraints({ advanced: [{ zoom: 1 }] }).catch(() => {})
           }
         } catch (e) {
           console.warn('Erro ao aplicar zoom de hardware:', e)
           setIsHardwareZoom(false)
-          setZoomLevel(4)
-          initialZoom = 4
+          setZoomLevel(2)
+          initialZoom = 2
         }
       } else {
         // Fallback para zoom digital
         setIsHardwareZoom(false)
-        setZoomLevel(4)
-        initialZoom = 4
+        setZoomLevel(2)
+        initialZoom = 2
       }
 
       if (ocrVideoRef.current) {
@@ -339,22 +341,22 @@ export default function Scanner() {
       
       const worker = await createWorker('eng')
       
-      // Configura whitelist para aceitar APENAS números
+      // Configura whitelist para aceitar números e espaços
       await worker.setParameters({
-        tessedit_char_whitelist: '0123456789',
+        tessedit_char_whitelist: '0123456789 ',
       })
       
       const { data: { text } } = await worker.recognize(canvas.toDataURL('image/png'))
       await worker.terminate()
       
-      // Limpeza adicional (regex) para garantir apenas números
-      const onlyNumbers = text.replace(/\D/g, '')
+      // Limpeza: Manter números e espaços
+      const cleanedText = text.replace(/[^0-9\s]/g, '')
       
-      setScannedResult(onlyNumbers || 'Nenhum número encontrado')
+      setScannedResult(cleanedText || 'Nenhum número encontrado')
       setCurrentScreen(SCREENS.RESULT)
       
-      if (onlyNumbers) {
-        await copyToClipboard(onlyNumbers)
+      if (cleanedText && cleanedText.trim().length > 0) {
+        await copyToClipboard(cleanedText)
       }
       
     } catch (err) {
@@ -480,7 +482,17 @@ export default function Scanner() {
         
         {/* HEADER */}
         <header className="text-center mb-8">
-          <div className="flex items-center justify-center gap-3 mb-2">
+          <div className="flex items-center justify-center gap-3 mb-2 relative">
+            <Link 
+              href="/"
+              className="absolute left-0 p-2 text-slate-400 hover:text-emerald-400 transition-colors"
+              title="Voltar ao Menu Principal"
+            >
+              <svg className="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 19l-7-7m0 0l7-7m-7 7h18" />
+              </svg>
+            </Link>
+            
             <svg 
               className="w-10 h-10 text-emerald-400" 
               fill="none" 

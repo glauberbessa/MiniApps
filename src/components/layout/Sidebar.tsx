@@ -11,6 +11,7 @@ import {
   Youtube,
   ChevronLeft,
   ChevronRight,
+  Home,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { UI_TEXT } from "@/lib/i18n";
@@ -49,6 +50,11 @@ const navigation = [
     name: UI_TEXT.nav.quota,
     href: "/ytpm/quota",
     icon: Gauge,
+  },
+  {
+    name: "Menu Principal",
+    href: "/",
+    icon: Home,
   },
 ];
 

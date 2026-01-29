@@ -477,12 +477,11 @@ function SkipLink() {
 |----|----------|---------|---------|
 | S1 | Melhorar feedback de permissão de câmera | Alto | Baixo |
 | S2 | Adicionar histórico de scans | Alto | Médio |
-| S3 | Implementar ações contextuais (URL, telefone, etc) | Alto | Médio |
-| S4 | Melhorar animação de sucesso | Médio | Baixo |
-| S5 | Adicionar modo lanterna | Médio | Baixo |
-| S6 | Suporte a múltiplos formatos (QR, barcode, etc) | Médio | Médio |
-| S7 | Implementar galeria para scan de imagem | Baixo | Médio |
-| S8 | Adicionar vibração haptic no sucesso | Baixo | Baixo |
+| S3 | Melhorar animação de sucesso | Médio | Baixo |
+| S4 | Adicionar modo lanterna | Médio | Baixo |
+| S5 | Suporte a múltiplos formatos (QR, barcode, etc) | Médio | Médio |
+| S6 | Implementar galeria para scan de imagem | Baixo | Médio |
+| S7 | Adicionar vibração haptic no sucesso | Baixo | Baixo |
 
 #### Novo Fluxo Proposto
 
@@ -502,17 +501,6 @@ HOME                    SCANNING                 RESULT
 │  • scan 2    │        │              │        │ [Nova Leitura]│
 └──────────────┘        └──────────────┘        └──────────────┘
 ```
-
-#### Ações Contextuais
-
-| Tipo de Conteúdo | Ações Disponíveis |
-|------------------|-------------------|
-| URL | Abrir no navegador, Copiar |
-| Telefone | Ligar, Copiar |
-| Email | Enviar email, Copiar |
-| WiFi | Conectar, Ver detalhes |
-| Texto | Copiar, Pesquisar |
-| vCard | Salvar contato |
 
 ---
 
@@ -589,9 +577,8 @@ HOME                    SCANNING                 RESULT
 | 6.1 | Redesenhar tela home | `ScanQRCodeBar/app/page.js` |
 | 6.2 | Melhorar animação de scan | `ScanQRCodeBar/app/globals.css` |
 | 6.3 | Implementar histórico de scans | `ScanQRCodeBar/app/components/History.js` |
-| 6.4 | Adicionar ações contextuais | `ScanQRCodeBar/app/components/ResultActions.js` |
-| 6.5 | Implementar modo lanterna | `ScanQRCodeBar/app/components/Scanner.js` |
-| 6.6 | Melhorar feedback de permissão | `ScanQRCodeBar/app/components/PermissionRequest.js` |
+| 6.4 | Implementar modo lanterna | `ScanQRCodeBar/app/components/Scanner.js` |
+| 6.5 | Melhorar feedback de permissão | `ScanQRCodeBar/app/components/PermissionRequest.js` |
 
 ### Fase 7: Polish & QA (Semanas 11-12)
 

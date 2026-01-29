@@ -195,38 +195,223 @@
 }
 
 /* ==========================================
- * LAUNCHER ANIMATIONS
+ * LAUNCHER ANIMATIONS - Enhanced
  * ========================================== */
 
+/* Keyframe principal - Unfold com perspectiva editorial */
 @keyframes launcher-unfold {
   from {
     opacity: 0;
-    transform: translateY(40px) rotateX(-15deg);
+    transform: translateY(40px) rotateX(-15deg) scale(0.95);
+    filter: blur(4px);
   }
   to {
     opacity: 1;
-    transform: translateY(0) rotateX(0);
+    transform: translateY(0) rotateX(0) scale(1);
+    filter: blur(0);
   }
 }
 
-.launcher-animate-unfold {
-  animation: launcher-unfold 0.6s cubic-bezier(0.22, 1, 0.36, 1) forwards;
+/* Keyframe para hero title */
+@keyframes launcher-title-reveal {
+  from {
+    opacity: 0;
+    transform: translateY(30px);
+    letter-spacing: 0.3em;
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+    letter-spacing: 0.1em;
+  }
 }
 
+/* Keyframe para linha decorativa */
+@keyframes launcher-line-draw {
+  from {
+    transform: scaleX(0);
+    opacity: 0;
+  }
+  to {
+    transform: scaleX(1);
+    opacity: 1;
+  }
+}
+
+/* Keyframe para hover glow editorial */
+@keyframes launcher-glow-pulse {
+  0%, 100% {
+    box-shadow:
+      -8px 8px 20px -4px rgba(0, 0, 0, 0.3),
+      0 0 0 1px var(--launcher-border-hover),
+      0 0 40px -10px rgba(255, 255, 255, 0.05);
+  }
+  50% {
+    box-shadow:
+      -8px 8px 30px -4px rgba(0, 0, 0, 0.4),
+      0 0 0 1px var(--launcher-border-hover),
+      0 0 60px -10px rgba(255, 255, 255, 0.08);
+  }
+}
+
+/* Classes de animação */
+.launcher-animate-unfold {
+  opacity: 0;
+  animation: launcher-unfold 0.7s cubic-bezier(0.22, 1, 0.36, 1) forwards;
+}
+
+.launcher-animate-title {
+  opacity: 0;
+  animation: launcher-title-reveal 0.8s cubic-bezier(0.22, 1, 0.36, 1) forwards;
+}
+
+.launcher-animate-line {
+  transform-origin: left center;
+  animation: launcher-line-draw 0.6s cubic-bezier(0.22, 1, 0.36, 1) forwards;
+  animation-delay: 0.4s;
+}
+
+/* Stagger delays - progressão suave */
 .launcher-stagger-1 { animation-delay: 0.1s; }
 .launcher-stagger-2 { animation-delay: 0.2s; }
-.launcher-stagger-3 { animation-delay: 0.3s; }
-.launcher-stagger-4 { animation-delay: 0.4s; }
+.launcher-stagger-3 { animation-delay: 0.35s; }
+.launcher-stagger-4 { animation-delay: 0.5s; }
+.launcher-stagger-5 { animation-delay: 0.65s; }
 
-/* Respeitar preferências de movimento reduzido */
+/* Container que aplica stagger aos filhos automaticamente */
+.launcher-stagger-children > * {
+  opacity: 0;
+  animation: launcher-unfold 0.7s cubic-bezier(0.22, 1, 0.36, 1) forwards;
+}
+
+.launcher-stagger-children > *:nth-child(1) { animation-delay: 0.15s; }
+.launcher-stagger-children > *:nth-child(2) { animation-delay: 0.25s; }
+.launcher-stagger-children > *:nth-child(3) { animation-delay: 0.35s; }
+.launcher-stagger-children > *:nth-child(4) { animation-delay: 0.45s; }
+.launcher-stagger-children > *:nth-child(5) { animation-delay: 0.55s; }
+
+/* ==========================================
+ * LAUNCHER HOVER STATES - Enhanced
+ * ========================================== */
+
+/* Hover editorial aprimorado com transições suaves */
+.launcher-card-editorial {
+  --card-rotate: 0deg;
+  --card-translate-y: 0px;
+  background: var(--launcher-surface);
+  border: 1px solid var(--launcher-border);
+  border-radius: 1rem;
+  transform: perspective(1000px) rotateY(var(--card-rotate)) translateY(var(--card-translate-y));
+  transition:
+    transform 400ms cubic-bezier(0.22, 1, 0.36, 1),
+    box-shadow 400ms ease,
+    border-color 200ms ease;
+}
+
+.launcher-card-editorial:hover {
+  --card-rotate: 2deg;
+  --card-translate-y: -4px;
+  border-color: var(--launcher-border-hover);
+  box-shadow:
+    -8px 8px 24px -4px rgba(0, 0, 0, 0.35),
+    0 0 0 1px var(--launcher-border-hover);
+}
+
+/* Efeito de brilho no hover */
+.launcher-card-editorial::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  background: linear-gradient(
+    135deg,
+    rgba(255, 255, 255, 0.03) 0%,
+    transparent 50%,
+    transparent 100%
+  );
+  opacity: 0;
+  transition: opacity 300ms ease;
+  pointer-events: none;
+}
+
+.launcher-card-editorial:hover::after {
+  opacity: 1;
+}
+
+/* Linha decorativa animada */
+.decorative-line {
+  height: 1px;
+  background: linear-gradient(
+    to right,
+    var(--launcher-border),
+    var(--launcher-border-hover),
+    var(--launcher-border)
+  );
+  position: relative;
+  overflow: hidden;
+}
+
+.decorative-line::after {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: -100%;
+  width: 50%;
+  height: 100%;
+  background: linear-gradient(
+    to right,
+    transparent,
+    rgba(255, 255, 255, 0.15),
+    transparent
+  );
+  animation: launcher-shimmer 3s ease-in-out infinite;
+  animation-delay: 1s;
+}
+
+@keyframes launcher-shimmer {
+  0% { left: -100%; }
+  100% { left: 200%; }
+}
+
+/* ==========================================
+ * LAUNCHER FOCUS STATES
+ * ========================================== */
+
+.launcher-card-editorial:focus-visible {
+  outline: none;
+  box-shadow:
+    -8px 8px 24px -4px rgba(0, 0, 0, 0.35),
+    0 0 0 2px var(--launcher-highlight);
+}
+
+/* ==========================================
+ * LAUNCHER REDUCED MOTION
+ * ========================================== */
+
 @media (prefers-reduced-motion: reduce) {
   .launcher-card:hover,
   .launcher-card-editorial:hover {
     transform: none;
+    --card-rotate: 0deg;
+    --card-translate-y: 0px;
   }
 
-  .launcher-animate-unfold {
+  .launcher-card-editorial:hover {
+    outline: 2px solid var(--launcher-border-hover);
+  }
+
+  .launcher-animate-unfold,
+  .launcher-animate-title,
+  .launcher-stagger-children > * {
     animation: none;
+    opacity: 1;
+    filter: none;
+  }
+
+  .launcher-animate-line,
+  .decorative-line::after {
+    animation: none;
+    transform: scaleX(1);
     opacity: 1;
   }
 }

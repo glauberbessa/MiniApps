@@ -294,17 +294,18 @@
 }
 
 /* ==========================================
- * SCANNER SUCCESS ANIMATION
+ * SCANNER ANIMATIONS - Enhanced
  * ========================================== */
 
+/* Flash de sucesso */
 @keyframes scanner-success-flash {
   0% {
     opacity: 0;
     transform: scale(0.8);
   }
-  50% {
+  40% {
     opacity: 1;
-    transform: scale(1.1);
+    transform: scale(1.05);
   }
   100% {
     opacity: 1;
@@ -312,17 +313,44 @@
   }
 }
 
-@keyframes scanner-success-particles {
+/* Flash de luz no scan success */
+@keyframes scanner-light-flash {
   0% {
-    opacity: 1;
-    transform: scale(0) translateY(0);
+    opacity: 0;
+  }
+  15% {
+    opacity: 0.8;
   }
   100% {
     opacity: 0;
-    transform: scale(1) translateY(-20px);
   }
 }
 
+/* Partículas emanando do centro */
+@keyframes scanner-particle-burst {
+  0% {
+    opacity: 1;
+    transform: translate(0, 0) scale(1);
+  }
+  100% {
+    opacity: 0;
+    transform: translate(var(--particle-x, 30px), var(--particle-y, -30px)) scale(0);
+  }
+}
+
+/* Onda de sucesso expandindo */
+@keyframes scanner-success-ring {
+  0% {
+    opacity: 0.6;
+    transform: scale(0.5);
+  }
+  100% {
+    opacity: 0;
+    transform: scale(2);
+  }
+}
+
+/* Pulse glow no viewfinder */
 @keyframes scanner-pulse-glow {
   0%, 100% {
     box-shadow: 0 0 0 0 var(--scanner-glow);
@@ -332,15 +360,132 @@
   }
 }
 
+/* Pulse nos corners durante scan */
+@keyframes scanner-corners-pulse {
+  0%, 100% {
+    opacity: 0.5;
+    filter: brightness(1);
+  }
+  50% {
+    opacity: 1;
+    filter: brightness(1.5);
+  }
+}
+
+/* Bounce suave para botões */
+@keyframes scanner-bounce {
+  0%, 100% {
+    transform: translateY(0);
+  }
+  50% {
+    transform: translateY(-3px);
+  }
+}
+
+/* Entrada fade suave */
+@keyframes scanner-fade-in {
+  from {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+/* Scale in para resultados */
+@keyframes scanner-result-in {
+  from {
+    opacity: 0;
+    transform: scale(0.9) translateY(20px);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1) translateY(0);
+  }
+}
+
+/* Ripple para botões de ação */
+@keyframes scanner-ripple {
+  0% {
+    opacity: 0.5;
+    transform: scale(0);
+  }
+  100% {
+    opacity: 0;
+    transform: scale(2.5);
+  }
+}
+
+/* Glow do código detectado */
+@keyframes scanner-code-glow {
+  0%, 100% {
+    box-shadow:
+      0 0 0 2px var(--scanner-success),
+      0 0 10px 2px var(--scanner-success-glow);
+  }
+  50% {
+    box-shadow:
+      0 0 0 3px var(--scanner-success),
+      0 0 20px 4px var(--scanner-success-glow);
+  }
+}
+
+/* Classes de animação */
 .scanner-animate-success {
   animation: scanner-success-flash 0.4s cubic-bezier(0.22, 1, 0.36, 1) forwards;
+}
+
+.scanner-animate-flash {
+  animation: scanner-light-flash 0.3s ease-out;
 }
 
 .scanner-animate-pulse {
   animation: scanner-pulse-glow 1.5s ease-in-out infinite;
 }
 
-/* Partículas de sucesso */
+.scanner-animate-bounce {
+  animation: scanner-bounce 0.6s ease-in-out;
+}
+
+.scanner-animate-fade-in {
+  opacity: 0;
+  animation: scanner-fade-in 0.4s cubic-bezier(0.22, 1, 0.36, 1) forwards;
+}
+
+.scanner-animate-result {
+  opacity: 0;
+  animation: scanner-result-in 0.5s cubic-bezier(0.22, 1, 0.36, 1) forwards;
+}
+
+.scanner-animate-code-glow {
+  animation: scanner-code-glow 1.5s ease-in-out infinite;
+}
+
+/* Stagger delays */
+.scanner-stagger-1 { animation-delay: 0.05s; }
+.scanner-stagger-2 { animation-delay: 0.1s; }
+.scanner-stagger-3 { animation-delay: 0.15s; }
+.scanner-stagger-4 { animation-delay: 0.2s; }
+
+/* Container com stagger para filhos */
+.scanner-stagger-children > * {
+  opacity: 0;
+  animation: scanner-fade-in 0.4s cubic-bezier(0.22, 1, 0.36, 1) forwards;
+}
+
+.scanner-stagger-children > *:nth-child(1) { animation-delay: 0.05s; }
+.scanner-stagger-children > *:nth-child(2) { animation-delay: 0.1s; }
+.scanner-stagger-children > *:nth-child(3) { animation-delay: 0.15s; }
+.scanner-stagger-children > *:nth-child(4) { animation-delay: 0.2s; }
+.scanner-stagger-children > *:nth-child(5) { animation-delay: 0.25s; }
+
+/* ==========================================
+ * SCANNER PARTICLE SYSTEM
+ * ========================================== */
+
+/* Container de partículas */
 .scanner-particles {
   position: absolute;
   inset: 0;
@@ -348,13 +493,55 @@
   overflow: hidden;
 }
 
+/* Partícula individual */
 .scanner-particle {
   position: absolute;
-  width: 4px;
-  height: 4px;
+  width: 6px;
+  height: 6px;
   background: var(--scanner-success);
   border-radius: 50%;
-  animation: scanner-success-particles 0.6s ease-out forwards;
+  animation: scanner-particle-burst 0.6s ease-out forwards;
+  box-shadow: 0 0 6px var(--scanner-success-glow);
+}
+
+/* Posições predefinidas para partículas (8 direções) */
+.scanner-particle:nth-child(1) { --particle-x: 40px; --particle-y: 0; }
+.scanner-particle:nth-child(2) { --particle-x: 28px; --particle-y: -28px; }
+.scanner-particle:nth-child(3) { --particle-x: 0; --particle-y: -40px; }
+.scanner-particle:nth-child(4) { --particle-x: -28px; --particle-y: -28px; }
+.scanner-particle:nth-child(5) { --particle-x: -40px; --particle-y: 0; }
+.scanner-particle:nth-child(6) { --particle-x: -28px; --particle-y: 28px; }
+.scanner-particle:nth-child(7) { --particle-x: 0; --particle-y: 40px; }
+.scanner-particle:nth-child(8) { --particle-x: 28px; --particle-y: 28px; }
+
+/* Delays nas partículas */
+.scanner-particle:nth-child(1) { animation-delay: 0s; }
+.scanner-particle:nth-child(2) { animation-delay: 0.02s; }
+.scanner-particle:nth-child(3) { animation-delay: 0.04s; }
+.scanner-particle:nth-child(4) { animation-delay: 0.06s; }
+.scanner-particle:nth-child(5) { animation-delay: 0.08s; }
+.scanner-particle:nth-child(6) { animation-delay: 0.1s; }
+.scanner-particle:nth-child(7) { animation-delay: 0.12s; }
+.scanner-particle:nth-child(8) { animation-delay: 0.14s; }
+
+/* Anel de sucesso */
+.scanner-success-ring {
+  position: absolute;
+  inset: 0;
+  border: 2px solid var(--scanner-success);
+  border-radius: inherit;
+  animation: scanner-success-ring 0.6s ease-out forwards;
+  pointer-events: none;
+}
+
+/* Flash overlay */
+.scanner-flash-overlay {
+  position: absolute;
+  inset: 0;
+  background: var(--scanner-success);
+  border-radius: inherit;
+  animation: scanner-light-flash 0.3s ease-out forwards;
+  pointer-events: none;
 }
 
 /* ==========================================

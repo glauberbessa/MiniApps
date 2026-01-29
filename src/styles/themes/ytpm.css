@@ -312,75 +312,425 @@
 }
 
 /* ==========================================
- * YTPM ANIMATIONS
+ * YTPM ANIMATIONS - Enhanced
  * ========================================== */
 
+/* Wave - Entrada em onda para dashboard */
 @keyframes ytpm-wave {
   from {
     opacity: 0;
-    transform: translateY(20px);
+    transform: translateY(24px) scale(0.96);
   }
   to {
     opacity: 1;
-    transform: translateY(0);
+    transform: translateY(0) scale(1);
   }
 }
 
+/* Wave com rotação sutil para cards */
+@keyframes ytpm-wave-card {
+  from {
+    opacity: 0;
+    transform: translateY(30px) scale(0.95) rotateX(-5deg);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1) rotateX(0);
+  }
+}
+
+/* Fly - Vídeo "voa" para playlist destino */
 @keyframes ytpm-fly {
   0% {
     opacity: 1;
-    transform: scale(1);
+    transform: scale(1) translate(0, 0);
   }
-  50% {
-    opacity: 0.8;
-    transform: scale(0.8) translateX(100px);
+  20% {
+    opacity: 1;
+    transform: scale(1.05) translate(10px, -5px);
   }
   100% {
     opacity: 0;
-    transform: scale(0.5) translateX(200px);
+    transform: scale(0.3) translate(200px, -80px);
   }
 }
 
+/* Fly reverso - Item chegando */
+@keyframes ytpm-fly-in {
+  0% {
+    opacity: 0;
+    transform: scale(0.3) translate(-200px, 80px);
+  }
+  80% {
+    opacity: 1;
+    transform: scale(1.02) translate(-5px, 2px);
+  }
+  100% {
+    opacity: 1;
+    transform: scale(1) translate(0, 0);
+  }
+}
+
+/* Pulse com glow vermelho */
 @keyframes ytpm-pulse-accent {
   0%, 100% {
     box-shadow: 0 0 0 0 var(--ytpm-accent-glow);
   }
   50% {
-    box-shadow: 0 0 0 8px transparent;
+    box-shadow: 0 0 20px 4px var(--ytpm-accent-glow);
   }
 }
 
+/* Shake para erros */
+@keyframes ytpm-shake {
+  0%, 100% { transform: translateX(0); }
+  10%, 30%, 50%, 70%, 90% { transform: translateX(-4px); }
+  20%, 40%, 60%, 80% { transform: translateX(4px); }
+}
+
+/* Error pulse */
+@keyframes ytpm-error-pulse {
+  0%, 100% {
+    box-shadow: 0 0 0 0 rgba(239, 68, 68, 0);
+    border-color: var(--ytpm-border);
+  }
+  50% {
+    box-shadow: 0 0 20px 4px rgba(239, 68, 68, 0.2);
+    border-color: var(--ytpm-error);
+  }
+}
+
+/* Success pulse */
+@keyframes ytpm-success-pulse {
+  0%, 100% {
+    box-shadow: 0 0 0 0 rgba(16, 185, 129, 0);
+  }
+  50% {
+    box-shadow: 0 0 20px 4px rgba(16, 185, 129, 0.2);
+  }
+}
+
+/* Slide out para delete */
+@keyframes ytpm-slide-out {
+  from {
+    opacity: 1;
+    transform: translateX(0);
+    max-height: 100px;
+  }
+  to {
+    opacity: 0;
+    transform: translateX(100px);
+    max-height: 0;
+  }
+}
+
+/* Collapse para remoção suave */
+@keyframes ytpm-collapse {
+  from {
+    opacity: 1;
+    transform: scaleY(1);
+    max-height: 200px;
+  }
+  to {
+    opacity: 0;
+    transform: scaleY(0);
+    max-height: 0;
+  }
+}
+
+/* Sparkline para estatísticas */
+@keyframes ytpm-sparkle {
+  0% { opacity: 0; transform: scaleY(0); }
+  50% { opacity: 1; transform: scaleY(1.1); }
+  100% { opacity: 1; transform: scaleY(1); }
+}
+
+/* Loading bar */
+@keyframes ytpm-loading-bar {
+  0% { transform: translateX(-100%); }
+  100% { transform: translateX(100%); }
+}
+
+/* Transfer indicator */
+@keyframes ytpm-transfer {
+  0% { background-position: 0% 50%; }
+  100% { background-position: 100% 50%; }
+}
+
+/* Classes de animação */
 .ytpm-animate-wave {
+  opacity: 0;
   animation: ytpm-wave 0.5s cubic-bezier(0.22, 1, 0.36, 1) forwards;
+}
+
+.ytpm-animate-wave-card {
+  opacity: 0;
+  animation: ytpm-wave-card 0.6s cubic-bezier(0.22, 1, 0.36, 1) forwards;
 }
 
 .ytpm-animate-fly {
   animation: ytpm-fly 0.6s cubic-bezier(0.22, 1, 0.36, 1) forwards;
+  pointer-events: none;
+}
+
+.ytpm-animate-fly-in {
+  animation: ytpm-fly-in 0.5s cubic-bezier(0.22, 1, 0.36, 1) forwards;
 }
 
 .ytpm-animate-pulse {
   animation: ytpm-pulse-accent 2s ease-in-out infinite;
 }
 
+.ytpm-animate-shake {
+  animation: ytpm-shake 0.5s cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+.ytpm-animate-error {
+  animation:
+    ytpm-shake 0.5s cubic-bezier(0.22, 1, 0.36, 1),
+    ytpm-error-pulse 0.8s ease-out;
+}
+
+.ytpm-animate-success {
+  animation: ytpm-success-pulse 0.8s ease-out;
+}
+
+.ytpm-animate-slide-out {
+  animation: ytpm-slide-out 0.4s cubic-bezier(0.22, 1, 0.36, 1) forwards;
+  overflow: hidden;
+}
+
+.ytpm-animate-collapse {
+  animation: ytpm-collapse 0.3s cubic-bezier(0.22, 1, 0.36, 1) forwards;
+  transform-origin: top;
+  overflow: hidden;
+}
+
+/* Stagger delays - mais rápido para dashboard */
 .ytpm-stagger-1 { animation-delay: 0.05s; }
 .ytpm-stagger-2 { animation-delay: 0.1s; }
 .ytpm-stagger-3 { animation-delay: 0.15s; }
 .ytpm-stagger-4 { animation-delay: 0.2s; }
 .ytpm-stagger-5 { animation-delay: 0.25s; }
+.ytpm-stagger-6 { animation-delay: 0.3s; }
+.ytpm-stagger-7 { animation-delay: 0.35s; }
+.ytpm-stagger-8 { animation-delay: 0.4s; }
 
-/* Respeitar preferências de movimento reduzido */
+/* Container que aplica stagger aos filhos */
+.ytpm-stagger-children > * {
+  opacity: 0;
+  animation: ytpm-wave 0.5s cubic-bezier(0.22, 1, 0.36, 1) forwards;
+}
+
+.ytpm-stagger-children > *:nth-child(1) { animation-delay: 0.05s; }
+.ytpm-stagger-children > *:nth-child(2) { animation-delay: 0.1s; }
+.ytpm-stagger-children > *:nth-child(3) { animation-delay: 0.15s; }
+.ytpm-stagger-children > *:nth-child(4) { animation-delay: 0.2s; }
+.ytpm-stagger-children > *:nth-child(5) { animation-delay: 0.25s; }
+.ytpm-stagger-children > *:nth-child(6) { animation-delay: 0.3s; }
+.ytpm-stagger-children > *:nth-child(7) { animation-delay: 0.35s; }
+.ytpm-stagger-children > *:nth-child(8) { animation-delay: 0.4s; }
+.ytpm-stagger-children > *:nth-child(9) { animation-delay: 0.45s; }
+.ytpm-stagger-children > *:nth-child(10) { animation-delay: 0.5s; }
+
+/* Stagger para grid de vídeos */
+.ytpm-stagger-grid > * {
+  opacity: 0;
+  animation: ytpm-wave-card 0.6s cubic-bezier(0.22, 1, 0.36, 1) forwards;
+}
+
+.ytpm-stagger-grid > *:nth-child(1) { animation-delay: 0.05s; }
+.ytpm-stagger-grid > *:nth-child(2) { animation-delay: 0.08s; }
+.ytpm-stagger-grid > *:nth-child(3) { animation-delay: 0.11s; }
+.ytpm-stagger-grid > *:nth-child(4) { animation-delay: 0.14s; }
+.ytpm-stagger-grid > *:nth-child(5) { animation-delay: 0.17s; }
+.ytpm-stagger-grid > *:nth-child(6) { animation-delay: 0.2s; }
+.ytpm-stagger-grid > *:nth-child(7) { animation-delay: 0.23s; }
+.ytpm-stagger-grid > *:nth-child(8) { animation-delay: 0.26s; }
+.ytpm-stagger-grid > *:nth-child(9) { animation-delay: 0.29s; }
+.ytpm-stagger-grid > *:nth-child(10) { animation-delay: 0.32s; }
+.ytpm-stagger-grid > *:nth-child(11) { animation-delay: 0.35s; }
+.ytpm-stagger-grid > *:nth-child(12) { animation-delay: 0.38s; }
+
+/* ==========================================
+ * YTPM HOVER STATES - Enhanced
+ * ========================================== */
+
+/* Video card com glow accent no hover */
+.ytpm-video-card {
+  --glow-opacity: 0;
+  background: var(--ytpm-card);
+  border: 1px solid var(--ytpm-border);
+  border-radius: 0.5rem;
+  overflow: hidden;
+  position: relative;
+  transition:
+    transform 300ms cubic-bezier(0.22, 1, 0.36, 1),
+    box-shadow 300ms ease,
+    border-color 200ms ease;
+}
+
+.ytpm-video-card::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: radial-gradient(
+    circle at 50% 0%,
+    var(--ytpm-accent-glow) 0%,
+    transparent 70%
+  );
+  opacity: var(--glow-opacity);
+  transition: opacity 300ms ease;
+  pointer-events: none;
+}
+
+.ytpm-video-card:hover {
+  --glow-opacity: 0.15;
+  transform: translateY(-4px) scale(1.02);
+  border-color: var(--ytpm-border-accent);
+  box-shadow:
+    0 20px 40px -12px var(--ytpm-accent-glow),
+    0 0 0 1px var(--ytpm-border-accent);
+}
+
+/* Card interativo com feedback visual */
+.ytpm-card-interactive {
+  --lift: 0px;
+  --glow: 0;
+  background: var(--ytpm-card);
+  border: 1px solid var(--ytpm-border);
+  border-radius: 0.75rem;
+  transform: translateY(var(--lift));
+  transition:
+    transform 300ms cubic-bezier(0.22, 1, 0.36, 1),
+    box-shadow 300ms ease,
+    border-color 200ms ease;
+}
+
+.ytpm-card-interactive:hover {
+  --lift: -4px;
+  --glow: 1;
+  border-color: var(--ytpm-border-accent);
+  box-shadow:
+    0 20px 40px -12px var(--ytpm-accent-glow),
+    0 0 0 1px var(--ytpm-border-accent);
+}
+
+/* Thumbnail com overlay de play */
+.ytpm-thumbnail {
+  position: relative;
+  overflow: hidden;
+}
+
+.ytpm-thumbnail::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(
+    to top,
+    rgba(0, 0, 0, 0.6) 0%,
+    transparent 50%
+  );
+  opacity: 0;
+  transition: opacity 200ms ease;
+}
+
+.ytpm-video-card:hover .ytpm-thumbnail::after {
+  opacity: 1;
+}
+
+/* Play icon overlay */
+.ytpm-play-icon {
+  opacity: 0;
+  transform: scale(0.8);
+  transition:
+    opacity 200ms ease,
+    transform 200ms cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+.ytpm-video-card:hover .ytpm-play-icon {
+  opacity: 1;
+  transform: scale(1);
+}
+
+/* ==========================================
+ * YTPM LOADING STATES
+ * ========================================== */
+
+.ytpm-loading-bar {
+  position: relative;
+  height: 2px;
+  background: var(--ytpm-surface);
+  overflow: hidden;
+  border-radius: 1px;
+}
+
+.ytpm-loading-bar::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(
+    90deg,
+    transparent,
+    var(--ytpm-accent) 50%,
+    transparent
+  );
+  animation: ytpm-loading-bar 1s ease-in-out infinite;
+}
+
+.ytpm-transfer-indicator {
+  background: linear-gradient(
+    90deg,
+    var(--ytpm-accent) 0%,
+    var(--ytpm-accent-soft) 50%,
+    var(--ytpm-accent) 100%
+  );
+  background-size: 200% 100%;
+  animation: ytpm-transfer 1.5s ease-in-out infinite;
+}
+
+/* ==========================================
+ * YTPM REDUCED MOTION
+ * ========================================== */
+
 @media (prefers-reduced-motion: reduce) {
   .ytpm-card:hover,
   .ytpm-card-interactive:hover,
   .ytpm-video-card:hover {
     transform: none;
+    --lift: 0px;
+  }
+
+  .ytpm-video-card:hover {
+    outline: 2px solid var(--ytpm-accent);
+    outline-offset: 2px;
   }
 
   .ytpm-animate-wave,
+  .ytpm-animate-wave-card,
   .ytpm-animate-fly,
-  .ytpm-animate-pulse {
+  .ytpm-animate-fly-in,
+  .ytpm-animate-pulse,
+  .ytpm-animate-shake,
+  .ytpm-animate-error,
+  .ytpm-animate-success,
+  .ytpm-stagger-children > *,
+  .ytpm-stagger-grid > * {
     animation: none;
     opacity: 1;
+    transform: none;
+  }
+
+  .ytpm-animate-slide-out,
+  .ytpm-animate-collapse {
+    animation: none;
+    opacity: 0;
+    max-height: 0;
+  }
+
+  .ytpm-loading-bar::after,
+  .ytpm-transfer-indicator {
+    animation: none;
   }
 }
 

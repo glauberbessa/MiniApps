@@ -103,12 +103,7 @@ function AppCard({ title, description, icon: Icon, href, iconBg, openInNewTab, f
       target={openInNewTab ? "_blank" : "_self"}
       rel={openInNewTab ? "noopener noreferrer" : undefined}
       aria-label={`${title} - ${description}`}
-      className={`
-        launcher-card-editorial
-        relative block p-8
-        focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-launcher-highlight focus-visible:ring-offset-2 focus-visible:ring-offset-launcher-bg
-        opacity-0 launcher-animate-unfold
-      `}
+      className="launcher-card-editorial relative block p-8 focus-visible:outline-none"
       onMouseEnter={() => setIsHovered(true)}
       onMouseLeave={() => setIsHovered(false)}
     >
@@ -196,7 +191,7 @@ function GettingStartedSection() {
       className="px-6 py-12 opacity-0 launcher-animate-unfold launcher-stagger-3"
     >
       <div className="max-w-4xl mx-auto">
-        <div className="launcher-card p-8">
+        <div className="launcher-card p-8 stagger-children">
           <h2
             id="getting-started-heading"
             className="text-heading-xs text-launcher-muted mb-6 tracking-widest"
@@ -269,7 +264,7 @@ export default function Home() {
       <header className="pt-16 pb-12 px-6 hero-launcher" role="banner">
         <div className="max-w-4xl mx-auto text-center">
           {/* Título principal com tipografia display */}
-          <h1 className="text-display-xl text-launcher-highlight mb-6 opacity-0 launcher-animate-unfold">
+          <h1 className="text-display-xl text-launcher-highlight mb-6 launcher-animate-title">
             MINIAPPS
           </h1>
 
@@ -277,6 +272,9 @@ export default function Home() {
           <p className="text-editorial text-launcher-muted max-w-lg mx-auto opacity-0 launcher-animate-unfold launcher-stagger-1">
             "Sua central de aplicativos"
           </p>
+
+          {/* Linha decorativa animada */}
+          <div className="decorative-line max-w-xs mx-auto mt-8 launcher-animate-line" aria-hidden="true" />
         </div>
       </header>
 
@@ -289,11 +287,9 @@ export default function Home() {
         >
           <h2 id="apps-heading" className="sr-only">Aplicativos disponíveis</h2>
           <div className="max-w-4xl mx-auto">
-            <div className="grid md:grid-cols-2 gap-8">
-              {apps.map((app, index) => (
-                <div key={app.title} className={`launcher-stagger-${index + 1}`}>
-                  <AppCard {...app} />
-                </div>
+            <div className="grid md:grid-cols-2 gap-8 launcher-stagger-children">
+              {apps.map((app) => (
+                <AppCard key={app.title} {...app} />
               ))}
             </div>
           </div>

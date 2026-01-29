@@ -224,79 +224,91 @@ Este documento apresenta o plano de refatoração das interfaces do MiniApps, se
 
 ## 3. Fases Pendentes
 
-### FASE 3: Motion e Micro-interações
+### ✅ FASE 3: Motion e Micro-interações (COMPLETA)
+
+> **Implementada em:** 29/01/2026
 
 **Objetivo:** Criar momentos de delícia sem sobrecarregar a interface
 
 #### 3.1 Animações de Entrada (High-Impact)
 
-| Contexto | Animação | Implementação |
-|----------|----------|---------------|
-| Launcher load | Cards "desdobram" com stagger | CSS + Intersection Observer |
-| YTPM dashboard | Elementos surgem em wave | Framer Motion |
-| Scanner ready | Pulse no viewfinder | CSS keyframes |
+| Contexto | Animação | Status |
+|----------|----------|--------|
+| Launcher load | Cards "desdobram" com stagger | ✅ `launcher-animate-unfold`, `launcher-stagger-children` |
+| YTPM dashboard | Elementos surgem em wave | ✅ `ytpm-animate-wave`, `ytpm-stagger-children` |
+| Scanner ready | Pulse no viewfinder | ✅ `scanner-animate-pulse`, `scanner-corners-pulse` |
 
-```tsx
-// Exemplo: Stagger animation no Launcher
-const containerVariants = {
-  hidden: { opacity: 0 },
-  visible: {
-    opacity: 1,
-    transition: {
-      staggerChildren: 0.15,
-      delayChildren: 0.2
-    }
-  }
-}
+**Arquivos criados:**
+- `src/styles/animations.css` - Sistema centralizado de animações (500+ linhas)
+- `src/hooks/useAnimateOnScroll.ts` - Hook para animações com Intersection Observer
+- `src/hooks/useAnimationFeedback.ts` - Hook para feedback programático
 
-const cardVariants = {
-  hidden: {
-    opacity: 0,
-    y: 40,
-    rotateX: -15
-  },
-  visible: {
-    opacity: 1,
-    y: 0,
-    rotateX: 0,
-    transition: {
-      duration: 0.6,
-      ease: [0.22, 1, 0.36, 1]
-    }
-  }
-}
+**Classes de animação disponíveis:**
+```css
+/* Entrada */
+.animate-fade-in, .animate-in-up, .animate-in-down, .animate-in-left, .animate-in-right
+.animate-scale-in, .animate-scale-in-center
+.animate-unfold, .animate-wave, .animate-pop
+
+/* Stagger (delays progressivos) */
+.stagger-1 a .stagger-8, .stagger-fast-*, .stagger-slow-*
+.stagger-children (container automático)
 ```
 
 #### 3.2 Feedback de Ações
 
-| Ação | Feedback Visual | Feedback Sonoro (opcional) |
-|------|-----------------|---------------------------|
-| Transferir vídeo | Vídeo "voa" para playlist destino | Subtle whoosh |
-| Scan success | Partículas + flash | Confirmation beep |
-| Delete item | Fade + slide out | - |
-| Error | Shake + red pulse | - |
+| Ação | Feedback Visual | Status |
+|------|-----------------|--------|
+| Transferir vídeo | Vídeo "voa" para playlist destino | ✅ `ytpm-animate-fly`, `ytpm-animate-fly-in` |
+| Scan success | Partículas + flash + anel | ✅ `ParticleSystem`, `FlashOverlay`, `SuccessRing` |
+| Delete item | Fade + slide out | ✅ `animate-slide-out-*`, `animate-collapse` |
+| Error | Shake + red pulse | ✅ `animate-error`, `ytpm-animate-error` |
+| Success | Green pulse | ✅ `animate-success`, `ytpm-animate-success` |
+
+**Componentes criados:**
+- `src/components/ui/particles.tsx` - Sistema de partículas para scanner
+  - `ParticleSystem` - Partículas emanando do centro
+  - `SuccessRing` - Anel expandindo
+  - `FlashOverlay` - Flash de luz
+  - `ScanSuccessEffect` - Combinação dos três efeitos
+- `src/components/ui/animated-feedback.tsx` - Componentes de feedback
+  - `AnimatedFeedback` - Wrapper para feedback visual
+  - `AnimatedListItem` - Item de lista com animações
+  - `FlyingItem` - Animação de transferência
 
 #### 3.3 Hover States Distintivos
 
+| App | Efeito | Status |
+|-----|--------|--------|
+| Launcher | Perspectiva 3D editorial + brilho | ✅ `.launcher-card-editorial:hover` |
+| YTPM | Elevação + glow vermelho | ✅ `.ytpm-video-card:hover`, `.ytpm-card-interactive:hover` |
+| Scanner | Minimal com glow cyan | ✅ `.scanner-card:hover`, `.scanner-btn-icon:hover` |
+
+**Classes utilitárias de hover:**
 ```css
-/* YTPM: Card de vídeo */
-.video-card {
-  transition:
-    transform 300ms cubic-bezier(0.22, 1, 0.36, 1),
-    box-shadow 300ms ease;
-}
+.hover-lift      /* Elevação suave */
+.hover-grow      /* Escala suave */
+.hover-glow      /* Brilho ao hover */
+.hover-perspective /* Rotação 3D */
+.hover-industrial  /* Estilo YTPM com glow vermelho */
+.hover-minimal     /* Estilo Scanner discreto */
+```
 
-.video-card:hover {
-  transform: translateY(-4px) scale(1.02);
-  box-shadow:
-    0 20px 40px -12px rgba(255, 0, 51, 0.25),
-    0 0 0 1px rgba(255, 0, 51, 0.1);
-}
+#### 3.4 Suporte a prefers-reduced-motion
 
-/* Launcher: App card */
-.app-card:hover {
-  transform: perspective(1000px) rotateY(2deg);
-}
+| Item | Status |
+|------|--------|
+| CSS: Desabilitar animações | ✅ Em todos os arquivos de tema |
+| CSS: Manter feedback funcional | ✅ Outline substitui transforms |
+| Hook: Detecção de preferência | ✅ `usePrefersReducedMotion.ts` |
+
+**Hook criado:**
+- `src/hooks/usePrefersReducedMotion.ts` - Detecta preferência do usuário
+
+```tsx
+// Uso
+const prefersReducedMotion = usePrefersReducedMotion()
+const getAnimationClass = useConditionalAnimation()
 ```
 
 ---
@@ -557,7 +569,7 @@ const cardVariants = {
 |------|-----------|--------|
 | 1 | Fundação (Tokens, Componentes Base, A11y) | ✅ COMPLETA |
 | 2 | Identidade Visual Distintiva | ✅ COMPLETA |
-| 3 | Motion e Micro-interações | 🔄 Pendente |
+| 3 | Motion e Micro-interações | ✅ COMPLETA |
 | 4 | Redesign das Páginas Principais | 🔄 Pendente |
 | 5 | Acessibilidade Avançada | 🔄 Pendente |
 | 6 | Polish e Refinamento | 🔄 Pendente |
@@ -603,4 +615,4 @@ const cardVariants = {
 ---
 
 *Documento baseado na skill frontend-design*
-*Última atualização: 29/01/2026*
+*Última atualização: 29/01/2026 - Fase 3 concluída*

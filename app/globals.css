@@ -2,11 +2,30 @@
 @tailwind components;
 @tailwind utilities;
 
-/* Reset básico */
-* {
-  box-sizing: border-box;
-  padding: 0;
-  margin: 0;
+@import '../src/styles/tokens.css';
+
+@layer base {
+  /* Reset básico */
+  * {
+    box-sizing: border-box;
+    padding: 0;
+    margin: 0;
+  }
+
+  /* HTML e Body com tema dark por padrão para o Main Launcher */
+  html {
+    color-scheme: dark;
+  }
+
+  body {
+    @apply bg-background text-foreground font-sans antialiased;
+    min-height: 100vh;
+  }
+
+  /* Declarar idioma para acessibilidade (WCAG 3.1.1) */
+  :root {
+    --radius: 0.5rem;
+  }
 }
 
 /* Estilo para scrollbar customizada */
@@ -16,27 +35,49 @@
 }
 
 ::-webkit-scrollbar-track {
-  background: #1e293b;
+  background: hsl(var(--color-gray-800));
 }
 
 ::-webkit-scrollbar-thumb {
-  background: #475569;
-  border-radius: 4px;
+  background: hsl(var(--color-gray-600));
+  border-radius: var(--radius-md);
 }
 
 ::-webkit-scrollbar-thumb:hover {
-  background: #64748b;
+  background: hsl(var(--color-gray-500));
+}
+
+/* Firefox scrollbar */
+* {
+  scrollbar-width: thin;
+  scrollbar-color: hsl(var(--color-gray-600)) hsl(var(--color-gray-800));
 }
 
 /* Selection color */
 ::selection {
-  background: rgba(14, 165, 233, 0.3);
+  background: hsl(var(--color-primary-500) / 0.3);
 }
 
-/* Focus outline para acessibilidade */
+/* Focus outline para acessibilidade (WCAG 2.4.7) */
 *:focus-visible {
-  outline: 2px solid #0ea5e9;
+  outline: 2px solid hsl(var(--ring));
   outline-offset: 2px;
+}
+
+/* Skip links - acessibilidade (WCAG 2.4.1) */
+.skip-link {
+  position: absolute;
+  top: -40px;
+  left: 0;
+  background: hsl(var(--primary));
+  color: hsl(var(--primary-foreground));
+  padding: var(--space-3) var(--space-4);
+  z-index: var(--z-toast);
+  transition: top var(--duration-fast) var(--ease-out);
+}
+
+.skip-link:focus {
+  top: 0;
 }
 
 /* Animação de gradient suave no background */
@@ -65,7 +106,7 @@
   background: linear-gradient(
     to right,
     transparent 0%,
-    rgba(255, 255, 255, 0.03) 50%,
+    hsl(var(--color-gray-50) / 0.03) 50%,
     transparent 100%
   );
   transform: rotate(45deg);
@@ -80,3 +121,31 @@
     transform: translateX(100%) rotate(45deg);
   }
 }
+
+/* Animações de entrada */
+@keyframes fade-in-up {
+  from {
+    opacity: 0;
+    transform: translateY(20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.animate-fade-in-up {
+  animation: fade-in-up var(--duration-normal) var(--ease-out) forwards;
+}
+
+/* Animação stagger para listas */
+.stagger-animation > * {
+  opacity: 0;
+  animation: fade-in-up var(--duration-normal) var(--ease-out) forwards;
+}
+
+.stagger-animation > *:nth-child(1) { animation-delay: 0ms; }
+.stagger-animation > *:nth-child(2) { animation-delay: 100ms; }
+.stagger-animation > *:nth-child(3) { animation-delay: 200ms; }
+.stagger-animation > *:nth-child(4) { animation-delay: 300ms; }
+.stagger-animation > *:nth-child(5) { animation-delay: 400ms; }

@@ -4,6 +4,8 @@ import { useState, useMemo, useCallback, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
+import { PageHeader } from "@/components/ui/page-header";
+import { EmptyState } from "@/components/ui/empty-state";
 import {
   PlaylistSelector,
   VideoFilters,
@@ -17,7 +19,7 @@ import { usePlaylistItems } from "@/hooks/usePlaylistItems";
 import { useVideoFilters } from "@/hooks/useVideoFilters";
 import { useFilterStore } from "@/stores/filterStore";
 import { UI_TEXT } from "@/lib/i18n";
-import { ArrowRight, ListVideo, Trash2 } from "lucide-react";
+import { ArrowRight, ListVideo, Trash2, Loader2 } from "lucide-react";
 import { useToast } from "@/components/ui/use-toast";
 import { useRemoveFromPlaylist } from "@/hooks/useTransfer";
 import {
@@ -175,10 +177,14 @@ export default function PlaylistsPage() {
   return (
     <div className="space-y-6">
       {/* Header */}
-      <div className="flex items-center gap-3">
-        <ListVideo className="h-8 w-8 text-primary" />
-        <h1 className="text-2xl font-bold">{UI_TEXT.playlists.title}</h1>
-      </div>
+      <PageHeader
+        title={UI_TEXT.playlists.title}
+        description="Transfira vídeos entre suas playlists do YouTube"
+        breadcrumbs={[
+          { label: "Home", href: "/ytpm" },
+          { label: "Playlists" },
+        ]}
+      />
 
       {/* Playlist Selectors */}
       <div className="grid gap-4 md:grid-cols-2">
@@ -295,11 +301,27 @@ export default function PlaylistsPage() {
 
       {/* Sticky Transfer Bar */}
       {activeSourceId && (
-        <div className="fixed bottom-0 left-0 right-0 bg-background border-t p-4 z-50 shadow-lg md:pl-[250px]">
+        <div
+          className="fixed bottom-0 left-0 right-0 bg-background border-t p-4 z-50 shadow-lg md:pl-[250px]"
+          role="region"
+          aria-label="Ações de vídeos selecionados"
+        >
           <div className="container flex justify-between items-center max-w-7xl mx-auto">
-            <span className="text-sm text-muted-foreground hidden md:inline-block">
-              {selectedVideos.size} vídeos selecionados
-            </span>
+            <div className="hidden md:flex items-center gap-2">
+              <span
+                className={`text-sm font-medium ${
+                  selectedVideos.size > 0 ? "text-primary" : "text-muted-foreground"
+                }`}
+                aria-live="polite"
+              >
+                {selectedVideos.size} {selectedVideos.size === 1 ? "vídeo selecionado" : "vídeos selecionados"}
+              </span>
+              {selectedVideos.size > 0 && (
+                <span className="text-xs text-muted-foreground">
+                  (de {filteredVideos.length} disponíveis)
+                </span>
+              )}
+            </div>
             <div className="flex w-full flex-col gap-3 md:w-auto md:flex-row md:items-center md:justify-end md:gap-2">
               <Button
                 variant="outline"
@@ -307,9 +329,14 @@ export default function PlaylistsPage() {
                 onClick={handleRemoveFromSource}
                 disabled={selectedVideos.size === 0 || removeMutation.isPending}
                 className="w-full md:w-auto"
+                aria-busy={removeMutation.isPending}
               >
-                <Trash2 className="mr-2 h-5 w-5" />
-                {UI_TEXT.playlists.removeFromSource}
+                {removeMutation.isPending ? (
+                  <Loader2 className="mr-2 h-5 w-5 animate-spin" aria-hidden="true" />
+                ) : (
+                  <Trash2 className="mr-2 h-5 w-5" aria-hidden="true" />
+                )}
+                {removeMutation.isPending ? "Removendo..." : UI_TEXT.playlists.removeFromSource}
               </Button>
               <Button
                 size="lg"
@@ -318,7 +345,7 @@ export default function PlaylistsPage() {
                 className="w-full md:w-auto"
               >
                 {UI_TEXT.playlists.transferVideos}
-                <ArrowRight className="ml-2 h-5 w-5" />
+                <ArrowRight className="ml-2 h-5 w-5" aria-hidden="true" />
               </Button>
             </div>
           </div>
@@ -330,14 +357,11 @@ export default function PlaylistsPage() {
 
       {/* Empty State */}
       {!activeSourceId && (
-        <Card>
-          <CardContent className="flex flex-col items-center justify-center py-12">
-            <ListVideo className="h-12 w-12 text-muted-foreground mb-4" />
-            <p className="text-muted-foreground text-center">
-              Selecione uma playlist de origem para começar
-            </p>
-          </CardContent>
-        </Card>
+        <EmptyState
+          icon={<ListVideo className="h-12 w-12" />}
+          title="Nenhuma playlist selecionada"
+          description="Selecione uma playlist de origem acima para visualizar e gerenciar seus vídeos."
+        />
       )}
 
       {/* Transfer Dialog */}

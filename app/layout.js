@@ -18,8 +18,15 @@ export const viewport = {
 
 export default function RootLayout({ children }) {
   return (
-    <html lang="pt-BR">
-      <body className="bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900 text-white antialiased min-h-screen">
+    <html lang="pt-BR" className="dark">
+      <body className="bg-gradient-to-br from-gray-950 via-gray-900 to-gray-950 text-foreground antialiased min-h-screen">
+        {/* Skip Link para acessibilidade (WCAG 2.4.1) */}
+        <a
+          href="#main-content"
+          className="skip-link"
+        >
+          Pular para o conteúdo principal
+        </a>
         {children}
       </body>
     </html>

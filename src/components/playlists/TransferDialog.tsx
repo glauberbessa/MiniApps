@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import {
   Dialog,
   DialogContent,
@@ -17,7 +17,7 @@ import { useToast } from "@/components/ui/use-toast";
 import { calculateTransferCost } from "@/lib/quota.shared";
 import { UI_TEXT, t } from "@/lib/i18n";
 import { formatNumber } from "@/lib/utils";
-import { AlertTriangle, CheckCircle, Loader2 } from "lucide-react";
+import { AlertTriangle, CheckCircle, Loader2, ArrowRight, Video } from "lucide-react";
 
 interface TransferDialogProps {
   open: boolean;
@@ -88,41 +88,85 @@ export function TransferDialog({
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent>
+      <DialogContent aria-describedby="transfer-description">
         <DialogHeader>
-          <DialogTitle>{UI_TEXT.transfer.title}</DialogTitle>
-          <DialogDescription>
+          <DialogTitle className="flex items-center gap-2">
+            <Video className="h-5 w-5 text-primary" aria-hidden="true" />
+            {UI_TEXT.transfer.title}
+          </DialogTitle>
+          <DialogDescription id="transfer-description">
             {t(UI_TEXT.transfer.description, { count: videos.length })}
           </DialogDescription>
         </DialogHeader>
 
         <div className="space-y-4 py-4">
+          {/* Transfer Summary */}
+          <div className="flex items-center justify-center gap-3 p-4 rounded-lg bg-muted/50">
+            <div className="text-center">
+              <div className="text-2xl font-bold text-primary">{videos.length}</div>
+              <div className="text-xs text-muted-foreground">
+                {videos.length === 1 ? "vídeo" : "vídeos"}
+              </div>
+            </div>
+            <ArrowRight className="h-5 w-5 text-muted-foreground" aria-hidden="true" />
+            <div className="text-center">
+              <div className="text-2xl font-bold text-success">
+                <CheckCircle className="h-6 w-6 inline" aria-hidden="true" />
+              </div>
+              <div className="text-xs text-muted-foreground">destino</div>
+            </div>
+          </div>
+
           {/* Quota Info */}
           <div className="rounded-lg border p-4 space-y-3">
-            <div className="flex items-center justify-between">
-              <span className="text-sm text-muted-foreground">
-                {t(UI_TEXT.transfer.quotaCost, { cost: formatNumber(quotaCost) })}
-              </span>
+            <div className="flex items-center justify-between text-sm">
+              <span className="text-muted-foreground">Custo de quota</span>
+              <span className="font-medium">{formatNumber(quotaCost)} unidades</span>
             </div>
-            <div className="flex items-center justify-between">
-              <span className="text-sm text-muted-foreground">
-                {t(UI_TEXT.transfer.quotaRemaining, {
-                  remaining: formatNumber(quota?.remainingUnits || 0),
-                })}
+            <div className="flex items-center justify-between text-sm">
+              <span className="text-muted-foreground">Quota disponível</span>
+              <span className={`font-medium ${hasQuota ? "text-success" : "text-destructive"}`}>
+                {formatNumber(quota?.remainingUnits || 0)} unidades
               </span>
             </div>
             {quota && (
-              <Progress value={quota.percentUsed} className="h-2" />
+              <div className="space-y-1">
+                <Progress
+                  value={quota.percentUsed}
+                  className="h-2"
+                  aria-label={`${quota.percentUsed}% da quota utilizada`}
+                />
+                <div className="text-xs text-muted-foreground text-right">
+                  {quota.percentUsed.toFixed(0)}% utilizado
+                </div>
+              </div>
             )}
           </div>
 
           {/* Warning if no quota */}
           {!hasQuota && (
-            <div className="flex items-start gap-3 rounded-lg border border-destructive/50 bg-destructive/10 p-4">
-              <AlertTriangle className="h-5 w-5 text-destructive shrink-0 mt-0.5" />
+            <div
+              className="flex items-start gap-3 rounded-lg border border-destructive/50 bg-destructive/10 p-4"
+              role="alert"
+            >
+              <AlertTriangle className="h-5 w-5 text-destructive shrink-0 mt-0.5" aria-hidden="true" />
               <div className="text-sm text-destructive">
                 {UI_TEXT.transfer.quotaInsufficient}
               </div>
+            </div>
+          )}
+
+          {/* Loading state with progress indication */}
+          {transferMutation.isPending && (
+            <div
+              className="flex items-center justify-center gap-3 p-4 rounded-lg bg-primary/10 animate-pulse"
+              role="status"
+              aria-live="polite"
+            >
+              <Loader2 className="h-5 w-5 animate-spin text-primary" aria-hidden="true" />
+              <span className="text-sm font-medium text-primary">
+                Transferindo vídeos... Aguarde.
+              </span>
             </div>
           )}
         </div>
@@ -138,14 +182,18 @@ export function TransferDialog({
           <Button
             onClick={handleTransfer}
             disabled={!hasQuota || transferMutation.isPending}
+            aria-busy={transferMutation.isPending}
           >
             {transferMutation.isPending ? (
               <>
-                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                <Loader2 className="mr-2 h-4 w-4 animate-spin" aria-hidden="true" />
                 {UI_TEXT.transfer.inProgress}
               </>
             ) : (
-              UI_TEXT.transfer.confirm
+              <>
+                {UI_TEXT.transfer.confirm}
+                <ArrowRight className="ml-2 h-4 w-4" aria-hidden="true" />
+              </>
             )}
           </Button>
         </DialogFooter>

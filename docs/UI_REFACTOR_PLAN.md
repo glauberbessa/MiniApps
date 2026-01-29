@@ -164,64 +164,65 @@ Este documento apresenta o plano de refatoração das interfaces do MiniApps, se
 
 ---
 
-## 3. Fases Pendentes
+### ✅ FASE 2: IDENTIDADE VISUAL DISTINTIVA (COMPLETA)
 
-### FASE 2: Identidade Visual Distintiva
+> **Implementada em:** 29/01/2026
 
-**Objetivo:** Implementar as direções estéticas definidas no Design Thinking
+| Item | Status | Detalhes |
+|------|--------|----------|
+| 2.1 Sistema Tipográfico | ✅ | Google Fonts integradas via next/font |
+| 2.2 Classes de Tipografia | ✅ | `src/styles/typography.css` com 25+ classes |
+| 2.3 Tokens por Aplicação | ✅ | `src/styles/themes/` com 3 temas |
+| 2.4 Seletor de Tema por Rota | ✅ | ThemeProvider + hook useTheme |
+| 2.5 Backgrounds e Atmosfera | ✅ | `src/styles/backgrounds.css` |
+| 2.6 Atualização do Launcher | ✅ | `app/page.js` com estilo editorial |
 
-#### 2.1 Sistema Tipográfico
+**Fonts integradas (via next/font/google):**
+- Playfair Display (display/editorial)
+- DM Sans (UI)
+- Space Grotesk (headings)
+- Inter (body)
+- JetBrains Mono (data/código)
 
-| Tarefa | Arquivos | Prioridade |
-|--------|----------|------------|
-| Integrar Google Fonts (Playfair Display, DM Sans, Space Grotesk, Geist) | `app/layout.js` | Alta |
-| Criar classes utilitárias de tipografia | `src/styles/typography.css` | Alta |
-| Atualizar hierarquia de headings | Todos os layouts | Alta |
+**Arquivos de tema criados:**
+- `src/styles/typography.css` - Classes utilitárias de tipografia
+- `src/styles/themes/launcher.css` - Tema Editorial Dark
+- `src/styles/themes/ytpm.css` - Tema Industrial Dark (YouTube Red)
+- `src/styles/themes/scanner.css` - Tema Soft/Minimal (Cyan)
+- `src/styles/themes/index.css` - Índice dos temas
+- `src/styles/backgrounds.css` - Backgrounds e atmosfera por app
+- `src/components/providers/theme-provider.tsx` - Seletor de tema por rota
 
+**Classes de tipografia implementadas:**
 ```css
-/* Exemplo de implementação */
-.text-display {
-  font-family: var(--font-display);
-  font-weight: 700;
-  letter-spacing: -0.02em;
-  line-height: 1.1;
-}
+/* Display (Launcher) */
+.text-display, .text-display-sm, .text-display-md, .text-display-lg, .text-display-xl
+.text-editorial, .text-editorial-lg
 
-.text-editorial {
-  font-family: var(--font-display);
-  font-size: clamp(2.5rem, 5vw, 4rem);
-  font-weight: 400;
-  font-style: italic;
-}
+/* Heading (YTPM) */
+.text-heading, .text-heading-xs, .text-heading-sm, .text-heading-md, .text-heading-lg, .text-heading-xl
+
+/* UI (Interface) */
+.text-ui, .text-ui-sm, .text-ui-md, .text-ui-lg
+.text-label, .text-button
+
+/* Body (Conteúdo) */
+.text-body, .text-body-sm, .text-body-md, .text-body-lg
+
+/* Data (Números/Código) */
+.text-data, .text-data-sm, .text-data-md, .text-data-lg, .text-code
+
+/* Efeitos especiais */
+.text-gradient, .text-gradient-ytpm, .text-gradient-scanner, .text-gradient-launcher
 ```
 
-#### 2.2 Paletas por Aplicação
-
-| Tarefa | Arquivos | Prioridade |
-|--------|----------|------------|
-| Criar tokens específicos por app | `src/styles/themes/` | Alta |
-| Implementar seletor de tema por rota | `app/layout.js` | Média |
-| Atualizar componentes com novas variáveis | `src/components/` | Alta |
-
-#### 2.3 Backgrounds e Atmosfera
-
-| Tarefa | Descrição | Prioridade |
-|--------|-----------|------------|
-| Launcher: Gradiente mesh sutil | Padrão geométrico de baixa opacidade | Alta |
-| YTPM: Textura de ruído industrial | Noise overlay com 2-3% opacidade | Média |
-| Scanner: Glow dinâmico | Efeito de luz seguindo área de scan | Alta |
-
-```css
-/* Exemplo: Background do Launcher */
-.launcher-bg {
-  background:
-    radial-gradient(ellipse at 20% 50%, rgba(255,255,255,0.03) 0%, transparent 50%),
-    radial-gradient(ellipse at 80% 50%, rgba(255,255,255,0.02) 0%, transparent 50%),
-    var(--launcher-bg);
-}
-```
+**Tailwind extendido com:**
+- Fonts: `font-display`, `font-ui`, `font-heading`, `font-body`, `font-data`
+- Cores: `launcher-*`, `ytpm-*`, `scanner-*`
 
 ---
+
+## 3. Fases Pendentes
 
 ### FASE 3: Motion e Micro-interações
 
@@ -555,7 +556,7 @@ const cardVariants = {
 | Fase | Descrição | Status |
 |------|-----------|--------|
 | 1 | Fundação (Tokens, Componentes Base, A11y) | ✅ COMPLETA |
-| 2 | Identidade Visual Distintiva | 🔄 Pendente |
+| 2 | Identidade Visual Distintiva | ✅ COMPLETA |
 | 3 | Motion e Micro-interações | 🔄 Pendente |
 | 4 | Redesign das Páginas Principais | 🔄 Pendente |
 | 5 | Acessibilidade Avançada | 🔄 Pendente |

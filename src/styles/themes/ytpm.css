@@ -1,0 +1,407 @@
+/**
+ * YTPM Theme - Industrial Dark
+ *
+ * Direção Estética: Industrial/Utilitarian com Toques de Cor
+ * Comunicação: Poderoso e eficiente, como painel de controle profissional
+ * Diferenciador: Interface "dashboard de missão" com acentos vermelhos do YouTube
+ */
+
+/* ==========================================
+ * YTPM COLOR TOKENS
+ * ========================================== */
+
+:root,
+[data-theme="ytpm"] {
+  /* Backgrounds */
+  --ytpm-bg: #09090b;               /* Quase preto */
+  --ytpm-surface: #18181b;          /* Zinc-900 */
+  --ytpm-card: #1f1f23;             /* Elevação sutil */
+  --ytpm-card-hover: #27272b;       /* Card em hover */
+
+  /* Accent Colors */
+  --ytpm-accent: #ff0033;           /* YouTube Red */
+  --ytpm-accent-soft: #ff4d6a;      /* Red suave para hovers */
+  --ytpm-accent-glow: rgba(255, 0, 51, 0.25);
+
+  /* Semantic Colors */
+  --ytpm-success: #10b981;          /* Emerald para confirmações */
+  --ytpm-warning: #f59e0b;          /* Amber para alertas */
+  --ytpm-error: #ef4444;            /* Red para erros */
+  --ytpm-info: #3b82f6;             /* Blue para informações */
+
+  /* Text */
+  --ytpm-text: #fafafa;             /* Texto principal */
+  --ytpm-text-secondary: #d4d4d8;   /* Zinc-300 */
+  --ytpm-muted: #a1a1aa;            /* Zinc-400 */
+  --ytpm-muted-dark: #71717a;       /* Zinc-500 */
+
+  /* Borders */
+  --ytpm-border: #27272a;           /* Zinc-800 */
+  --ytpm-border-hover: #3f3f46;     /* Zinc-700 */
+  --ytpm-border-accent: rgba(255, 0, 51, 0.3);
+
+  /* Shadows */
+  --ytpm-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.4),
+                 0 2px 4px -2px rgba(0, 0, 0, 0.4);
+  --ytpm-shadow-accent: 0 4px 14px -3px var(--ytpm-accent-glow);
+}
+
+/* ==========================================
+ * YTPM BACKGROUND PATTERNS
+ * ========================================== */
+
+.ytpm-bg {
+  background: var(--ytpm-bg);
+}
+
+.ytpm-bg-noise {
+  background: var(--ytpm-bg);
+  position: relative;
+}
+
+.ytpm-bg-noise::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noise)'/%3E%3C/svg%3E");
+  opacity: 0.03;
+  pointer-events: none;
+  mix-blend-mode: overlay;
+}
+
+.ytpm-bg-gradient {
+  background:
+    radial-gradient(ellipse at 0% 0%, rgba(255, 0, 51, 0.05) 0%, transparent 50%),
+    radial-gradient(ellipse at 100% 100%, rgba(255, 0, 51, 0.03) 0%, transparent 50%),
+    var(--ytpm-bg);
+}
+
+/* ==========================================
+ * YTPM CARD STYLES
+ * ========================================== */
+
+.ytpm-card {
+  background: var(--ytpm-card);
+  border: 1px solid var(--ytpm-border);
+  border-radius: 0.75rem;
+  transition:
+    transform 300ms cubic-bezier(0.22, 1, 0.36, 1),
+    box-shadow 300ms ease,
+    border-color 200ms ease;
+}
+
+.ytpm-card:hover {
+  border-color: var(--ytpm-border-hover);
+  box-shadow: var(--ytpm-shadow);
+  transform: translateY(-2px);
+}
+
+/* Card com accent glow no hover */
+.ytpm-card-interactive {
+  background: var(--ytpm-card);
+  border: 1px solid var(--ytpm-border);
+  border-radius: 0.75rem;
+  transition:
+    transform 300ms cubic-bezier(0.22, 1, 0.36, 1),
+    box-shadow 300ms ease,
+    border-color 200ms ease;
+}
+
+.ytpm-card-interactive:hover {
+  transform: translateY(-4px) scale(1.01);
+  border-color: var(--ytpm-border-accent);
+  box-shadow:
+    0 20px 40px -12px var(--ytpm-accent-glow),
+    0 0 0 1px var(--ytpm-border-accent);
+}
+
+/* Video card específico */
+.ytpm-video-card {
+  background: var(--ytpm-card);
+  border: 1px solid var(--ytpm-border);
+  border-radius: 0.5rem;
+  overflow: hidden;
+  transition:
+    transform 300ms cubic-bezier(0.22, 1, 0.36, 1),
+    box-shadow 300ms ease;
+}
+
+.ytpm-video-card:hover {
+  transform: translateY(-4px) scale(1.02);
+  box-shadow:
+    0 20px 40px -12px var(--ytpm-accent-glow),
+    0 0 0 1px var(--ytpm-border-accent);
+}
+
+/* ==========================================
+ * YTPM TYPOGRAPHY OVERRIDES
+ * ========================================== */
+
+.ytpm-title {
+  font-family: var(--font-heading);
+  font-weight: 700;
+  color: var(--ytpm-text);
+  letter-spacing: -0.02em;
+}
+
+.ytpm-title-accent {
+  font-family: var(--font-heading);
+  font-weight: 700;
+  background: linear-gradient(135deg, var(--ytpm-accent) 0%, var(--ytpm-accent-soft) 100%);
+  background-clip: text;
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+}
+
+.ytpm-subtitle {
+  font-family: var(--font-heading);
+  font-weight: 500;
+  color: var(--ytpm-text-secondary);
+  letter-spacing: -0.01em;
+}
+
+.ytpm-text {
+  font-family: var(--font-body);
+  color: var(--ytpm-text);
+}
+
+.ytpm-text-muted {
+  font-family: var(--font-body);
+  color: var(--ytpm-muted);
+}
+
+.ytpm-label {
+  font-family: var(--font-heading);
+  font-size: 0.75rem;
+  font-weight: 500;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+  color: var(--ytpm-muted);
+}
+
+.ytpm-data {
+  font-family: var(--font-mono);
+  font-variant-numeric: tabular-nums;
+  color: var(--ytpm-text);
+}
+
+/* ==========================================
+ * YTPM BUTTONS
+ * ========================================== */
+
+.ytpm-btn {
+  font-family: var(--font-heading);
+  font-weight: 600;
+  font-size: 0.875rem;
+  letter-spacing: 0.01em;
+  padding: 0.625rem 1.25rem;
+  border-radius: 0.5rem;
+  transition:
+    background-color 200ms ease,
+    color 200ms ease,
+    transform 150ms ease,
+    box-shadow 200ms ease;
+}
+
+.ytpm-btn:active {
+  transform: scale(0.98);
+}
+
+.ytpm-btn-primary {
+  background: var(--ytpm-accent);
+  color: white;
+}
+
+.ytpm-btn-primary:hover {
+  background: var(--ytpm-accent-soft);
+  box-shadow: 0 4px 14px -3px var(--ytpm-accent-glow);
+}
+
+.ytpm-btn-secondary {
+  background: var(--ytpm-surface);
+  color: var(--ytpm-text);
+  border: 1px solid var(--ytpm-border);
+}
+
+.ytpm-btn-secondary:hover {
+  background: var(--ytpm-card);
+  border-color: var(--ytpm-border-hover);
+}
+
+.ytpm-btn-ghost {
+  background: transparent;
+  color: var(--ytpm-muted);
+}
+
+.ytpm-btn-ghost:hover {
+  background: var(--ytpm-surface);
+  color: var(--ytpm-text);
+}
+
+/* ==========================================
+ * YTPM STATUS BADGES
+ * ========================================== */
+
+.ytpm-badge {
+  font-family: var(--font-mono);
+  font-size: 0.75rem;
+  font-weight: 500;
+  padding: 0.25rem 0.5rem;
+  border-radius: 0.25rem;
+}
+
+.ytpm-badge-success {
+  background: rgba(16, 185, 129, 0.15);
+  color: var(--ytpm-success);
+  border: 1px solid rgba(16, 185, 129, 0.3);
+}
+
+.ytpm-badge-warning {
+  background: rgba(245, 158, 11, 0.15);
+  color: var(--ytpm-warning);
+  border: 1px solid rgba(245, 158, 11, 0.3);
+}
+
+.ytpm-badge-error {
+  background: rgba(239, 68, 68, 0.15);
+  color: var(--ytpm-error);
+  border: 1px solid rgba(239, 68, 68, 0.3);
+}
+
+.ytpm-badge-info {
+  background: rgba(59, 130, 246, 0.15);
+  color: var(--ytpm-info);
+  border: 1px solid rgba(59, 130, 246, 0.3);
+}
+
+/* ==========================================
+ * YTPM TABLE STYLES
+ * ========================================== */
+
+.ytpm-table {
+  width: 100%;
+  border-collapse: collapse;
+}
+
+.ytpm-table th {
+  font-family: var(--font-heading);
+  font-size: 0.75rem;
+  font-weight: 500;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+  color: var(--ytpm-muted);
+  text-align: left;
+  padding: 0.75rem 1rem;
+  border-bottom: 1px solid var(--ytpm-border);
+}
+
+.ytpm-table td {
+  font-family: var(--font-body);
+  font-size: 0.875rem;
+  color: var(--ytpm-text);
+  padding: 1rem;
+  border-bottom: 1px solid var(--ytpm-border);
+}
+
+.ytpm-table tr {
+  transition: background-color 150ms ease;
+}
+
+.ytpm-table tr:hover {
+  background: var(--ytpm-surface);
+}
+
+/* ==========================================
+ * YTPM ANIMATIONS
+ * ========================================== */
+
+@keyframes ytpm-wave {
+  from {
+    opacity: 0;
+    transform: translateY(20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes ytpm-fly {
+  0% {
+    opacity: 1;
+    transform: scale(1);
+  }
+  50% {
+    opacity: 0.8;
+    transform: scale(0.8) translateX(100px);
+  }
+  100% {
+    opacity: 0;
+    transform: scale(0.5) translateX(200px);
+  }
+}
+
+@keyframes ytpm-pulse-accent {
+  0%, 100% {
+    box-shadow: 0 0 0 0 var(--ytpm-accent-glow);
+  }
+  50% {
+    box-shadow: 0 0 0 8px transparent;
+  }
+}
+
+.ytpm-animate-wave {
+  animation: ytpm-wave 0.5s cubic-bezier(0.22, 1, 0.36, 1) forwards;
+}
+
+.ytpm-animate-fly {
+  animation: ytpm-fly 0.6s cubic-bezier(0.22, 1, 0.36, 1) forwards;
+}
+
+.ytpm-animate-pulse {
+  animation: ytpm-pulse-accent 2s ease-in-out infinite;
+}
+
+.ytpm-stagger-1 { animation-delay: 0.05s; }
+.ytpm-stagger-2 { animation-delay: 0.1s; }
+.ytpm-stagger-3 { animation-delay: 0.15s; }
+.ytpm-stagger-4 { animation-delay: 0.2s; }
+.ytpm-stagger-5 { animation-delay: 0.25s; }
+
+/* Respeitar preferências de movimento reduzido */
+@media (prefers-reduced-motion: reduce) {
+  .ytpm-card:hover,
+  .ytpm-card-interactive:hover,
+  .ytpm-video-card:hover {
+    transform: none;
+  }
+
+  .ytpm-animate-wave,
+  .ytpm-animate-fly,
+  .ytpm-animate-pulse {
+    animation: none;
+    opacity: 1;
+  }
+}
+
+/* ==========================================
+ * YTPM SCROLLBAR
+ * ========================================== */
+
+.ytpm-scrollbar::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+
+.ytpm-scrollbar::-webkit-scrollbar-track {
+  background: var(--ytpm-bg);
+}
+
+.ytpm-scrollbar::-webkit-scrollbar-thumb {
+  background: var(--ytpm-surface);
+  border-radius: 4px;
+}
+
+.ytpm-scrollbar::-webkit-scrollbar-thumb:hover {
+  background: var(--ytpm-accent);
+}

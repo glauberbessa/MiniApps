@@ -1,0 +1,470 @@
+/**
+ * Scanner Theme - Soft/Minimal
+ *
+ * Direção Estética: Soft/Minimal com Foco no Conteúdo
+ * Comunicação: Discreto, focado, satisfatório
+ * Diferenciador: UI que "desaparece" durante scan, feedback háptico visual
+ */
+
+/* ==========================================
+ * SCANNER COLOR TOKENS
+ * ========================================== */
+
+:root,
+[data-theme="scanner"] {
+  /* Backgrounds */
+  --scanner-bg: #0f0f10;
+  --scanner-surface: rgba(255, 255, 255, 0.03);
+  --scanner-surface-solid: #161618;
+  --scanner-overlay: rgba(0, 0, 0, 0.8);
+
+  /* Accent Colors */
+  --scanner-accent: #22d3ee;         /* Cyan vibrante para scan */
+  --scanner-accent-soft: #67e8f9;    /* Cyan claro */
+  --scanner-success: #4ade80;        /* Green para sucesso */
+  --scanner-success-soft: #86efac;   /* Green claro */
+  --scanner-error: #f87171;          /* Red para erros */
+
+  /* Glow Effects */
+  --scanner-glow: rgba(34, 211, 238, 0.2);
+  --scanner-glow-strong: rgba(34, 211, 238, 0.4);
+  --scanner-success-glow: rgba(74, 222, 128, 0.3);
+
+  /* Text */
+  --scanner-text: #e4e4e7;           /* Zinc-200 */
+  --scanner-text-secondary: #a1a1aa; /* Zinc-400 */
+  --scanner-muted: #52525b;          /* Zinc-600 */
+
+  /* Borders */
+  --scanner-border: rgba(255, 255, 255, 0.08);
+  --scanner-border-active: rgba(34, 211, 238, 0.3);
+
+  /* Shadows */
+  --scanner-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.3);
+  --scanner-shadow-glow: 0 0 30px -5px var(--scanner-glow);
+}
+
+/* ==========================================
+ * SCANNER BACKGROUND PATTERNS
+ * ========================================== */
+
+.scanner-bg {
+  background: var(--scanner-bg);
+}
+
+.scanner-bg-gradient {
+  background:
+    radial-gradient(ellipse at 50% 0%, rgba(34, 211, 238, 0.05) 0%, transparent 50%),
+    var(--scanner-bg);
+}
+
+.scanner-bg-subtle {
+  background:
+    radial-gradient(circle at 50% 50%, rgba(34, 211, 238, 0.02) 0%, transparent 70%),
+    var(--scanner-bg);
+}
+
+/* ==========================================
+ * SCANNER VIEWFINDER
+ * ========================================== */
+
+.scanner-viewfinder {
+  position: relative;
+  border-radius: 1rem;
+  overflow: hidden;
+  background: var(--scanner-bg);
+}
+
+/* Corners do viewfinder */
+.scanner-viewfinder::before {
+  content: '';
+  position: absolute;
+  inset: 1rem;
+  border: 2px solid var(--scanner-accent);
+  border-radius: 0.5rem;
+  opacity: 0.5;
+  pointer-events: none;
+  /* Mostrar apenas os cantos */
+  clip-path: polygon(
+    /* Top-left */
+    0 0, 20% 0, 20% 2px, 2px 2px, 2px 20%, 0 20%,
+    /* Top-right */
+    80% 0, 100% 0, 100% 20%, calc(100% - 2px) 20%, calc(100% - 2px) 2px, 80% 2px,
+    /* Bottom-right */
+    100% 80%, 100% 100%, 80% 100%, 80% calc(100% - 2px), calc(100% - 2px) calc(100% - 2px), calc(100% - 2px) 80%,
+    /* Bottom-left */
+    20% 100%, 0 100%, 0 80%, 2px 80%, 2px calc(100% - 2px), 20% calc(100% - 2px)
+  );
+}
+
+/* Linha de scan animada */
+.scanner-scanline {
+  position: absolute;
+  left: 1.5rem;
+  right: 1.5rem;
+  height: 2px;
+  background: linear-gradient(
+    90deg,
+    transparent,
+    var(--scanner-accent) 20%,
+    var(--scanner-accent) 80%,
+    transparent
+  );
+  box-shadow: 0 0 20px 2px var(--scanner-glow);
+  animation: scanner-scan 2s ease-in-out infinite;
+}
+
+@keyframes scanner-scan {
+  0%, 100% {
+    top: 2rem;
+    opacity: 0;
+  }
+  10% {
+    opacity: 1;
+  }
+  90% {
+    opacity: 1;
+  }
+  100% {
+    top: calc(100% - 2rem);
+    opacity: 0;
+  }
+}
+
+/* Glow dinâmico */
+.scanner-glow-effect {
+  position: absolute;
+  inset: 0;
+  background: radial-gradient(
+    circle at var(--glow-x, 50%) var(--glow-y, 50%),
+    var(--scanner-glow) 0%,
+    transparent 50%
+  );
+  pointer-events: none;
+  opacity: 0;
+  transition: opacity 300ms ease;
+}
+
+.scanner-glow-effect.active {
+  opacity: 1;
+}
+
+/* ==========================================
+ * SCANNER CARD STYLES
+ * ========================================== */
+
+.scanner-card {
+  background: var(--scanner-surface);
+  border: 1px solid var(--scanner-border);
+  border-radius: 0.75rem;
+  backdrop-filter: blur(10px);
+  transition:
+    background-color 200ms ease,
+    border-color 200ms ease;
+}
+
+.scanner-card:hover {
+  background: rgba(255, 255, 255, 0.05);
+  border-color: rgba(255, 255, 255, 0.12);
+}
+
+/* Card de resultado */
+.scanner-result-card {
+  background: var(--scanner-surface-solid);
+  border: 1px solid var(--scanner-border-active);
+  border-radius: 0.75rem;
+  box-shadow: var(--scanner-shadow-glow);
+}
+
+/* ==========================================
+ * SCANNER TYPOGRAPHY OVERRIDES
+ * ========================================== */
+
+.scanner-title {
+  font-family: var(--font-ui);
+  font-weight: 600;
+  color: var(--scanner-text);
+  letter-spacing: -0.01em;
+}
+
+.scanner-text {
+  font-family: var(--font-ui);
+  color: var(--scanner-text);
+}
+
+.scanner-text-muted {
+  font-family: var(--font-ui);
+  color: var(--scanner-muted);
+}
+
+.scanner-result {
+  font-family: var(--font-mono);
+  font-size: 0.875rem;
+  color: var(--scanner-text);
+  word-break: break-all;
+}
+
+.scanner-label {
+  font-family: var(--font-ui);
+  font-size: 0.75rem;
+  font-weight: 500;
+  letter-spacing: 0.02em;
+  text-transform: uppercase;
+  color: var(--scanner-muted);
+}
+
+/* ==========================================
+ * SCANNER BUTTONS
+ * ========================================== */
+
+.scanner-btn {
+  font-family: var(--font-ui);
+  font-weight: 500;
+  font-size: 0.875rem;
+  padding: 0.75rem 1.5rem;
+  border-radius: 9999px;
+  transition:
+    background-color 200ms ease,
+    color 200ms ease,
+    transform 150ms ease,
+    box-shadow 200ms ease;
+}
+
+.scanner-btn:active {
+  transform: scale(0.98);
+}
+
+.scanner-btn-primary {
+  background: var(--scanner-accent);
+  color: #000;
+}
+
+.scanner-btn-primary:hover {
+  background: var(--scanner-accent-soft);
+  box-shadow: 0 0 20px -5px var(--scanner-glow);
+}
+
+.scanner-btn-success {
+  background: var(--scanner-success);
+  color: #000;
+}
+
+.scanner-btn-success:hover {
+  background: var(--scanner-success-soft);
+  box-shadow: 0 0 20px -5px var(--scanner-success-glow);
+}
+
+.scanner-btn-ghost {
+  background: transparent;
+  color: var(--scanner-text-secondary);
+}
+
+.scanner-btn-ghost:hover {
+  background: var(--scanner-surface);
+  color: var(--scanner-text);
+}
+
+/* Botão circular para ações */
+.scanner-btn-icon {
+  width: 3rem;
+  height: 3rem;
+  padding: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 9999px;
+  background: var(--scanner-surface);
+  border: 1px solid var(--scanner-border);
+  color: var(--scanner-text-secondary);
+  transition:
+    background-color 200ms ease,
+    border-color 200ms ease,
+    color 200ms ease,
+    transform 150ms ease;
+}
+
+.scanner-btn-icon:hover {
+  background: rgba(255, 255, 255, 0.08);
+  border-color: var(--scanner-border-active);
+  color: var(--scanner-accent);
+}
+
+.scanner-btn-icon:active {
+  transform: scale(0.95);
+}
+
+/* ==========================================
+ * SCANNER SUCCESS ANIMATION
+ * ========================================== */
+
+@keyframes scanner-success-flash {
+  0% {
+    opacity: 0;
+    transform: scale(0.8);
+  }
+  50% {
+    opacity: 1;
+    transform: scale(1.1);
+  }
+  100% {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
+@keyframes scanner-success-particles {
+  0% {
+    opacity: 1;
+    transform: scale(0) translateY(0);
+  }
+  100% {
+    opacity: 0;
+    transform: scale(1) translateY(-20px);
+  }
+}
+
+@keyframes scanner-pulse-glow {
+  0%, 100% {
+    box-shadow: 0 0 0 0 var(--scanner-glow);
+  }
+  50% {
+    box-shadow: 0 0 30px 10px var(--scanner-glow);
+  }
+}
+
+.scanner-animate-success {
+  animation: scanner-success-flash 0.4s cubic-bezier(0.22, 1, 0.36, 1) forwards;
+}
+
+.scanner-animate-pulse {
+  animation: scanner-pulse-glow 1.5s ease-in-out infinite;
+}
+
+/* Partículas de sucesso */
+.scanner-particles {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  overflow: hidden;
+}
+
+.scanner-particle {
+  position: absolute;
+  width: 4px;
+  height: 4px;
+  background: var(--scanner-success);
+  border-radius: 50%;
+  animation: scanner-success-particles 0.6s ease-out forwards;
+}
+
+/* ==========================================
+ * SCANNER STATES
+ * ========================================== */
+
+/* Estado idle */
+.scanner-state-idle {
+  opacity: 0.7;
+  transition: opacity 300ms ease;
+}
+
+.scanner-state-idle:hover {
+  opacity: 1;
+}
+
+/* Estado scanning */
+.scanner-state-scanning .scanner-viewfinder::before {
+  animation: scanner-corners-pulse 1s ease-in-out infinite;
+}
+
+@keyframes scanner-corners-pulse {
+  0%, 100% {
+    opacity: 0.5;
+  }
+  50% {
+    opacity: 1;
+  }
+}
+
+/* Estado success */
+.scanner-state-success .scanner-viewfinder {
+  border-color: var(--scanner-success);
+}
+
+.scanner-state-success .scanner-viewfinder::before {
+  border-color: var(--scanner-success);
+  opacity: 1;
+}
+
+/* ==========================================
+ * SCANNER HISTORY LIST
+ * ========================================== */
+
+.scanner-history-item {
+  padding: 0.75rem 1rem;
+  border-radius: 0.5rem;
+  background: transparent;
+  border: 1px solid transparent;
+  transition:
+    background-color 200ms ease,
+    border-color 200ms ease;
+}
+
+.scanner-history-item:hover {
+  background: var(--scanner-surface);
+  border-color: var(--scanner-border);
+}
+
+/* ==========================================
+ * SCANNER REDUCED MOTION
+ * ========================================== */
+
+@media (prefers-reduced-motion: reduce) {
+  .scanner-scanline {
+    animation: none;
+    top: 50%;
+    opacity: 0.5;
+  }
+
+  .scanner-animate-success,
+  .scanner-animate-pulse,
+  .scanner-state-scanning .scanner-viewfinder::before {
+    animation: none;
+  }
+
+  .scanner-glow-effect {
+    transition: none;
+  }
+}
+
+/* ==========================================
+ * SCANNER FOCUS STATES
+ * ========================================== */
+
+.scanner-focus-visible:focus-visible {
+  outline: 2px solid var(--scanner-accent);
+  outline-offset: 2px;
+}
+
+/* ==========================================
+ * SCANNER TOAST NOTIFICATIONS
+ * ========================================== */
+
+.scanner-toast {
+  background: var(--scanner-surface-solid);
+  border: 1px solid var(--scanner-border);
+  border-radius: 0.75rem;
+  padding: 1rem 1.25rem;
+  box-shadow: var(--scanner-shadow);
+  backdrop-filter: blur(10px);
+}
+
+.scanner-toast-success {
+  border-color: rgba(74, 222, 128, 0.3);
+  box-shadow:
+    var(--scanner-shadow),
+    0 0 20px -5px var(--scanner-success-glow);
+}
+
+.scanner-toast-error {
+  border-color: rgba(248, 113, 113, 0.3);
+}

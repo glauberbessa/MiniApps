@@ -2,7 +2,11 @@
 @tailwind components;
 @tailwind utilities;
 
+/* Design System Imports */
 @import '../src/styles/tokens.css';
+@import '../src/styles/typography.css';
+@import '../src/styles/themes/index.css';
+@import '../src/styles/backgrounds.css';
 
 @layer base {
   /* Reset básico */

@@ -1,0 +1,232 @@
+/**
+ * Launcher Theme - Editorial Dark
+ *
+ * Direção Estética: Editorial/Magazine
+ * Comunicação: Sofisticação e organização, como capa de revista de tecnologia premium
+ * Diferenciador: Tipografia bold com hierarquia dramática, espaço negativo generoso
+ */
+
+/* ==========================================
+ * LAUNCHER COLOR TOKENS
+ * ========================================== */
+
+:root,
+[data-theme="launcher"] {
+  /* Backgrounds */
+  --launcher-bg: #0a0a0b;
+  --launcher-surface: #141416;
+  --launcher-surface-elevated: #1a1a1d;
+
+  /* Text */
+  --launcher-accent: #e4e4e7;        /* Zinc-200 - texto principal */
+  --launcher-muted: #71717a;         /* Zinc-500 - texto secundário */
+  --launcher-highlight: #fafafa;     /* Branco puro para destaques */
+
+  /* Borders & Dividers */
+  --launcher-border: #27272a;        /* Zinc-800 - bordas sutis */
+  --launcher-border-hover: #3f3f46;  /* Zinc-700 - bordas em hover */
+
+  /* Interactive */
+  --launcher-link: #a1a1aa;
+  --launcher-link-hover: #fafafa;
+
+  /* Shadows */
+  --launcher-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.3),
+                     0 2px 4px -2px rgba(0, 0, 0, 0.3);
+  --launcher-shadow-lg: 0 10px 15px -3px rgba(0, 0, 0, 0.4),
+                        0 4px 6px -4px rgba(0, 0, 0, 0.4);
+}
+
+/* ==========================================
+ * LAUNCHER BACKGROUND PATTERNS
+ * ========================================== */
+
+.launcher-bg {
+  background: var(--launcher-bg);
+}
+
+.launcher-bg-pattern {
+  background:
+    radial-gradient(ellipse at 20% 50%, rgba(255, 255, 255, 0.03) 0%, transparent 50%),
+    radial-gradient(ellipse at 80% 50%, rgba(255, 255, 255, 0.02) 0%, transparent 50%),
+    var(--launcher-bg);
+}
+
+.launcher-bg-mesh {
+  background:
+    radial-gradient(at 40% 20%, rgba(120, 120, 128, 0.08) 0px, transparent 50%),
+    radial-gradient(at 80% 0%, rgba(100, 100, 108, 0.06) 0px, transparent 50%),
+    radial-gradient(at 0% 50%, rgba(140, 140, 148, 0.04) 0px, transparent 50%),
+    radial-gradient(at 80% 100%, rgba(110, 110, 118, 0.05) 0px, transparent 50%),
+    radial-gradient(at 0% 100%, rgba(130, 130, 138, 0.03) 0px, transparent 50%),
+    var(--launcher-bg);
+}
+
+/* ==========================================
+ * LAUNCHER CARD STYLES
+ * ========================================== */
+
+.launcher-card {
+  background: var(--launcher-surface);
+  border: 1px solid var(--launcher-border);
+  border-radius: 1rem;
+  transition:
+    transform 300ms cubic-bezier(0.22, 1, 0.36, 1),
+    box-shadow 300ms ease,
+    border-color 200ms ease;
+}
+
+.launcher-card:hover {
+  border-color: var(--launcher-border-hover);
+  box-shadow: var(--launcher-shadow-lg);
+  transform: translateY(-2px);
+}
+
+/* Card com efeito de perspectiva editorial */
+.launcher-card-editorial {
+  background: var(--launcher-surface);
+  border: 1px solid var(--launcher-border);
+  border-radius: 1rem;
+  transition:
+    transform 400ms cubic-bezier(0.22, 1, 0.36, 1),
+    box-shadow 300ms ease;
+}
+
+.launcher-card-editorial:hover {
+  transform: perspective(1000px) rotateY(2deg) translateY(-4px);
+  box-shadow:
+    -8px 8px 20px -4px rgba(0, 0, 0, 0.3),
+    0 0 0 1px var(--launcher-border-hover);
+}
+
+/* ==========================================
+ * LAUNCHER TYPOGRAPHY OVERRIDES
+ * ========================================== */
+
+.launcher-title {
+  font-family: var(--font-display);
+  font-weight: 700;
+  color: var(--launcher-highlight);
+  letter-spacing: -0.02em;
+}
+
+.launcher-subtitle {
+  font-family: var(--font-display);
+  font-weight: 400;
+  font-style: italic;
+  color: var(--launcher-muted);
+}
+
+.launcher-text {
+  font-family: var(--font-ui);
+  color: var(--launcher-accent);
+}
+
+.launcher-text-muted {
+  font-family: var(--font-ui);
+  color: var(--launcher-muted);
+}
+
+/* ==========================================
+ * LAUNCHER BUTTONS
+ * ========================================== */
+
+.launcher-btn {
+  font-family: var(--font-ui);
+  font-weight: 600;
+  font-size: 0.875rem;
+  letter-spacing: 0.01em;
+  padding: 0.75rem 1.5rem;
+  border-radius: 0.5rem;
+  transition:
+    background-color 200ms ease,
+    color 200ms ease,
+    transform 150ms ease;
+}
+
+.launcher-btn:active {
+  transform: scale(0.98);
+}
+
+.launcher-btn-primary {
+  background: var(--launcher-highlight);
+  color: var(--launcher-bg);
+}
+
+.launcher-btn-primary:hover {
+  background: var(--launcher-accent);
+}
+
+.launcher-btn-ghost {
+  background: transparent;
+  color: var(--launcher-accent);
+  border: 1px solid var(--launcher-border);
+}
+
+.launcher-btn-ghost:hover {
+  background: var(--launcher-surface);
+  border-color: var(--launcher-border-hover);
+}
+
+/* ==========================================
+ * LAUNCHER DIVIDERS
+ * ========================================== */
+
+.launcher-divider {
+  height: 1px;
+  background: linear-gradient(
+    to right,
+    transparent,
+    var(--launcher-border) 20%,
+    var(--launcher-border) 80%,
+    transparent
+  );
+}
+
+.launcher-divider-vertical {
+  width: 1px;
+  background: linear-gradient(
+    to bottom,
+    transparent,
+    var(--launcher-border) 20%,
+    var(--launcher-border) 80%,
+    transparent
+  );
+}
+
+/* ==========================================
+ * LAUNCHER ANIMATIONS
+ * ========================================== */
+
+@keyframes launcher-unfold {
+  from {
+    opacity: 0;
+    transform: translateY(40px) rotateX(-15deg);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0) rotateX(0);
+  }
+}
+
+.launcher-animate-unfold {
+  animation: launcher-unfold 0.6s cubic-bezier(0.22, 1, 0.36, 1) forwards;
+}
+
+.launcher-stagger-1 { animation-delay: 0.1s; }
+.launcher-stagger-2 { animation-delay: 0.2s; }
+.launcher-stagger-3 { animation-delay: 0.3s; }
+.launcher-stagger-4 { animation-delay: 0.4s; }
+
+/* Respeitar preferências de movimento reduzido */
+@media (prefers-reduced-motion: reduce) {
+  .launcher-card:hover,
+  .launcher-card-editorial:hover {
+    transform: none;
+  }
+
+  .launcher-animate-unfold {
+    animation: none;
+    opacity: 1;
+  }
+}

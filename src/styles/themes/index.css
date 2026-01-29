@@ -1,0 +1,14 @@
+/**
+ * MiniApps Theme System
+ *
+ * Este arquivo importa todos os temas disponíveis.
+ * Cada tema define tokens CSS específicos para sua aplicação.
+ *
+ * Uso:
+ * - Adicione data-theme="launcher|ytpm|scanner" ao elemento raiz
+ * - Ou use as classes específicas de cada tema diretamente
+ */
+
+@import './launcher.css';
+@import './ytpm.css';
+@import './scanner.css';

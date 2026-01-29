@@ -93,8 +93,8 @@ function ArrowRightIcon({ className }) {
   )
 }
 
-// Componente de Card de App com acessibilidade melhorada
-function AppCard({ title, description, icon: Icon, href, gradient, hoverGradient, iconBg, openInNewTab, features }) {
+// Componente de Card de App com estilo editorial
+function AppCard({ title, description, icon: Icon, href, iconBg, openInNewTab, features }) {
   const [isHovered, setIsHovered] = useState(false)
 
   return (
@@ -104,13 +104,10 @@ function AppCard({ title, description, icon: Icon, href, gradient, hoverGradient
       rel={openInNewTab ? "noopener noreferrer" : undefined}
       aria-label={`${title} - ${description}`}
       className={`
-        relative block p-6 rounded-2xl border border-gray-700/50
-        transition-all duration-normal ease-out
-        hover:scale-105 hover:border-gray-600/50
-        hover:shadow-2xl hover:shadow-primary-500/20
-        focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary-500 focus-visible:ring-offset-2 focus-visible:ring-offset-gray-900
-        ${isHovered ? hoverGradient : gradient}
-        card-shine
+        launcher-card-editorial
+        relative block p-8
+        focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-launcher-highlight focus-visible:ring-offset-2 focus-visible:ring-offset-launcher-bg
+        opacity-0 launcher-animate-unfold
       `}
       onMouseEnter={() => setIsHovered(true)}
       onMouseLeave={() => setIsHovered(false)}
@@ -118,40 +115,43 @@ function AppCard({ title, description, icon: Icon, href, gradient, hoverGradient
       {/* Glow effect */}
       <div
         className={`
-          absolute inset-0 rounded-2xl opacity-0 transition-opacity duration-normal
-          ${isHovered ? 'opacity-20' : ''}
+          absolute inset-0 rounded-2xl opacity-0 transition-opacity duration-300
+          ${isHovered ? 'opacity-15' : ''}
           bg-gradient-to-r ${iconBg}
-          blur-xl
+          blur-xl -z-10
         `}
         aria-hidden="true"
       />
 
       <div className="relative z-10">
-        {/* Ícone */}
+        {/* Ícone com gradiente */}
         <div className={`
-          w-16 h-16 rounded-xl flex items-center justify-center mb-4
+          w-14 h-14 rounded-xl flex items-center justify-center mb-6
           bg-gradient-to-br ${iconBg}
           shadow-lg
         `}>
-          <Icon className="w-8 h-8 text-white" />
+          <Icon className="w-7 h-7 text-white" />
         </div>
 
-        {/* Título */}
-        <h2 className="text-xl font-bold text-white mb-2">
+        {/* Título em tipografia heading */}
+        <h2 className="text-heading-md text-launcher-highlight mb-3">
           {title}
         </h2>
 
+        {/* Linha decorativa */}
+        <div className="decorative-line mb-4" aria-hidden="true" />
+
         {/* Descrição */}
-        <p className="text-gray-400 text-sm leading-relaxed mb-3">
+        <p className="text-ui-sm text-launcher-muted leading-relaxed mb-4">
           {description}
         </p>
 
         {/* Features list */}
         {features && (
-          <ul className="space-y-1 mb-4">
+          <ul className="space-y-2 mb-6">
             {features.map((feature, index) => (
-              <li key={index} className="flex items-center gap-2 text-xs text-gray-500">
-                <CheckIcon className="w-3 h-3 text-success-500 flex-shrink-0" />
+              <li key={index} className="flex items-center gap-2 text-ui-sm text-launcher-accent">
+                <CheckIcon className="w-3.5 h-3.5 text-success-500 flex-shrink-0" />
                 <span>{feature}</span>
               </li>
             ))}
@@ -159,10 +159,10 @@ function AppCard({ title, description, icon: Icon, href, gradient, hoverGradient
         )}
 
         {/* Indicador de "Abrir" */}
-        <div className="mt-4 flex items-center text-sm font-medium text-primary-400">
-          <span>Abrir aplicativo</span>
+        <div className="flex items-center text-button text-launcher-highlight group-hover:text-white">
+          <span>Abrir</span>
           <ArrowRightIcon
-            className={`w-4 h-4 ml-2 transition-transform duration-normal ${isHovered ? 'translate-x-1' : ''}`}
+            className={`w-4 h-4 ml-2 transition-transform duration-300 ${isHovered ? 'translate-x-1' : ''}`}
           />
         </div>
       </div>
@@ -174,49 +174,48 @@ function AppCard({ title, description, icon: Icon, href, gradient, hoverGradient
 function GettingStartedSection() {
   const steps = [
     {
-      number: '1',
-      title: 'Escolha um aplicativo',
-      description: 'Selecione um dos mini-apps disponíveis acima',
+      number: '01',
+      title: 'Faça login com Google',
+      description: 'Use sua conta para acessar recursos completos',
     },
     {
-      number: '2',
-      title: 'Faça login (se necessário)',
-      description: 'Use sua conta Google para acessar recursos completos',
+      number: '02',
+      title: 'Escolha seu aplicativo',
+      description: 'Selecione um dos mini-apps disponíveis',
     },
     {
-      number: '3',
-      title: 'Aproveite!',
-      description: 'Explore todas as funcionalidades do aplicativo',
+      number: '03',
+      title: 'Comece a usar',
+      description: 'Explore todas as funcionalidades',
     },
   ]
 
   return (
     <section
       aria-labelledby="getting-started-heading"
-      className="px-6 py-8 animate-fade-in-up"
-      style={{ animationDelay: '200ms' }}
+      className="px-6 py-12 opacity-0 launcher-animate-unfold launcher-stagger-3"
     >
       <div className="max-w-4xl mx-auto">
-        <div className="bg-gray-800/30 border border-gray-700/50 rounded-2xl p-6">
+        <div className="launcher-card p-8">
           <h2
             id="getting-started-heading"
-            className="text-lg font-semibold text-white mb-4 flex items-center gap-2"
+            className="text-heading-xs text-launcher-muted mb-6 tracking-widest"
           >
-            <span className="w-8 h-8 rounded-lg bg-primary-500/20 flex items-center justify-center">
-              <span className="text-primary-400 text-sm">?</span>
-            </span>
-            Começando
+            COMEÇANDO
           </h2>
 
-          <div className="grid md:grid-cols-3 gap-4">
-            {steps.map((step) => (
-              <div key={step.number} className="flex gap-3">
-                <div className="w-8 h-8 rounded-full bg-gray-700/50 flex items-center justify-center flex-shrink-0">
-                  <span className="text-sm font-medium text-gray-300">{step.number}</span>
-                </div>
-                <div>
-                  <h3 className="text-sm font-medium text-white">{step.title}</h3>
-                  <p className="text-xs text-gray-500 mt-1">{step.description}</p>
+          <div className="space-y-6">
+            {steps.map((step, index) => (
+              <div key={step.number} className="flex items-start gap-4">
+                <span className="text-data-md text-launcher-muted font-mono">
+                  {step.number}
+                </span>
+                <div className="flex items-center gap-4 flex-1">
+                  <span className="w-8 h-px bg-launcher-border" aria-hidden="true" />
+                  <div>
+                    <h3 className="text-ui-md text-launcher-highlight">{step.title}</h3>
+                    <p className="text-ui-sm text-launcher-muted mt-1">{step.description}</p>
+                  </div>
                 </div>
               </div>
             ))}
@@ -237,28 +236,24 @@ export default function Home() {
 
   const apps = [
     {
-      title: 'YT Playlist Manager Pro',
-      description: 'Gerencie suas playlists do YouTube de forma profissional.',
+      title: 'YouTube Playlist Manager',
+      description: 'Gerencie playlists como um profissional. Sincronize, transfira e monitore.',
       icon: YouTubeIcon,
       href: ytpmUrl,
-      gradient: 'bg-gray-800/50',
-      hoverGradient: 'bg-gray-800/80',
       iconBg: 'from-red-500 to-red-700',
       openInNewTab: isDev,
       features: [
-        'Sincronize playlists',
-        'Transfira vídeos',
-        'Monitore sua quota',
+        'Sincronização automática',
+        'Transfer entre playlists',
+        'Monitoramento de quota',
       ],
     },
     {
-      title: 'ScanQRCodeBar',
-      description: 'Escaneie QR Codes e códigos de barras com facilidade.',
+      title: 'Scanner QR Code',
+      description: 'Escaneie códigos instantaneamente. QR Code, barras e OCR.',
       icon: QRCodeIcon,
       href: scannerUrl,
-      gradient: 'bg-gray-800/50',
-      hoverGradient: 'bg-gray-800/80',
-      iconBg: 'from-emerald-500 to-teal-600',
+      iconBg: 'from-cyan-500 to-teal-600',
       openInNewTab: isDev,
       features: [
         'QR Code e códigos de barras',
@@ -269,26 +264,18 @@ export default function Home() {
   ]
 
   return (
-    <div className="min-h-screen flex flex-col">
-      {/* Header */}
-      <header className="pt-12 pb-8 px-6" role="banner">
-        <div className="max-w-4xl mx-auto text-center animate-fade-in-up">
-          {/* Logo */}
-          <div
-            className="inline-flex items-center justify-center w-20 h-20 rounded-2xl bg-gradient-to-br from-primary-500 to-primary-700 shadow-lg shadow-primary-500/30 mb-6"
-            aria-hidden="true"
-          >
-            <AppsIcon className="w-10 h-10 text-white" />
-          </div>
-
-          {/* Título */}
-          <h1 className="text-4xl md:text-5xl font-bold bg-gradient-to-r from-white via-gray-200 to-gray-400 bg-clip-text text-transparent mb-4">
-            MiniApps
+    <div className="min-h-screen flex flex-col launcher-bg-mesh">
+      {/* Header com estilo editorial */}
+      <header className="pt-16 pb-12 px-6 hero-launcher" role="banner">
+        <div className="max-w-4xl mx-auto text-center">
+          {/* Título principal com tipografia display */}
+          <h1 className="text-display-xl text-launcher-highlight mb-6 opacity-0 launcher-animate-unfold">
+            MINIAPPS
           </h1>
 
-          {/* Subtítulo */}
-          <p className="text-gray-400 text-lg max-w-md mx-auto">
-            Sua central de aplicativos. Escolha um app para começar.
+          {/* Subtítulo editorial em itálico */}
+          <p className="text-editorial text-launcher-muted max-w-lg mx-auto opacity-0 launcher-animate-unfold launcher-stagger-1">
+            "Sua central de aplicativos"
           </p>
         </div>
       </header>
@@ -302,9 +289,11 @@ export default function Home() {
         >
           <h2 id="apps-heading" className="sr-only">Aplicativos disponíveis</h2>
           <div className="max-w-4xl mx-auto">
-            <div className="grid md:grid-cols-2 gap-6 stagger-animation">
-              {apps.map((app) => (
-                <AppCard key={app.title} {...app} />
+            <div className="grid md:grid-cols-2 gap-8">
+              {apps.map((app, index) => (
+                <div key={app.title} className={`launcher-stagger-${index + 1}`}>
+                  <AppCard {...app} />
+                </div>
               ))}
             </div>
           </div>
@@ -314,41 +303,48 @@ export default function Home() {
         <GettingStartedSection />
       </main>
 
-      {/* Footer */}
-      <footer className="py-6 px-6 border-t border-gray-800" role="contentinfo">
+      {/* Footer com estilo editorial */}
+      <footer className="py-8 px-6 border-t border-launcher-border" role="contentinfo">
         <div className="max-w-4xl mx-auto">
-          <div className="flex flex-col md:flex-row justify-between items-center gap-4">
-            <div className="text-center md:text-left">
-              <p className="text-gray-500 text-sm">
-                Para iniciar os apps, execute:{' '}
-                <code className="bg-gray-800 px-2 py-1 rounded text-primary-400 text-xs">
-                  npm run dev:all
-                </code>
-              </p>
-              <p className="text-gray-600 text-xs mt-1">
-                Launcher: 3000 | YTPM: 3001 | Scanner: 3002
-              </p>
-            </div>
+          {/* Linha decorativa */}
+          <div className="decorative-line mb-8" aria-hidden="true" />
 
+          <div className="flex flex-col md:flex-row justify-between items-center gap-6">
             <nav aria-label="Links do rodapé">
-              <ul className="flex items-center gap-4 text-sm">
+              <ul className="flex items-center gap-6 text-ui-sm">
+                <li>
+                  <a
+                    href="#"
+                    className="text-launcher-muted hover:text-launcher-highlight transition-colors duration-200"
+                  >
+                    Sobre
+                  </a>
+                </li>
+                <li>
+                  <a
+                    href="#"
+                    className="text-launcher-muted hover:text-launcher-highlight transition-colors duration-200"
+                  >
+                    Privacidade
+                  </a>
+                </li>
                 <li>
                   <a
                     href="https://github.com/glauberbessa/MiniApps"
                     target="_blank"
                     rel="noopener noreferrer"
-                    className="text-gray-500 hover:text-gray-300 transition-colors duration-fast"
+                    className="text-launcher-muted hover:text-launcher-highlight transition-colors duration-200"
                   >
                     GitHub
                   </a>
                 </li>
               </ul>
             </nav>
-          </div>
 
-          <p className="text-center text-gray-600 text-xs mt-4">
-            © {new Date().getFullYear()} MiniApps. Todos os direitos reservados.
-          </p>
+            <p className="text-ui-sm text-launcher-muted">
+              © {new Date().getFullYear()} MiniApps
+            </p>
+          </div>
         </div>
       </footer>
     </div>

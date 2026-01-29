@@ -19,8 +19,15 @@ module.exports = {
     },
     extend: {
       fontFamily: {
+        // Fonts genéricas do sistema
         sans: ['var(--font-sans)', 'ui-sans-serif', 'system-ui', '-apple-system', 'sans-serif'],
         mono: ['var(--font-mono)', 'ui-monospace', 'monospace'],
+        // Fonts distintivas por aplicação
+        display: ['var(--font-display)', 'Georgia', 'serif'], // Playfair Display - Launcher
+        ui: ['var(--font-ui)', 'system-ui', 'sans-serif'], // DM Sans - Launcher UI
+        heading: ['var(--font-heading)', 'system-ui', 'sans-serif'], // Space Grotesk - YTPM
+        body: ['var(--font-body)', 'system-ui', 'sans-serif'], // Inter - YTPM body
+        data: ['var(--font-mono)', 'monospace'], // JetBrains Mono - Dados/código
       },
       colors: {
         border: "hsl(var(--border))",
@@ -138,6 +145,40 @@ module.exports = {
           800: 'hsl(var(--color-gray-800))',
           900: 'hsl(var(--color-gray-900))',
           950: 'hsl(var(--color-gray-950))',
+        },
+        // ========================================
+        // CORES POR APLICAÇÃO - IDENTIDADE VISUAL
+        // ========================================
+        // Launcher - Editorial Dark
+        launcher: {
+          bg: 'var(--launcher-bg)',
+          surface: 'var(--launcher-surface)',
+          accent: 'var(--launcher-accent)',
+          muted: 'var(--launcher-muted)',
+          highlight: 'var(--launcher-highlight)',
+          border: 'var(--launcher-border)',
+        },
+        // YTPM - Industrial Dark com YouTube Red
+        ytpm: {
+          bg: 'var(--ytpm-bg)',
+          surface: 'var(--ytpm-surface)',
+          card: 'var(--ytpm-card)',
+          accent: 'var(--ytpm-accent)',
+          'accent-soft': 'var(--ytpm-accent-soft)',
+          success: 'var(--ytpm-success)',
+          warning: 'var(--ytpm-warning)',
+          text: 'var(--ytpm-text)',
+          muted: 'var(--ytpm-muted)',
+        },
+        // Scanner - Soft Dark com Cyan
+        scanner: {
+          bg: 'var(--scanner-bg)',
+          surface: 'var(--scanner-surface)',
+          accent: 'var(--scanner-accent)',
+          success: 'var(--scanner-success)',
+          text: 'var(--scanner-text)',
+          muted: 'var(--scanner-muted)',
+          glow: 'var(--scanner-glow)',
         },
       },
       borderRadius: {

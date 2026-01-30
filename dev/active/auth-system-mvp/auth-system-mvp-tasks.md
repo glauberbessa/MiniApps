@@ -1,38 +1,42 @@
 # Checklist de Tarefas: Sistema de Autenticação MVP
 
-**Última atualização:** 2026-01-30 (v2 - Adicionada Fase 9: Integração Home)
+**Última atualização:** 2026-01-30 (v3 - Fase 1 Completa)
 
 ---
 
-## Fase 1: Infraestrutura (Base)
+## Fase 1: Infraestrutura (Base) ✅ COMPLETA
 
 ### 1.1 Dependências
-- [ ] Instalar bcryptjs e @types/bcryptjs
-- [ ] Instalar resend
+- [x] Instalar bcryptjs e @types/bcryptjs
+- [x] Instalar resend
 
 ### 1.2 Schema Prisma
-- [ ] Adicionar campo `password` (String?) ao User
-- [ ] Adicionar campo `isActive` (Boolean, default true) ao User
-- [ ] Adicionar campo `loginAttempts` (Int, default 0) ao User
-- [ ] Adicionar campo `lockedUntil` (DateTime?) ao User
-- [ ] Adicionar campo `passwordResetToken` (String? @unique) ao User
-- [ ] Adicionar campo `passwordResetExpires` (DateTime?) ao User
-- [ ] Executar `npm run db:push`
+- [x] Adicionar campo `password` (String?) ao User
+- [x] Adicionar campo `isActive` (Boolean, default true) ao User
+- [x] Adicionar campo `loginAttempts` (Int, default 0) ao User
+- [x] Adicionar campo `lockedUntil` (DateTime?) ao User
+- [x] Adicionar campo `passwordResetToken` (String? @unique) ao User
+- [x] Adicionar campo `passwordResetExpires` (DateTime?) ao User
+- [x] Gerar Prisma client (`npx prisma generate`)
+- [ ] Executar `npm run db:push` (pendente: requer DATABASE_URL)
 
 ### 1.3 Utilitários
-- [ ] Criar `src/lib/password.ts` (hashPassword, verifyPassword)
-- [ ] Criar `src/lib/tokens.ts` (generateToken)
-- [ ] Criar `src/lib/rate-limit.ts` (checkLoginAttempts, incrementAttempts, resetAttempts)
-- [ ] Criar `src/lib/email.ts` (sendPasswordResetEmail)
+- [x] Criar `src/lib/password.ts` (hashPassword, verifyPassword)
+- [x] Criar `src/lib/tokens.ts` (generateToken, getTokenExpiration, isTokenExpired)
+- [x] Criar `src/lib/rate-limit.ts` (checkLoginAttempts, incrementAttempts, resetAttempts, getLockoutMessage)
+- [x] Criar `src/lib/email.ts` (sendPasswordResetEmail com templates HTML/texto)
 
 ### 1.4 Validações
-- [ ] Criar `src/lib/validations/auth.ts` com schemas Zod:
-  - [ ] passwordSchema (regras de força)
-  - [ ] loginSchema
-  - [ ] registerSchema
-  - [ ] forgotPasswordSchema
-  - [ ] resetPasswordSchema
-  - [ ] changePasswordSchema
+- [x] Criar `src/lib/validations/auth.ts` com schemas Zod:
+  - [x] passwordSchema (regras de força)
+  - [x] emailSchema
+  - [x] loginSchema
+  - [x] registerSchema
+  - [x] forgotPasswordSchema
+  - [x] resetPasswordSchema
+  - [x] changePasswordSchema
+  - [x] Helpers de força da senha (evaluatePasswordCriteria, calculatePasswordStrength)
+  - [x] Labels e cores para indicador de força
 
 ---
 

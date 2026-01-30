@@ -47,6 +47,14 @@ model User {
   image            String?
   youtubeChannelId String?   @unique
 
+  // Campos de autenticação por senha
+  password             String?   // Nullable para usuários OAuth
+  isActive             Boolean   @default(true)
+  loginAttempts        Int       @default(0)
+  lockedUntil          DateTime?
+  passwordResetToken   String?   @unique
+  passwordResetExpires DateTime?
+
   accounts        Account[]
   sessions        Session[]
   playlistConfigs PlaylistConfig[]
@@ -55,6 +63,10 @@ model User {
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
+
+  @@index([email])
+  @@index([passwordResetToken])
+  @@index([isActive])
 }
 
 model VerificationToken {

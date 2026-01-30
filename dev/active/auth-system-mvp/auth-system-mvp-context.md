@@ -1,6 +1,22 @@
 # Contexto: Sistema de Autenticação MVP
 
-**Última atualização:** 2026-01-30 (v2 - Adicionada Fase 9: Integração Home)
+**Última atualização:** 2026-01-30 (v3 - Fase 1 Completa)
+
+---
+
+## Status do Projeto
+
+| Fase | Status |
+|------|--------|
+| Fase 1: Infraestrutura | ✅ Completa |
+| Fase 2: Backend | Pendente |
+| Fase 3: Frontend | Pendente |
+| Fase 4: E-mail | Pendente |
+| Fase 5: Middleware | Pendente |
+| Fase 6: i18n e UX | Pendente |
+| Fase 7: Testes | Pendente |
+| Fase 8: Deploy | Pendente |
+| Fase 9: Integração Home | Pendente |
 
 ---
 
@@ -8,23 +24,23 @@
 
 ### Configuração Principal
 
-| Arquivo | Ação | Descrição |
-|---------|------|-----------|
-| `prisma/schema.prisma` | MODIFICAR | Adicionar campos de auth ao User |
-| `src/lib/auth.ts` | MODIFICAR | Adicionar CredentialsProvider |
-| `middleware.ts` | MODIFICAR | Proteger rotas de perfil |
-| `package.json` | MODIFICAR | Adicionar dependências |
-| `.env` | MODIFICAR | Adicionar RESEND_API_KEY |
+| Arquivo | Ação | Status | Descrição |
+|---------|------|--------|-----------|
+| `prisma/schema.prisma` | MODIFICAR | ✅ | Campos de auth adicionados ao User |
+| `package.json` | MODIFICAR | ✅ | bcryptjs e resend adicionados |
+| `src/lib/auth.ts` | MODIFICAR | Pendente | Adicionar CredentialsProvider |
+| `middleware.ts` | MODIFICAR | Pendente | Proteger rotas de perfil |
+| `.env` | MODIFICAR | Pendente | Adicionar RESEND_API_KEY |
 
-### Novos Arquivos - Utilitários
+### Novos Arquivos - Utilitários (Fase 1 - ✅ CRIADOS)
 
-| Arquivo | Descrição |
-|---------|-----------|
-| `src/lib/password.ts` | Hash e verificação de senhas |
-| `src/lib/email.ts` | Serviço de envio de e-mails |
-| `src/lib/tokens.ts` | Geração de tokens seguros |
-| `src/lib/rate-limit.ts` | Controle de tentativas de login |
-| `src/lib/validations/auth.ts` | Schemas Zod para auth |
+| Arquivo | Status | Descrição |
+|---------|--------|-----------|
+| `src/lib/password.ts` | ✅ | Hash e verificação de senhas (bcryptjs, 12 salt rounds) |
+| `src/lib/email.ts` | ✅ | Serviço de envio de e-mails (Resend, templates HTML/texto) |
+| `src/lib/tokens.ts` | ✅ | Geração de tokens seguros (crypto.randomBytes) |
+| `src/lib/rate-limit.ts` | ✅ | Controle de tentativas (5 tentativas, 15min bloqueio) |
+| `src/lib/validations/auth.ts` | ✅ | Schemas Zod + helpers de força da senha |
 
 ### Novos Arquivos - Componentes
 
@@ -185,10 +201,10 @@ return { error: UI_TEXT.auth.invalidCredentials };
 ### Logging
 
 ```typescript
-import { Logger, LogCategory } from '@/lib/logger';
+import { logger } from '@/lib/logger';
 
-Logger.info(LogCategory.AUTH, 'User registered', { email });
-Logger.error(LogCategory.AUTH, 'Login failed', { email, reason });
+logger.info('AUTH', 'User registered', { email });
+logger.error('AUTH', 'Login failed', undefined, { email, reason });
 ```
 
 ---
@@ -220,7 +236,7 @@ export const authOptions: NextAuthConfig = {
 };
 ```
 
-### Schema Prisma Atual (User)
+### Schema Prisma Atualizado (User) - Fase 1 ✅
 
 ```prisma
 model User {
@@ -230,10 +246,27 @@ model User {
   emailVerified    DateTime?
   image            String?
   youtubeChannelId String?   @unique
+
+  // Campos de autenticação por senha (NOVOS)
+  password             String?   // Nullable para usuários OAuth
+  isActive             Boolean   @default(true)
+  loginAttempts        Int       @default(0)
+  lockedUntil          DateTime?
+  passwordResetToken   String?   @unique
+  passwordResetExpires DateTime?
+
   accounts         Account[]
   sessions         Session[]
+  playlistConfigs  PlaylistConfig[]
+  channelConfigs   ChannelConfig[]
+  quotaHistories   QuotaHistory[]
+
   createdAt        DateTime  @default(now())
   updatedAt        DateTime  @updatedAt
+
+  @@index([email])
+  @@index([passwordResetToken])
+  @@index([isActive])
 }
 ```
 

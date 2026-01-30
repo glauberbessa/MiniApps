@@ -2,20 +2,11 @@
 
 /**
  * ============================================================================
- * COMPONENTE SCANNER - O CORAÇÃO DO APLICATIVO
+ * COMPONENTE SCANNER - Redesign Fase 4
  * ============================================================================
- * 
- * 'use client' no topo indica que este é um Client Component.
- * 
- * EXPLICAÇÃO PARA DESENVOLVEDOR JÚNIOR:
- * 
- * No Next.js 13+, existem dois tipos de componentes:
- * 
- * 1. SERVER COMPONENTS (padrão): Renderizam no servidor, não têm interatividade
- * 2. CLIENT COMPONENTS: Renderizam no navegador, podem usar hooks, eventos, etc.
- * 
- * Como nosso Scanner usa câmera, eventos de clique e hooks do React,
- * PRECISA ser um Client Component, por isso o 'use client'.
+ *
+ * Fluxo Visual: IDLE → SCANNING → SUCCESS
+ * Estética: Soft/Minimal com foco no conteúdo
  * ============================================================================
  */
 
@@ -39,40 +30,98 @@ const ERROR_MESSAGES = {
   GENERIC: 'Ocorreu um erro. Tente novamente.'
 }
 
+// Ícone de QR Code
+function QRCodeIcon({ className }) {
+  return (
+    <svg className={className} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
+      <rect x="3" y="3" width="7" height="7" />
+      <rect x="14" y="3" width="7" height="7" />
+      <rect x="3" y="14" width="7" height="7" />
+      <rect x="14" y="14" width="3" height="3" />
+      <rect x="18" y="14" width="3" height="3" />
+      <rect x="14" y="18" width="3" height="3" />
+      <rect x="18" y="18" width="3" height="3" />
+    </svg>
+  )
+}
+
+// Ícone de Câmera
+function CameraIcon({ className }) {
+  return (
+    <svg className={className} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+      <path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z" />
+      <circle cx="12" cy="13" r="4" />
+    </svg>
+  )
+}
+
+// Ícone de Check
+function CheckIcon({ className }) {
+  return (
+    <svg className={className} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+      <polyline points="20 6 9 17 4 12" />
+    </svg>
+  )
+}
+
+// Ícone de Copiar
+function CopyIcon({ className }) {
+  return (
+    <svg className={className} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+      <rect x="9" y="9" width="13" height="13" rx="2" ry="2" />
+      <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1" />
+    </svg>
+  )
+}
+
+// Ícone de Refresh
+function RefreshIcon({ className }) {
+  return (
+    <svg className={className} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+      <polyline points="23 4 23 10 17 10" />
+      <path d="M20.49 15a9 9 0 1 1-2.12-9.36L23 10" />
+    </svg>
+  )
+}
+
+// Ícone de Link
+function LinkIcon({ className }) {
+  return (
+    <svg className={className} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+      <path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71" />
+      <path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71" />
+    </svg>
+  )
+}
+
+// Ícone de Home
+function HomeIcon({ className }) {
+  return (
+    <svg className={className} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+      <path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z" />
+      <polyline points="9 22 9 12 15 12 15 22" />
+    </svg>
+  )
+}
+
 export default function Scanner() {
-  // =====================================================================
-  // ESTADOS (useState)
-  // Cada useState retorna [valor, função_para_mudar_valor]
-  // =====================================================================
-  
   const [currentScreen, setCurrentScreen] = useState(SCREENS.HOME)
   const [scannedResult, setScannedResult] = useState('')
   const [copyFeedback, setCopyFeedback] = useState(false)
   const [error, setError] = useState(null)
   const [isLoading, setIsLoading] = useState(false)
-  
-  // =====================================================================
-  // REFS (useRef)
-  // Guardam valores que persistem entre renderizações sem causar re-render
-  // =====================================================================
-  
+  const [showSuccessEffect, setShowSuccessEffect] = useState(false)
+
   const scannerRef = useRef(null)
   const scannerElementId = 'qr-reader'
 
-  // =====================================================================
-  // FUNÇÃO: Copiar para Clipboard
-  // =====================================================================
-  
   const copyToClipboard = useCallback(async (text) => {
     try {
       await navigator.clipboard.writeText(text)
       setCopyFeedback(true)
-      
-      // Vibração como feedback (se disponível no dispositivo)
       if (navigator.vibrate) {
         navigator.vibrate(100)
       }
-      
       setTimeout(() => setCopyFeedback(false), 2500)
       return true
     } catch (err) {
@@ -82,10 +131,6 @@ export default function Scanner() {
     }
   }, [])
 
-  // =====================================================================
-  // FUNÇÃO: Parar o Scanner (libera a câmera)
-  // =====================================================================
-  
   const stopScanner = useCallback(async () => {
     if (scannerRef.current) {
       try {
@@ -101,85 +146,75 @@ export default function Scanner() {
     }
   }, [])
 
-  // =====================================================================
-  // FUNÇÃO: Quando um código é detectado com sucesso
-  // =====================================================================
-  
   const onScanSuccess = useCallback(async (decodedText) => {
     console.log('Código detectado:', decodedText)
-    
+
     await stopScanner()
-    
+
+    // Mostrar efeito de sucesso
+    setShowSuccessEffect(true)
+    setTimeout(() => setShowSuccessEffect(false), 600)
+
     setScannedResult(decodedText)
     setCurrentScreen(SCREENS.RESULT)
-    
-    // Copia automaticamente
+
     await copyToClipboard(decodedText)
-    
-    // Beep sonoro usando Web Audio API
+
+    // Beep sonoro
     try {
       const audioContext = new (window.AudioContext || window.webkitAudioContext)()
       const oscillator = audioContext.createOscillator()
       const gainNode = audioContext.createGain()
-      
+
       oscillator.connect(gainNode)
       gainNode.connect(audioContext.destination)
-      
-      oscillator.frequency.value = 800
+
+      oscillator.frequency.value = 880
       oscillator.type = 'sine'
-      gainNode.gain.value = 0.3
-      
+      gainNode.gain.value = 0.2
+
       oscillator.start()
-      setTimeout(() => oscillator.stop(), 150)
+      setTimeout(() => oscillator.stop(), 100)
     } catch (e) {
       // Ignora se áudio não funcionar
     }
   }, [stopScanner, copyToClipboard])
 
-  // =====================================================================
-  // FUNÇÃO: Iniciar o Scanner
-  // =====================================================================
-  
   const startScanner = useCallback(async () => {
     setError(null)
     setIsLoading(true)
-    
+
     try {
-      // Verifica HTTPS (câmera só funciona em conexão segura ou localhost)
       if (location.protocol !== 'https:' && location.hostname !== 'localhost') {
         throw new Error('HTTPS_REQUIRED')
       }
-      
+
       await stopScanner()
-      
-      // Cria instância do scanner (agora importado como módulo)
+
       scannerRef.current = new Html5Qrcode(scannerElementId)
-      
-      // Configuração
+
       const config = {
         fps: 10,
         qrbox: { width: 250, height: 250 },
         aspectRatio: 1.0,
       }
-      
+
       setCurrentScreen(SCREENS.SCANNING)
-      
-      // Aguarda o elemento DOM existir
+
       await new Promise(resolve => setTimeout(resolve, 100))
-      
-      // Inicia com câmera traseira
+
       await scannerRef.current.start(
         { facingMode: 'environment' },
         config,
         onScanSuccess,
-        () => {} // Ignora erros por frame
+        () => {}
       )
-      
+
     } catch (err) {
       console.error('Erro ao iniciar scanner:', err)
-      
+
       let errorMessage = ERROR_MESSAGES.GENERIC
-      
+
       if (err.message === 'HTTPS_REQUIRED') {
         errorMessage = ERROR_MESSAGES.HTTPS_REQUIRED
       } else if (err.name === 'NotAllowedError' || err.message?.includes('Permission')) {
@@ -187,20 +222,16 @@ export default function Scanner() {
       } else if (err.name === 'NotFoundError' || err.message?.includes('not found')) {
         errorMessage = ERROR_MESSAGES.CAMERA_NOT_FOUND
       }
-      
+
       setError(errorMessage)
       setCurrentScreen(SCREENS.HOME)
       await stopScanner()
-      
+
     } finally {
       setIsLoading(false)
     }
   }, [stopScanner, onScanSuccess])
 
-  // =====================================================================
-  // FUNÇÃO: Voltar para Home
-  // =====================================================================
-  
   const goHome = useCallback(async () => {
     await stopScanner()
     setCurrentScreen(SCREENS.HOME)
@@ -209,208 +240,248 @@ export default function Scanner() {
     setCopyFeedback(false)
   }, [stopScanner])
 
-  // =====================================================================
-  // EFFECT: Cleanup ao desmontar componente
-  // =====================================================================
-  
+  // Detecta se é uma URL
+  const isUrl = (text) => {
+    try {
+      new URL(text)
+      return true
+    } catch {
+      return false
+    }
+  }
+
   useEffect(() => {
     return () => {
       stopScanner()
     }
   }, [stopScanner])
 
-  // =====================================================================
-  // RENDERIZAÇÃO (JSX)
-  // =====================================================================
-  
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900 flex flex-col items-center justify-center p-4 font-sans">
-      <div className="w-full max-w-md">
-        
+    <div className="scanner-bg-subtle min-h-screen flex flex-col items-center justify-center p-4">
+      <div className="w-full max-w-md scanner-stagger-children">
+
         {/* HEADER */}
         <header className="text-center mb-8">
-          <div className="flex items-center justify-center gap-3 mb-2">
-            <svg 
-              className="w-10 h-10 text-emerald-400" 
-              fill="none" 
-              viewBox="0 0 24 24" 
-              stroke="currentColor"
-            >
-              <path 
-                strokeLinecap="round" 
-                strokeLinejoin="round" 
-                strokeWidth={1.5} 
-                d="M3 4a1 1 0 011-1h4a1 1 0 011 1v4a1 1 0 01-1 1H4a1 1 0 01-1-1V4zm0 12a1 1 0 011-1h4a1 1 0 011 1v4a1 1 0 01-1 1H4a1 1 0 01-1-1v-4zm12-12a1 1 0 011-1h4a1 1 0 011 1v4a1 1 0 01-1 1h-4a1 1 0 01-1-1V4zm0 8h2v2h-2v-2zm0 4h2v2h-2v-2zm4-4h2v2h-2v-2zm0 4h2v2h-2v-2zm-8 0h2v2h-2v-2zm0-4h2v2h-2v-2z" 
-              />
-            </svg>
-            <h1 className="text-3xl font-bold text-white tracking-tight">
-              Scan<span className="text-emerald-400">QR</span>Code<span className="text-amber-400">Bar</span>
-            </h1>
+          <div className="inline-flex items-center gap-3 mb-3">
+            <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-scanner-accent to-teal-500 flex items-center justify-center shadow-lg" style={{ boxShadow: '0 4px 20px -5px rgba(34, 211, 238, 0.3)' }}>
+              <QRCodeIcon className="w-6 h-6 text-white" />
+            </div>
+            <div>
+              <h1 className="text-2xl font-semibold text-scanner-text tracking-tight">
+                Scanner
+              </h1>
+              <p className="text-scanner-muted text-xs tracking-wide uppercase">
+                QR Code & Barras
+              </p>
+            </div>
           </div>
-          <p className="text-slate-400 text-sm">
-            Scanner de QR Code e Código de Barras
-          </p>
         </header>
 
-        {/* ÁREA DE CONTEÚDO */}
-        <div className="bg-slate-800/50 backdrop-blur-sm rounded-3xl p-6 shadow-2xl border border-slate-700/50">
-          
+        {/* CARD PRINCIPAL */}
+        <div className="scanner-card p-6 rounded-2xl">
+
           {/* MENSAGEM DE ERRO */}
           {error && (
-            <div className="mb-6 p-4 bg-red-500/20 border border-red-500/30 rounded-xl flex items-start gap-3">
-              <svg className="w-5 h-5 text-red-400 mt-0.5 flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
-              </svg>
-              <div>
-                <p className="text-red-300 text-sm font-medium">{error}</p>
-                <button 
-                  onClick={() => setError(null)}
-                  className="text-red-400/70 text-xs mt-1 hover:text-red-300 transition-colors"
-                >
-                  Dispensar
-                </button>
+            <div className="mb-6 p-4 rounded-xl bg-scanner-error/10 border border-scanner-error/20 scanner-animate-fade-in">
+              <div className="flex items-start gap-3">
+                <div className="w-5 h-5 rounded-full bg-scanner-error/20 flex items-center justify-center flex-shrink-0 mt-0.5">
+                  <span className="text-scanner-error text-xs">!</span>
+                </div>
+                <div>
+                  <p className="text-scanner-error text-sm">{error}</p>
+                  <button
+                    onClick={() => setError(null)}
+                    className="text-scanner-muted text-xs mt-2 hover:text-scanner-text transition-colors"
+                  >
+                    Dispensar
+                  </button>
+                </div>
               </div>
             </div>
           )}
 
-          {/* TELA HOME */}
+          {/* TELA HOME - IDLE */}
           {currentScreen === SCREENS.HOME && (
-            <div className="flex flex-col items-center py-12 animate-fadeIn">
-              <div className="w-40 h-40 mb-8 rounded-2xl bg-gradient-to-br from-emerald-500/20 to-amber-500/20 flex items-center justify-center border-2 border-dashed border-slate-600">
-                <svg className="w-20 h-20 text-slate-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1} d="M12 4v1m6 11h2m-6 0h-2v4m0-11v3m0 0h.01M12 12h4.01M16 20h4M4 12h4m12 0h.01M5 8h2a1 1 0 001-1V5a1 1 0 00-1-1H5a1 1 0 00-1 1v2a1 1 0 001 1zm12 0h2a1 1 0 001-1V5a1 1 0 00-1-1h-2a1 1 0 00-1 1v2a1 1 0 001 1zM5 20h2a1 1 0 001-1v-2a1 1 0 00-1-1H5a1 1 0 00-1 1v2a1 1 0 001 1z" />
-                </svg>
+            <div className="flex flex-col items-center py-10 scanner-animate-fade-in">
+              {/* Ícone central com glow */}
+              <div className="relative w-32 h-32 mb-8">
+                <div className="absolute inset-0 rounded-full bg-scanner-accent/10 animate-pulse" />
+                <div className="relative w-full h-full rounded-full bg-scanner-surface border border-scanner-border flex items-center justify-center">
+                  <QRCodeIcon className="w-14 h-14 text-scanner-accent" />
+                </div>
               </div>
-              
+
+              {/* Botão SCAN principal */}
               <button
                 onClick={startScanner}
                 disabled={isLoading}
-                className="group relative px-12 py-5 bg-gradient-to-r from-emerald-500 to-emerald-600 hover:from-emerald-400 hover:to-emerald-500 text-white font-bold text-xl rounded-2xl shadow-lg shadow-emerald-500/30 transition-all duration-300 hover:scale-105 hover:shadow-emerald-500/50 disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:scale-100 active:scale-95"
+                className="scanner-btn scanner-btn-primary px-10 py-4 text-lg font-semibold flex items-center gap-3 disabled:opacity-50 disabled:cursor-not-allowed"
               >
                 {isLoading ? (
-                  <span className="flex items-center gap-3">
-                    <svg className="w-6 h-6 animate-spin" fill="none" viewBox="0 0 24 24">
+                  <>
+                    <svg className="w-5 h-5 animate-spin" fill="none" viewBox="0 0 24 24">
                       <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
                       <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" />
                     </svg>
-                    Iniciando...
-                  </span>
+                    <span>Iniciando...</span>
+                  </>
                 ) : (
-                  <span className="flex items-center gap-3">
-                    <svg className="w-7 h-7 group-hover:animate-pulse" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 9a2 2 0 012-2h.93a2 2 0 001.664-.89l.812-1.22A2 2 0 0110.07 4h3.86a2 2 0 011.664.89l.812 1.22A2 2 0 0018.07 7H19a2 2 0 012 2v9a2 2 0 01-2 2H5a2 2 0 01-2-2V9z" />
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 13a3 3 0 11-6 0 3 3 0 016 0z" />
-                    </svg>
-                    SCAN
-                  </span>
+                  <>
+                    <CameraIcon className="w-5 h-5" />
+                    <span>ESCANEAR</span>
+                  </>
                 )}
               </button>
-              
-              <p className="text-slate-500 text-sm mt-6 text-center">
-                Aponte a câmera para um QR Code<br/>ou código de barras
+
+              <p className="text-scanner-muted text-sm mt-6 text-center">
+                Aponte a câmera para um código
               </p>
             </div>
           )}
 
           {/* TELA SCANNING */}
           {currentScreen === SCREENS.SCANNING && (
-            <div className="animate-fadeIn">
-              <div className="relative">
-                {/* Bordas decorativas */}
-                <div className="absolute top-0 left-0 w-8 h-8 border-t-4 border-l-4 border-emerald-400 rounded-tl-lg z-10" />
-                <div className="absolute top-0 right-0 w-8 h-8 border-t-4 border-r-4 border-emerald-400 rounded-tr-lg z-10" />
-                <div className="absolute bottom-0 left-0 w-8 h-8 border-b-4 border-l-4 border-emerald-400 rounded-bl-lg z-10" />
-                <div className="absolute bottom-0 right-0 w-8 h-8 border-b-4 border-r-4 border-emerald-400 rounded-br-lg z-10" />
-                
+            <div className="scanner-animate-fade-in">
+              {/* Viewfinder com cantos animados */}
+              <div className="scanner-viewfinder relative rounded-2xl overflow-hidden scanner-state-scanning">
+                {/* Cantos decorativos */}
+                <div className="absolute top-3 left-3 w-6 h-6 border-t-2 border-l-2 border-scanner-accent rounded-tl-lg z-10 animate-pulse" />
+                <div className="absolute top-3 right-3 w-6 h-6 border-t-2 border-r-2 border-scanner-accent rounded-tr-lg z-10 animate-pulse" style={{ animationDelay: '0.1s' }} />
+                <div className="absolute bottom-3 left-3 w-6 h-6 border-b-2 border-l-2 border-scanner-accent rounded-bl-lg z-10 animate-pulse" style={{ animationDelay: '0.2s' }} />
+                <div className="absolute bottom-3 right-3 w-6 h-6 border-b-2 border-r-2 border-scanner-accent rounded-br-lg z-10 animate-pulse" style={{ animationDelay: '0.3s' }} />
+
                 {/* Container do scanner */}
-                <div 
+                <div
                   id={scannerElementId}
-                  className="w-full aspect-square bg-black rounded-2xl overflow-hidden"
+                  className="w-full aspect-square bg-black"
                 />
-                
+
                 {/* Linha de scan animada */}
-                <div className="absolute inset-x-4 top-1/2 h-0.5 bg-gradient-to-r from-transparent via-emerald-400 to-transparent animate-scanLine" />
+                <div className="scanner-scanline" />
               </div>
-              
-              <p className="text-slate-400 text-center mt-4 text-sm animate-pulse">
-                Posicione o código na área verde
+
+              <p className="text-scanner-accent text-center mt-4 text-sm animate-pulse">
+                Buscando código...
               </p>
-              
+
               <button
                 onClick={goHome}
-                className="w-full mt-6 py-3 bg-slate-700 hover:bg-slate-600 text-slate-300 font-medium rounded-xl transition-colors"
+                className="scanner-btn scanner-btn-ghost w-full mt-6"
               >
                 Cancelar
               </button>
             </div>
           )}
 
-          {/* TELA RESULTADO */}
+          {/* TELA RESULTADO - SUCCESS */}
           {currentScreen === SCREENS.RESULT && (
-            <div className="animate-fadeIn">
+            <div className="scanner-animate-result">
+              {/* Ícone de sucesso com efeito */}
               <div className="flex justify-center mb-6">
-                <div className="w-16 h-16 bg-emerald-500/20 rounded-full flex items-center justify-center">
-                  <svg className="w-8 h-8 text-emerald-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
-                  </svg>
+                <div className="relative">
+                  {/* Partículas de sucesso */}
+                  {showSuccessEffect && (
+                    <div className="scanner-particles">
+                      {[...Array(8)].map((_, i) => (
+                        <div key={i} className="scanner-particle" style={{ left: '50%', top: '50%', marginLeft: '-3px', marginTop: '-3px' }} />
+                      ))}
+                    </div>
+                  )}
+                  {/* Anel de sucesso */}
+                  <div className="w-16 h-16 rounded-full bg-scanner-success/20 flex items-center justify-center scanner-animate-code-glow">
+                    <CheckIcon className="w-8 h-8 text-scanner-success" />
+                  </div>
                 </div>
               </div>
-              
-              <h2 className="text-slate-300 text-center font-medium mb-4">
-                Código Detectado!
+
+              <h2 className="text-scanner-text text-center font-medium mb-1">
+                Código Detectado
               </h2>
-              
-              <div className="relative">
+              <p className="text-scanner-muted text-center text-sm mb-6">
+                {isUrl(scannedResult) ? 'URL detectada' : 'Texto copiado automaticamente'}
+              </p>
+
+              {/* Resultado com estilo */}
+              <div className="scanner-result-card relative p-4 rounded-xl mb-6">
                 <textarea
                   readOnly
                   value={scannedResult}
                   onClick={(e) => e.target.select()}
-                  className="w-full p-4 bg-slate-900/50 border border-slate-600 rounded-xl text-white font-mono text-sm resize-none focus:ring-2 focus:ring-emerald-500/50 cursor-text selection:bg-emerald-500/30"
+                  className="w-full bg-transparent text-scanner-text scanner-result resize-none focus:outline-none cursor-text selection:bg-scanner-accent/30"
                   rows={3}
                 />
-                
+
                 {copyFeedback && (
-                  <div className="absolute -top-3 right-3 px-3 py-1 bg-emerald-500 text-white text-xs font-bold rounded-full shadow-lg animate-bounce">
-                    ✓ Copiado!
+                  <div className="absolute -top-3 right-3 px-3 py-1 bg-scanner-success text-black text-xs font-bold rounded-full shadow-lg">
+                    Copiado!
                   </div>
                 )}
               </div>
-              
-              <button
-                onClick={() => copyToClipboard(scannedResult)}
-                className="w-full mt-4 py-3 bg-slate-700 hover:bg-slate-600 text-slate-300 font-medium rounded-xl transition-colors flex items-center justify-center gap-2"
-              >
-                <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z" />
-                </svg>
-                Copiar Novamente
-              </button>
-              
+
+              {/* Botões de ação */}
+              <div className="flex gap-3 mb-4">
+                <button
+                  onClick={() => copyToClipboard(scannedResult)}
+                  className="scanner-btn-icon flex-1 h-12 rounded-xl"
+                  title="Copiar"
+                >
+                  <CopyIcon className="w-5 h-5" />
+                </button>
+
+                {isUrl(scannedResult) && (
+                  <a
+                    href={scannedResult}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="scanner-btn-icon flex-1 h-12 rounded-xl"
+                    title="Abrir link"
+                  >
+                    <LinkIcon className="w-5 h-5" />
+                  </a>
+                )}
+
+                <button
+                  onClick={startScanner}
+                  disabled={isLoading}
+                  className="scanner-btn-icon flex-1 h-12 rounded-xl"
+                  title="Nova leitura"
+                >
+                  <RefreshIcon className="w-5 h-5" />
+                </button>
+              </div>
+
+              {/* Botão principal de nova leitura */}
               <button
                 onClick={startScanner}
                 disabled={isLoading}
-                className="w-full mt-3 py-4 bg-gradient-to-r from-emerald-500 to-emerald-600 hover:from-emerald-400 hover:to-emerald-500 text-white font-bold rounded-xl shadow-lg shadow-emerald-500/20 transition-all hover:shadow-emerald-500/40 disabled:opacity-50 flex items-center justify-center gap-2"
+                className="scanner-btn scanner-btn-success w-full py-4 font-semibold flex items-center justify-center gap-2"
               >
-                <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 9a2 2 0 012-2h.93a2 2 0 001.664-.89l.812-1.22A2 2 0 0110.07 4h3.86a2 2 0 011.664.89l.812 1.22A2 2 0 0018.07 7H19a2 2 0 012 2v9a2 2 0 01-2 2H5a2 2 0 01-2-2V9z" />
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 13a3 3 0 11-6 0 3 3 0 016 0z" />
-                </svg>
+                <CameraIcon className="w-5 h-5" />
                 Nova Leitura
               </button>
-              
+
               <button
                 onClick={goHome}
-                className="w-full mt-3 py-2 text-slate-500 hover:text-slate-300 text-sm transition-colors"
+                className="w-full mt-3 py-2 text-scanner-muted hover:text-scanner-text text-sm transition-colors flex items-center justify-center gap-2"
               >
-                ← Voltar ao início
+                <HomeIcon className="w-4 h-4" />
+                Voltar ao início
               </button>
             </div>
           )}
         </div>
-        
+
         {/* FOOTER */}
-        <footer className="text-center mt-6 text-slate-600 text-xs">
-          <p>Requer HTTPS para acesso à câmera</p>
+        <footer className="text-center mt-6">
+          <p className="text-scanner-muted text-xs">
+            Requer HTTPS para acesso à câmera
+          </p>
+          <a
+            href="/"
+            className="inline-flex items-center gap-1 text-scanner-text-secondary text-xs mt-2 hover:text-scanner-accent transition-colors"
+          >
+            ← Voltar ao MiniApps
+          </a>
         </footer>
       </div>
     </div>

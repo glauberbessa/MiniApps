@@ -54,6 +54,22 @@
   background: var(--ytpm-bg);
 }
 
+/* Background industrial para páginas de auth */
+.ytpm-bg-industrial {
+  background:
+    radial-gradient(ellipse at 50% -20%, rgba(255, 0, 51, 0.08) 0%, transparent 50%),
+    radial-gradient(ellipse at 80% 80%, rgba(255, 0, 51, 0.04) 0%, transparent 40%),
+    var(--ytpm-bg);
+}
+
+/* Grid pattern sutil */
+.ytpm-grid-pattern {
+  background-image:
+    linear-gradient(rgba(255, 255, 255, 0.03) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(255, 255, 255, 0.03) 1px, transparent 1px);
+  background-size: 60px 60px;
+}
+
 .ytpm-bg-noise {
   background: var(--ytpm-bg);
   position: relative;
@@ -94,6 +110,15 @@
   border-color: var(--ytpm-border-hover);
   box-shadow: var(--ytpm-shadow);
   transform: translateY(-2px);
+}
+
+/* Card com efeito glass para páginas de auth */
+.ytpm-card-glass {
+  background: rgba(31, 31, 35, 0.8);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+  border: 1px solid var(--ytpm-border);
+  border-radius: 1rem;
 }
 
 /* Card com accent glow no hover */

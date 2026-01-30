@@ -12,7 +12,7 @@ interface DashboardShellProps {
 export function DashboardShell({ children }: DashboardShellProps) {
   return (
     <SidebarProvider>
-      <div className="flex h-screen">
+      <div className="flex h-screen ytpm-bg-gradient">
         {/* Sidebar - hidden on mobile */}
         <div className="hidden md:flex">
           <Sidebar />
@@ -21,8 +21,10 @@ export function DashboardShell({ children }: DashboardShellProps) {
         {/* Main content */}
         <div className="flex flex-1 flex-col overflow-hidden">
           <Header />
-          <main className="flex-1 overflow-auto bg-muted/30 p-4 md:p-6">
-            {children}
+          <main className="flex-1 overflow-auto p-4 md:p-6 ytpm-scrollbar">
+            <div className="ytpm-stagger-children">
+              {children}
+            </div>
           </main>
         </div>
       </div>

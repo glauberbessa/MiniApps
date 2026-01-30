@@ -1,12 +1,5 @@
 import { Button } from "@/components/ui/button";
-import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardHeader,
-  CardTitle,
-} from "@/components/ui/card";
-import { Youtube, ListVideo, Radio, Gauge, Check, Shield, BarChart3 } from "lucide-react";
+import { Youtube, ListVideo, Radio, Gauge, Check, Shield, BarChart3, ArrowRight, Zap } from "lucide-react";
 import { UI_TEXT } from "@/lib/i18n";
 import { signInWithGoogle } from "./actions";
 
@@ -43,18 +36,19 @@ export default function LoginPage() {
   const features = [
     {
       icon: ListVideo,
-      title: "Sincronize suas playlists",
-      description: "Acesse e gerencie todas as suas playlists do YouTube",
+      title: "Sincronização automática",
     },
     {
       icon: Radio,
-      title: "Transfira vídeos entre playlists",
-      description: "Mova ou copie vídeos facilmente entre suas playlists",
+      title: "Transfer entre playlists",
     },
     {
       icon: Gauge,
-      title: "Monitore sua quota da API",
-      description: "Acompanhe o uso diário da sua quota do YouTube",
+      title: "Monitoramento de quota",
+    },
+    {
+      icon: Zap,
+      title: "Interface profissional",
     },
   ];
 
@@ -62,124 +56,138 @@ export default function LoginPage() {
     {
       icon: BarChart3,
       title: "Estatísticas",
-      description: "Acompanhe seu uso",
+      description: "Acompanhe o uso da API em tempo real",
     },
     {
       icon: Shield,
       title: "Privacidade",
-      description: "Dados seguros",
+      description: "Seus dados permanecem seguros",
     },
   ];
 
   return (
-    <div className="w-full max-w-md">
-      <Card className="border-2 shadow-xl">
-        <CardHeader className="text-center pb-2">
-          {/* Logo */}
-          <div
-            className="mx-auto mb-4 flex h-16 w-16 items-center justify-center rounded-full bg-gradient-to-br from-red-500 to-red-700 shadow-lg shadow-red-500/30"
-            aria-hidden="true"
-          >
-            <Youtube className="h-8 w-8 text-white" />
-          </div>
-
-          {/* Título */}
-          <CardTitle className="text-2xl font-bold">
-            {UI_TEXT.auth.loginTitle}
-          </CardTitle>
-          <CardDescription className="text-base">
-            {UI_TEXT.auth.loginSubtitle}
-          </CardDescription>
-        </CardHeader>
-
-        <CardContent className="space-y-6">
-          {/* Botão de Login */}
-          <form action={signInWithGoogle}>
-            <Button
-              type="submit"
-              className="w-full h-12 text-base font-medium"
-              size="lg"
-              aria-label="Fazer login com sua conta Google"
+    <div className="w-full max-w-lg relative z-10 animate-in-up">
+      {/* Card Principal */}
+      <div className="ytpm-card-glass p-8 md:p-10 rounded-2xl border border-ytpm-border shadow-2xl">
+        {/* Header */}
+        <div className="text-center mb-8">
+          {/* Logo com badge PRO */}
+          <div className="inline-flex items-center gap-3 mb-6">
+            <div
+              className="relative flex h-14 w-14 items-center justify-center rounded-xl bg-gradient-to-br from-ytpm-accent to-red-700 shadow-lg shadow-ytpm-accent/30"
+              aria-hidden="true"
             >
-              <GoogleIcon className="mr-2 h-5 w-5" />
-              {UI_TEXT.auth.loginWithGoogle}
-            </Button>
-          </form>
-
-          {/* Separador */}
-          <div className="relative">
-            <div className="absolute inset-0 flex items-center">
-              <span className="w-full border-t border-border" />
+              <Youtube className="h-7 w-7 text-white" />
+              {/* Glow interno */}
+              <div className="absolute inset-0 rounded-xl bg-white/10" />
             </div>
-            <div className="relative flex justify-center text-xs uppercase">
-              <span className="bg-card px-2 text-muted-foreground">
-                O que você pode fazer
-              </span>
+            <div className="text-left">
+              <h1 className="text-heading-lg text-ytpm-text tracking-tight">
+                YTPM
+              </h1>
+              <span className="text-data-sm text-ytpm-accent tracking-widest">PRO</span>
             </div>
           </div>
 
-          {/* Features com checkmarks */}
-          <ul className="space-y-3" aria-label="Recursos disponíveis">
-            {features.map((feature, index) => (
-              <li key={index}>
-                <Feature
-                  icon={feature.icon}
-                  title={feature.title}
-                  description={feature.description}
-                />
-              </li>
-            ))}
-          </ul>
+          {/* Linha decorativa */}
+          <div className="h-px w-full bg-gradient-to-r from-transparent via-ytpm-border to-transparent mb-6" aria-hidden="true" />
 
-          {/* Cards de destaque */}
-          <div className="grid grid-cols-2 gap-3 pt-2">
-            {highlights.map((highlight, index) => (
-              <div
-                key={index}
-                className="flex flex-col items-center p-3 rounded-lg bg-muted/50 text-center"
-              >
+          {/* Título e subtítulo */}
+          <h2 className="text-heading-md text-ytpm-text mb-2">
+            Gerencie suas Playlists
+          </h2>
+          <p className="text-heading-xs text-ytpm-muted tracking-wide">
+            COMO UM PRO
+          </p>
+        </div>
+
+        {/* Linha separadora com estilo industrial */}
+        <div className="relative mb-8">
+          <div className="h-px bg-ytpm-border" />
+          <div className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 bg-ytpm-card px-3">
+            <div className="w-2 h-2 rounded-full bg-ytpm-accent/50" />
+          </div>
+        </div>
+
+        {/* Botão de Login - Destaque principal */}
+        <form action={signInWithGoogle} className="mb-8">
+          <Button
+            type="submit"
+            className="w-full h-14 text-base font-semibold bg-white hover:bg-gray-100 text-gray-900 rounded-xl transition-all duration-300 hover:shadow-lg hover:shadow-white/10 group"
+            size="lg"
+            aria-label="Fazer login com sua conta Google"
+          >
+            <GoogleIcon className="mr-3 h-5 w-5" />
+            <span>{UI_TEXT.auth.loginWithGoogle}</span>
+            <ArrowRight className="ml-2 h-4 w-4 opacity-0 -translate-x-2 group-hover:opacity-100 group-hover:translate-x-0 transition-all duration-300" />
+          </Button>
+        </form>
+
+        {/* Separador com texto */}
+        <div className="relative mb-8">
+          <div className="absolute inset-0 flex items-center">
+            <span className="w-full border-t border-ytpm-border" />
+          </div>
+          <div className="relative flex justify-center text-xs uppercase">
+            <span className="bg-ytpm-card px-4 text-ytpm-muted tracking-wider">
+              Recursos
+            </span>
+          </div>
+        </div>
+
+        {/* Features Grid com checkmarks estilizados */}
+        <ul className="grid grid-cols-2 gap-4 mb-8" aria-label="Recursos disponíveis">
+          {features.map((feature, index) => (
+            <li key={index}>
+              <div className="flex items-center gap-3 p-3 rounded-lg bg-ytpm-surface/50 border border-ytpm-border/50 hover:border-ytpm-accent/30 transition-colors duration-200">
+                <div
+                  className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-ytpm-accent/10"
+                  aria-hidden="true"
+                >
+                  <Check className="h-4 w-4 text-ytpm-accent" />
+                </div>
+                <span className="text-ui-sm text-ytpm-text leading-tight">{feature.title}</span>
+              </div>
+            </li>
+          ))}
+        </ul>
+
+        {/* Cards de destaque lado a lado */}
+        <div className="grid grid-cols-2 gap-4">
+          {highlights.map((highlight, index) => (
+            <div
+              key={index}
+              className="flex flex-col p-4 rounded-xl bg-ytpm-surface border border-ytpm-border hover:border-ytpm-accent/20 transition-all duration-200 group"
+            >
+              <div className="flex items-center gap-2 mb-2">
                 <highlight.icon
-                  className="h-5 w-5 text-primary mb-1"
+                  className="h-4 w-4 text-ytpm-accent"
                   aria-hidden="true"
                 />
-                <span className="text-sm font-medium">{highlight.title}</span>
-                <span className="text-xs text-muted-foreground">
-                  {highlight.description}
-                </span>
+                <span className="text-ui-sm font-medium text-ytpm-text">{highlight.title}</span>
               </div>
-            ))}
-          </div>
+              <p className="text-ui-sm text-ytpm-muted leading-relaxed">
+                {highlight.description}
+              </p>
+            </div>
+          ))}
+        </div>
 
-          {/* Aviso de privacidade */}
-          <p className="text-center text-xs text-muted-foreground pt-2">
-            {UI_TEXT.auth.loginDescription}
-          </p>
-        </CardContent>
-      </Card>
-    </div>
-  );
-}
-
-function Feature({
-  icon: Icon,
-  title,
-  description,
-}: {
-  icon: React.ElementType;
-  title: string;
-  description: string;
-}) {
-  return (
-    <div className="flex items-start gap-3">
-      <div
-        className="flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-success/20 mt-0.5"
-        aria-hidden="true"
-      >
-        <Check className="h-3 w-3 text-success" />
+        {/* Aviso de privacidade */}
+        <p className="text-center text-ui-sm text-ytpm-muted/70 mt-8">
+          {UI_TEXT.auth.loginDescription}
+        </p>
       </div>
-      <div>
-        <p className="text-sm font-medium leading-tight">{title}</p>
-        <p className="text-xs text-muted-foreground">{description}</p>
+
+      {/* Link para voltar ao launcher */}
+      <div className="text-center mt-6">
+        <a
+          href="/"
+          className="inline-flex items-center gap-2 text-ui-sm text-ytpm-muted hover:text-ytpm-text transition-colors duration-200"
+        >
+          <span>←</span>
+          <span>Voltar ao MiniApps</span>
+        </a>
       </div>
     </div>
   );

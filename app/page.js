@@ -322,7 +322,7 @@ export default function Home() {
   ]
 
   return (
-    <div className="min-h-screen flex flex-col launcher-bg-mesh">
+    <div className="min-h-screen flex flex-col launcher-bg-mesh launcher-grain launcher-selection">
       {/* Header com estilo editorial refinado */}
       <header className="pt-20 pb-16 px-6 hero-launcher relative" role="banner">
         {/* Background decorativo */}

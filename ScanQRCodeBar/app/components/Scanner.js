@@ -257,7 +257,7 @@ export default function Scanner() {
   }, [stopScanner])
 
   return (
-    <div className="scanner-bg-subtle min-h-screen flex flex-col items-center justify-center p-4">
+    <div className="scanner-bg-subtle min-h-screen flex flex-col items-center justify-center p-4 scanner-grain scanner-selection scanner-scrollbar">
       <div className="w-full max-w-md scanner-stagger-children">
 
         {/* HEADER */}

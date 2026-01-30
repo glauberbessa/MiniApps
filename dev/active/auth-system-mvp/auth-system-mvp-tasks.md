@@ -1,6 +1,6 @@
 # Checklist de Tarefas: Sistema de Autenticação MVP
 
-**Última atualização:** 2026-01-30 (v4 - Fase 2 Completa)
+**Última atualização:** 2026-01-30 (v5 - Fase 3 Completa)
 
 ---
 
@@ -88,52 +88,52 @@
 
 ---
 
-## Fase 3: Frontend (Componentes e Páginas)
+## Fase 3: Frontend (Componentes e Páginas) ✅ COMPLETA
 
 ### 3.1 Componentes UI Base
-- [ ] Criar `src/components/ui/form.tsx` (Form, FormField, FormItem, etc.)
-- [ ] Criar `src/components/ui/password-input.tsx` (input com toggle olho)
+- [x] Criar `src/components/ui/form.tsx` (Form, FormField, FormItem, etc.)
+- [x] Criar `src/components/ui/password-input.tsx` (input com toggle olho)
 
 ### 3.2 Componentes Auth
-- [ ] Criar `src/components/auth/password-strength.tsx`
-  - [ ] Calcular força da senha
-  - [ ] Mostrar barra visual
-  - [ ] Mostrar critérios atendidos
-- [ ] Criar `src/components/auth/login-form.tsx`
-- [ ] Criar `src/components/auth/register-form.tsx`
-- [ ] Criar `src/components/auth/forgot-password-form.tsx`
-- [ ] Criar `src/components/auth/reset-password-form.tsx`
-- [ ] Criar `src/components/auth/change-password-form.tsx`
+- [x] Criar `src/components/auth/password-strength.tsx`
+  - [x] Calcular força da senha
+  - [x] Mostrar barra visual
+  - [x] Mostrar critérios atendidos
+- [x] Criar `src/components/auth/login-form.tsx`
+- [x] Criar `src/components/auth/register-form.tsx`
+- [x] Criar `src/components/auth/forgot-password-form.tsx`
+- [x] Criar `src/components/auth/reset-password-form.tsx`
+- [x] Criar `src/components/auth/change-password-form.tsx`
 
 ### 3.3 Páginas
-- [ ] Criar `app/login/page.tsx`
-  - [ ] Layout com card centralizado
-  - [ ] LoginForm
-  - [ ] Link para cadastro
-  - [ ] Link para esqueci senha
-  - [ ] Botão OAuth Google
-- [ ] Criar `app/cadastro/page.tsx`
-  - [ ] Layout com card centralizado
-  - [ ] RegisterForm
-  - [ ] Link para login
-- [ ] Criar `app/esqueci-senha/page.tsx`
-  - [ ] Layout com card centralizado
-  - [ ] ForgotPasswordForm
-  - [ ] Link para login
-- [ ] Criar `app/redefinir-senha/[token]/page.tsx`
-  - [ ] Layout com card centralizado
-  - [ ] ResetPasswordForm
-  - [ ] Verificar token válido
-- [ ] Criar `app/perfil/alterar-senha/page.tsx`
-  - [ ] Layout protegido
-  - [ ] ChangePasswordForm
-  - [ ] Botão voltar
+- [x] Criar `app/login/page.tsx`
+  - [x] Layout com card centralizado
+  - [x] LoginForm
+  - [x] Link para cadastro
+  - [x] Link para esqueci senha
+  - [x] Botão OAuth Google
+- [x] Criar `app/cadastro/page.tsx`
+  - [x] Layout com card centralizado
+  - [x] RegisterForm
+  - [x] Link para login
+- [x] Criar `app/esqueci-senha/page.tsx`
+  - [x] Layout com card centralizado
+  - [x] ForgotPasswordForm
+  - [x] Link para login
+- [x] Criar `app/redefinir-senha/[token]/page.tsx`
+  - [x] Layout com card centralizado
+  - [x] ResetPasswordForm
+  - [x] Verificar token válido
+- [x] Criar `app/perfil/alterar-senha/page.tsx`
+  - [x] Layout protegido
+  - [x] ChangePasswordForm
+  - [x] Botão voltar
 
 ### 3.4 Hook de Força da Senha
-- [ ] Criar `src/hooks/use-password-strength.ts`
-  - [ ] Calcular score 0-4
-  - [ ] Retornar critérios atendidos
-  - [ ] Retornar cor do indicador
+- [x] Criar `src/hooks/use-password-strength.ts`
+  - [x] Calcular score 0-5
+  - [x] Retornar critérios atendidos
+  - [x] Retornar cor do indicador
 
 ---
 
@@ -269,7 +269,7 @@
 ## Notas
 
 ### Prioridades
-1. **Alta:** Fases 1-3 (funcionalidade básica)
+1. **Alta:** Fases 1-3 (funcionalidade básica) ✅
 2. **Média:** Fases 4-5 (e-mail e proteção)
 3. **Baixa:** Fases 6-8 (polish, testes e deploy)
 4. **Final:** Fase 9 (integração home - só após todas as outras)

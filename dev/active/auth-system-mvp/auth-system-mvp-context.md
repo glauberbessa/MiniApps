@@ -1,0 +1,259 @@
+# Contexto: Sistema de Autenticação MVP
+
+**Última atualização:** 2026-01-30
+
+---
+
+## Arquivos-Chave para Modificação
+
+### Configuração Principal
+
+| Arquivo | Ação | Descrição |
+|---------|------|-----------|
+| `prisma/schema.prisma` | MODIFICAR | Adicionar campos de auth ao User |
+| `src/lib/auth.ts` | MODIFICAR | Adicionar CredentialsProvider |
+| `middleware.ts` | MODIFICAR | Proteger rotas de perfil |
+| `package.json` | MODIFICAR | Adicionar dependências |
+| `.env` | MODIFICAR | Adicionar RESEND_API_KEY |
+
+### Novos Arquivos - Utilitários
+
+| Arquivo | Descrição |
+|---------|-----------|
+| `src/lib/password.ts` | Hash e verificação de senhas |
+| `src/lib/email.ts` | Serviço de envio de e-mails |
+| `src/lib/tokens.ts` | Geração de tokens seguros |
+| `src/lib/rate-limit.ts` | Controle de tentativas de login |
+| `src/lib/validations/auth.ts` | Schemas Zod para auth |
+
+### Novos Arquivos - Componentes
+
+| Arquivo | Descrição |
+|---------|-----------|
+| `src/components/ui/form.tsx` | Wrapper React Hook Form |
+| `src/components/ui/password-input.tsx` | Input com toggle visibilidade |
+| `src/components/auth/login-form.tsx` | Formulário de login |
+| `src/components/auth/register-form.tsx` | Formulário de cadastro |
+| `src/components/auth/forgot-password-form.tsx` | Formulário recuperação |
+| `src/components/auth/reset-password-form.tsx` | Formulário redefinição |
+| `src/components/auth/change-password-form.tsx` | Formulário alteração |
+| `src/components/auth/password-strength.tsx` | Indicador força senha |
+
+### Novos Arquivos - APIs
+
+| Arquivo | Descrição |
+|---------|-----------|
+| `app/api/auth/register/route.ts` | Endpoint de cadastro |
+| `app/api/auth/forgot-password/route.ts` | Endpoint recuperação |
+| `app/api/auth/reset-password/route.ts` | Endpoint redefinição |
+| `app/api/auth/change-password/route.ts` | Endpoint alteração |
+
+### Novos Arquivos - Páginas
+
+| Arquivo | Descrição |
+|---------|-----------|
+| `app/login/page.tsx` | Página de login |
+| `app/cadastro/page.tsx` | Página de cadastro |
+| `app/esqueci-senha/page.tsx` | Página esqueci senha |
+| `app/redefinir-senha/[token]/page.tsx` | Página redefinir senha |
+| `app/perfil/alterar-senha/page.tsx` | Página alterar senha |
+
+---
+
+## Decisões Arquiteturais
+
+### 1. bcryptjs vs bcrypt
+
+**Decisão:** Usar `bcryptjs`
+
+**Justificativa:**
+- Pure JavaScript, sem bindings nativos
+- Compatível com Vercel serverless
+- Sem problemas de build em diferentes plataformas
+- Performance suficiente para MVP
+
+### 2. Estrutura de Rotas
+
+**Decisão:** Rotas em português no path raiz
+
+**Justificativa:**
+- Aplicação em pt-BR
+- Melhor UX para usuários brasileiros
+- URLs amigáveis: `/login`, `/cadastro`, `/esqueci-senha`
+
+### 3. Coexistência OAuth + Credentials
+
+**Decisão:** Campo `password` nullable no User
+
+**Justificativa:**
+- Usuários podem ter conta OAuth sem senha
+- Usuários podem ter conta com senha sem OAuth
+- Usuários podem ter ambos (vincular depois)
+
+### 4. Serviço de E-mail
+
+**Decisão:** Resend
+
+**Justificativa:**
+- API moderna e simples
+- Free tier generoso (100 e-mails/dia)
+- Ótima deliverability
+- SDK TypeScript oficial
+
+### 5. Tokens de Recuperação
+
+**Decisão:** Campo direto no User (não tabela separada)
+
+**Justificativa:**
+- Simplicidade para MVP
+- Um token por usuário por vez
+- Fácil verificação e limpeza
+
+---
+
+## Padrões a Seguir
+
+### Validação
+
+```typescript
+// 1. Schema Zod
+const schema = z.object({ ... });
+
+// 2. Validar no cliente (React Hook Form)
+const form = useForm({ resolver: zodResolver(schema) });
+
+// 3. Validar no servidor (API route)
+const result = schema.safeParse(body);
+if (!result.success) {
+  return NextResponse.json({ error: result.error }, { status: 400 });
+}
+```
+
+### Mensagens de Erro
+
+```typescript
+// Usar i18n centralizado
+import { UI_TEXT } from '@/lib/i18n';
+
+return { error: UI_TEXT.auth.invalidCredentials };
+```
+
+### Componentes de Formulário
+
+```typescript
+// Seguir padrão shadcn/ui
+<Form {...form}>
+  <FormField
+    control={form.control}
+    name="email"
+    render={({ field }) => (
+      <FormItem>
+        <FormLabel>E-mail</FormLabel>
+        <FormControl>
+          <Input {...field} />
+        </FormControl>
+        <FormMessage />
+      </FormItem>
+    )}
+  />
+</Form>
+```
+
+### Logging
+
+```typescript
+import { Logger, LogCategory } from '@/lib/logger';
+
+Logger.info(LogCategory.AUTH, 'User registered', { email });
+Logger.error(LogCategory.AUTH, 'Login failed', { email, reason });
+```
+
+---
+
+## Referências do Projeto Existente
+
+### Componentes UI Existentes
+
+- `src/components/ui/input.tsx` - Input base
+- `src/components/ui/button.tsx` - Botões com variantes
+- `src/components/ui/card.tsx` - Cards para layouts
+- `src/components/ui/alert.tsx` - Alertas de erro
+- `src/components/ui/toast.tsx` - Notificações
+
+### Hooks Existentes
+
+- `src/hooks/use-toast.ts` - Toast notifications
+
+### Configuração NextAuth Atual
+
+```typescript
+// src/lib/auth.ts
+export const authOptions: NextAuthConfig = {
+  adapter: PrismaAdapter(prisma),
+  session: { strategy: "jwt" },
+  providers: [GoogleProvider({ ... })],
+  callbacks: { jwt, session },
+  pages: { signIn: "/ytpm/login" },
+};
+```
+
+### Schema Prisma Atual (User)
+
+```prisma
+model User {
+  id               String    @id @default(cuid())
+  name             String?
+  email            String?   @unique
+  emailVerified    DateTime?
+  image            String?
+  youtubeChannelId String?   @unique
+  accounts         Account[]
+  sessions         Session[]
+  createdAt        DateTime  @default(now())
+  updatedAt        DateTime  @updatedAt
+}
+```
+
+---
+
+## Variáveis de Ambiente Necessárias
+
+```env
+# Nova (Resend)
+RESEND_API_KEY=re_xxxxxxxxxxxx
+
+# Opcional (override URL)
+NEXT_PUBLIC_APP_URL=http://localhost:3000
+
+# Existentes (já configuradas)
+AUTH_SECRET=xxx
+NEXTAUTH_URL=xxx
+DATABASE_URL=xxx
+GOOGLE_CLIENT_ID=xxx
+GOOGLE_CLIENT_SECRET=xxx
+```
+
+---
+
+## Comandos Úteis
+
+```bash
+# Instalar dependências
+npm install bcryptjs resend
+npm install -D @types/bcryptjs
+
+# Atualizar banco de dados
+npm run db:push
+
+# Verificar schema
+npx prisma format
+
+# Abrir Prisma Studio
+npm run db:studio
+
+# Build para verificar erros
+npm run build
+
+# Lint
+npm run lint
+```

@@ -78,14 +78,21 @@ export function Sidebar({ showToggle = true, onNavigate }: SidebarProps) {
     <TooltipProvider delayDuration={0}>
       <div
         className={cn(
-          "flex h-full flex-col border-r bg-background transition-all duration-300",
+          "flex h-full flex-col border-r border-ytpm-border bg-ytpm-bg transition-all duration-300",
           isCollapsed ? "w-16" : "w-64"
         )}
       >
         {/* Logo */}
-        <div className="flex h-16 items-center gap-2 border-b px-4">
-          <Youtube className="h-8 w-8 text-primary shrink-0" />
-          {!isCollapsed && <span className="text-lg font-bold">YTPM Pro</span>}
+        <div className="flex h-16 items-center gap-3 border-b border-ytpm-border px-4">
+          <div className="relative flex h-9 w-9 items-center justify-center rounded-lg bg-gradient-to-br from-ytpm-accent to-red-700 shadow-md shadow-ytpm-accent/20 shrink-0">
+            <Youtube className="h-5 w-5 text-white" />
+          </div>
+          {!isCollapsed && (
+            <div className="flex items-baseline gap-1.5">
+              <span className="text-heading-sm text-ytpm-text tracking-tight">YTPM</span>
+              <span className="text-data-sm text-ytpm-accent">PRO</span>
+            </div>
+          )}
         </div>
 
         {/* Navigation */}
@@ -98,14 +105,14 @@ export function Sidebar({ showToggle = true, onNavigate }: SidebarProps) {
                 href={item.href}
                 onClick={handleNavigate}
                 className={cn(
-                  "flex items-center gap-3 rounded-lg px-3 py-2 text-sm font-medium transition-colors",
+                  "flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium transition-all duration-200",
                   isActive
-                    ? "bg-primary text-primary-foreground"
-                    : "text-muted-foreground hover:bg-muted hover:text-foreground",
+                    ? "bg-ytpm-accent text-white shadow-md shadow-ytpm-accent/20"
+                    : "text-ytpm-muted hover:bg-ytpm-surface hover:text-ytpm-text",
                   isCollapsed && "justify-center px-2"
                 )}
               >
-                <item.icon className="h-5 w-5 shrink-0" />
+                <item.icon className={cn("h-5 w-5 shrink-0", isActive && "drop-shadow-sm")} />
                 {!isCollapsed && item.name}
               </Link>
             );
@@ -114,7 +121,7 @@ export function Sidebar({ showToggle = true, onNavigate }: SidebarProps) {
               return (
                 <Tooltip key={item.name}>
                   <TooltipTrigger asChild>{linkContent}</TooltipTrigger>
-                  <TooltipContent side="right">
+                  <TooltipContent side="right" className="bg-ytpm-card border-ytpm-border text-ytpm-text">
                     <p>{item.name}</p>
                   </TooltipContent>
                 </Tooltip>
@@ -125,7 +132,7 @@ export function Sidebar({ showToggle = true, onNavigate }: SidebarProps) {
           })}
         </nav>
 
-        <div className="border-t p-2 space-y-2">
+        <div className="border-t border-ytpm-border p-2 space-y-2">
           <div
             className={cn(
               "flex items-center justify-between gap-2 rounded-md px-2 py-2 text-sm",
@@ -133,7 +140,7 @@ export function Sidebar({ showToggle = true, onNavigate }: SidebarProps) {
             )}
           >
             {!isCollapsed && (
-              <span className="text-muted-foreground">
+              <span className="text-ytpm-muted text-ui-sm">
                 {UI_TEXT.nav.autoCloseMenu}
               </span>
             )}
@@ -148,7 +155,7 @@ export function Sidebar({ showToggle = true, onNavigate }: SidebarProps) {
                 </div>
               </TooltipTrigger>
               {isCollapsed && (
-                <TooltipContent side="right">
+                <TooltipContent side="right" className="bg-ytpm-card border-ytpm-border text-ytpm-text">
                   <p>{UI_TEXT.nav.autoCloseMenu}</p>
                 </TooltipContent>
               )}
@@ -162,7 +169,7 @@ export function Sidebar({ showToggle = true, onNavigate }: SidebarProps) {
                   variant="ghost"
                   size="sm"
                   onClick={toggleSidebar}
-                  className={cn("w-full", isCollapsed && "px-2")}
+                  className={cn("w-full text-ytpm-muted hover:text-ytpm-text hover:bg-ytpm-surface", isCollapsed && "px-2")}
                 >
                   {isCollapsed ? (
                     <ChevronRight className="h-4 w-4" />
@@ -175,7 +182,7 @@ export function Sidebar({ showToggle = true, onNavigate }: SidebarProps) {
                 </Button>
               </TooltipTrigger>
               {isCollapsed && (
-                <TooltipContent side="right">
+                <TooltipContent side="right" className="bg-ytpm-card border-ytpm-border text-ytpm-text">
                   <p>Expandir menu</p>
                 </TooltipContent>
               )}

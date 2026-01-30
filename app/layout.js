@@ -1,6 +1,7 @@
 import './globals.css'
 import { Playfair_Display, DM_Sans, Space_Grotesk, JetBrains_Mono, Inter } from 'next/font/google'
 import { ThemeProvider } from '@/components/providers/theme-provider'
+import { AccessibilityProvider } from '@/components/providers/accessibility-provider'
 
 // Fonts distintivas por aplicação
 const playfairDisplay = Playfair_Display({
@@ -62,14 +63,16 @@ export default function RootLayout({ children }) {
     >
       <body className="text-foreground antialiased min-h-screen font-ui">
         <ThemeProvider>
-          {/* Skip Link para acessibilidade (WCAG 2.4.1) */}
-          <a
-            href="#main-content"
-            className="skip-link"
-          >
-            Pular para o conteúdo principal
-          </a>
-          {children}
+          <AccessibilityProvider>
+            {/* Skip Link para acessibilidade (WCAG 2.4.1) */}
+            <a
+              href="#main-content"
+              className="skip-link"
+            >
+              Pular para o conteúdo principal
+            </a>
+            {children}
+          </AccessibilityProvider>
         </ThemeProvider>
       </body>
     </html>

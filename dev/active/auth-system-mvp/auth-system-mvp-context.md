@@ -1,6 +1,6 @@
 # Contexto: Sistema de Autenticação MVP
 
-**Última atualização:** 2026-01-30 (v5 - Fase 3 Completa)
+**Última atualização:** 2026-01-30 (v6 - Fase 4 Completa)
 
 ---
 
@@ -11,7 +11,7 @@
 | Fase 1: Infraestrutura | ✅ Completa |
 | Fase 2: Backend | ✅ Completa |
 | Fase 3: Frontend | ✅ Completa |
-| Fase 4: E-mail | Pendente |
+| Fase 4: E-mail | ✅ Completa |
 | Fase 5: Middleware | Pendente |
 | Fase 6: i18n e UX | Pendente |
 | Fase 7: Testes | Pendente |
@@ -30,14 +30,14 @@
 | `package.json` | MODIFICAR | ✅ | bcryptjs e resend adicionados |
 | `src/lib/auth.ts` | MODIFICAR | ✅ | CredentialsProvider adicionado |
 | `middleware.ts` | MODIFICAR | Pendente | Proteger rotas de perfil |
-| `.env` | MODIFICAR | Pendente | Adicionar RESEND_API_KEY |
+| `.env` | MODIFICAR | ✅ (vars em .env.example) | Adicionar RESEND_API_KEY e EMAIL_FROM |
 
 ### Novos Arquivos - Utilitários (Fase 1 - ✅ CRIADOS)
 
 | Arquivo | Status | Descrição |
 |---------|--------|-----------|
 | `src/lib/password.ts` | ✅ | Hash e verificação de senhas (bcryptjs, 12 salt rounds) |
-| `src/lib/email.ts` | ✅ | Serviço de envio de e-mails (Resend, templates HTML/texto) |
+| `src/lib/email.ts` | ✅ | Serviço de e-mails (Resend): recuperação de senha + boas-vindas |
 | `src/lib/tokens.ts` | ✅ | Geração de tokens seguros (crypto.randomBytes) |
 | `src/lib/rate-limit.ts` | ✅ | Controle de tentativas (5 tentativas, 15min bloqueio) |
 | `src/lib/validations/auth.ts` | ✅ | Schemas Zod + helpers de força da senha |

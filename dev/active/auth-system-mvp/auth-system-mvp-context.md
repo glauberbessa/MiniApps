@@ -1,6 +1,6 @@
 # Contexto: Sistema de Autenticação MVP
 
-**Última atualização:** 2026-01-30 (v3 - Fase 1 Completa)
+**Última atualização:** 2026-01-30 (v4 - Fase 2 Completa)
 
 ---
 
@@ -9,7 +9,7 @@
 | Fase | Status |
 |------|--------|
 | Fase 1: Infraestrutura | ✅ Completa |
-| Fase 2: Backend | Pendente |
+| Fase 2: Backend | ✅ Completa |
 | Fase 3: Frontend | Pendente |
 | Fase 4: E-mail | Pendente |
 | Fase 5: Middleware | Pendente |
@@ -28,7 +28,7 @@
 |---------|------|--------|-----------|
 | `prisma/schema.prisma` | MODIFICAR | ✅ | Campos de auth adicionados ao User |
 | `package.json` | MODIFICAR | ✅ | bcryptjs e resend adicionados |
-| `src/lib/auth.ts` | MODIFICAR | Pendente | Adicionar CredentialsProvider |
+| `src/lib/auth.ts` | MODIFICAR | ✅ | CredentialsProvider adicionado |
 | `middleware.ts` | MODIFICAR | Pendente | Proteger rotas de perfil |
 | `.env` | MODIFICAR | Pendente | Adicionar RESEND_API_KEY |
 
@@ -55,14 +55,14 @@
 | `src/components/auth/change-password-form.tsx` | Formulário alteração |
 | `src/components/auth/password-strength.tsx` | Indicador força senha |
 
-### Novos Arquivos - APIs
+### Novos Arquivos - APIs (Fase 2 - ✅ CRIADOS)
 
-| Arquivo | Descrição |
-|---------|-----------|
-| `app/api/auth/register/route.ts` | Endpoint de cadastro |
-| `app/api/auth/forgot-password/route.ts` | Endpoint recuperação |
-| `app/api/auth/reset-password/route.ts` | Endpoint redefinição |
-| `app/api/auth/change-password/route.ts` | Endpoint alteração |
+| Arquivo | Status | Descrição |
+|---------|--------|-----------|
+| `app/api/auth/register/route.ts` | ✅ | Endpoint de cadastro |
+| `app/api/auth/forgot-password/route.ts` | ✅ | Endpoint recuperação |
+| `app/api/auth/reset-password/route.ts` | ✅ | Endpoint redefinição |
+| `app/api/auth/change-password/route.ts` | ✅ | Endpoint alteração |
 
 ### Novos Arquivos - Páginas
 

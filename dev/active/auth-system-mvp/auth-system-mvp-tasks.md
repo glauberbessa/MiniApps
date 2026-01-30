@@ -1,6 +1,6 @@
 # Checklist de Tarefas: Sistema de Autenticação MVP
 
-**Última atualização:** 2026-01-30 (v3 - Fase 1 Completa)
+**Última atualização:** 2026-01-30 (v4 - Fase 2 Completa)
 
 ---
 
@@ -40,51 +40,51 @@
 
 ---
 
-## Fase 2: Backend (APIs e NextAuth)
+## Fase 2: Backend (APIs e NextAuth) ✅ COMPLETA
 
 ### 2.1 NextAuth
-- [ ] Adicionar CredentialsProvider em `src/lib/auth.ts`
-- [ ] Implementar função `authorize`:
-  - [ ] Validar campos
-  - [ ] Verificar se usuário existe
-  - [ ] Verificar se está ativo
-  - [ ] Verificar bloqueio por tentativas
-  - [ ] Verificar senha
-  - [ ] Resetar tentativas em sucesso
-  - [ ] Incrementar tentativas em falha
-- [ ] Atualizar callback de session para incluir isActive
+- [x] Adicionar CredentialsProvider em `src/lib/auth.ts`
+- [x] Implementar função `authorize`:
+  - [x] Validar campos
+  - [x] Verificar se usuário existe
+  - [x] Verificar se está ativo
+  - [x] Verificar bloqueio por tentativas
+  - [x] Verificar senha
+  - [x] Resetar tentativas em sucesso
+  - [x] Incrementar tentativas em falha
+- [x] Atualizar callback de signIn para credentials
 
 ### 2.2 API - Cadastro
-- [ ] Criar `app/api/auth/register/route.ts`
-  - [ ] POST: validar dados
-  - [ ] Verificar e-mail único
-  - [ ] Hash da senha
-  - [ ] Criar usuário
-  - [ ] Retornar sucesso
+- [x] Criar `app/api/auth/register/route.ts`
+  - [x] POST: validar dados
+  - [x] Verificar e-mail único
+  - [x] Hash da senha
+  - [x] Criar usuário
+  - [x] Retornar sucesso
 
 ### 2.3 API - Esqueci Senha
-- [ ] Criar `app/api/auth/forgot-password/route.ts`
-  - [ ] POST: validar e-mail
-  - [ ] Gerar token
-  - [ ] Salvar token e expiração no User
-  - [ ] Enviar e-mail (ou log em dev)
-  - [ ] Retornar mensagem genérica
+- [x] Criar `app/api/auth/forgot-password/route.ts`
+  - [x] POST: validar e-mail
+  - [x] Gerar token
+  - [x] Salvar token e expiração no User
+  - [x] Enviar e-mail (ou log em dev)
+  - [x] Retornar mensagem genérica
 
 ### 2.4 API - Redefinir Senha
-- [ ] Criar `app/api/auth/reset-password/route.ts`
-  - [ ] POST: validar token e senha
-  - [ ] Verificar token válido e não expirado
-  - [ ] Hash da nova senha
-  - [ ] Atualizar senha e limpar token
-  - [ ] Retornar sucesso
+- [x] Criar `app/api/auth/reset-password/route.ts`
+  - [x] POST: validar token e senha
+  - [x] Verificar token válido e não expirado
+  - [x] Hash da nova senha
+  - [x] Atualizar senha e limpar token
+  - [x] Retornar sucesso
 
 ### 2.5 API - Alterar Senha
-- [ ] Criar `app/api/auth/change-password/route.ts`
-  - [ ] POST: verificar sessão
-  - [ ] Validar senha atual
-  - [ ] Hash da nova senha
-  - [ ] Atualizar senha
-  - [ ] Retornar sucesso
+- [x] Criar `app/api/auth/change-password/route.ts`
+  - [x] POST: verificar sessão
+  - [x] Validar senha atual
+  - [x] Hash da nova senha
+  - [x] Atualizar senha
+  - [x] Retornar sucesso
 
 ---
 

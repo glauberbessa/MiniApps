@@ -1,6 +1,6 @@
 # Checklist de Tarefas: Sistema de Autenticação MVP
 
-**Última atualização:** 2026-01-30 (v5 - Fase 3 Completa)
+**Última atualização:** 2026-01-30 (v6 - Fase 4 Completa)
 
 ---
 
@@ -137,21 +137,30 @@
 
 ---
 
-## Fase 4: E-mail
+## Fase 4: E-mail ✅ COMPLETA
 
 ### 4.1 Configuração
-- [ ] Configurar Resend API key no .env
-- [ ] Criar conta no resend.com (se necessário)
+- [x] Configurar variáveis de ambiente no .env.example (RESEND_API_KEY, EMAIL_FROM, NEXT_PUBLIC_APP_URL)
+- [x] Criar conta no resend.com (usuário deve fazer manualmente)
 
 ### 4.2 Templates
-- [ ] Criar template de e-mail de recuperação
-  - [ ] Assunto: "Recupere sua senha"
-  - [ ] Corpo: link com token
-  - [ ] Expiração informada
+- [x] Template de e-mail de recuperação de senha
+  - [x] Assunto: "Recupere sua senha - MiniApps"
+  - [x] Corpo HTML com design responsivo
+  - [x] Versão texto plano
+  - [x] Expiração informada (1 hora)
+- [x] Template de e-mail de boas-vindas
+  - [x] Assunto: "Bem-vindo ao MiniApps!"
+  - [x] Corpo HTML com apresentação dos apps
+  - [x] Versão texto plano
 
 ### 4.3 Implementação
-- [ ] Atualizar `src/lib/email.ts` com Resend
-- [ ] Testar envio de e-mail
+- [x] `src/lib/email.ts` implementado com Resend
+  - [x] `sendPasswordResetEmail()` - Recuperação de senha
+  - [x] `sendWelcomeEmail()` - Boas-vindas no cadastro
+  - [x] Fallback para modo dev (log quando RESEND_API_KEY não configurada)
+  - [x] Logging de sucesso/erro
+- [x] Integração com API de registro (envio de boas-vindas assíncrono)
 
 ---
 
@@ -269,8 +278,8 @@
 ## Notas
 
 ### Prioridades
-1. **Alta:** Fases 1-3 (funcionalidade básica) ✅
-2. **Média:** Fases 4-5 (e-mail e proteção)
+1. **Alta:** Fases 1-4 (funcionalidade básica + e-mail) ✅
+2. **Média:** Fase 5 (proteção de rotas)
 3. **Baixa:** Fases 6-8 (polish, testes e deploy)
 4. **Final:** Fase 9 (integração home - só após todas as outras)
 

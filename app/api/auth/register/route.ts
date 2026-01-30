@@ -7,6 +7,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma'
 import { hashPassword } from '@/lib/password'
 import { registerSchema } from '@/lib/validations/auth'
+import { sendWelcomeEmail } from '@/lib/email'
 import { logger } from '@/lib/logger'
 
 export async function POST(request: NextRequest) {
@@ -63,6 +64,14 @@ export async function POST(request: NextRequest) {
     logger.info('AUTH', 'New user registered', {
       userId: user.id,
       email: user.email,
+    })
+
+    // Enviar e-mail de boas-vindas (não bloqueia o retorno)
+    sendWelcomeEmail(user.email!, user.name).catch((err) => {
+      logger.error('AUTH', 'Failed to send welcome email', err instanceof Error ? err : undefined, {
+        userId: user.id,
+        email: user.email,
+      })
     })
 
     return NextResponse.json(

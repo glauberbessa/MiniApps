@@ -9,6 +9,7 @@
 @import '../src/styles/backgrounds.css';
 @import '../src/styles/animations.css';
 @import '../src/styles/accessibility.css';
+@import '../src/styles/polish.css';
 
 @layer base {
   /* Reset básico */

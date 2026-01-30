@@ -1,6 +1,6 @@
 # Checklist de Tarefas: Sistema de Autenticação MVP
 
-**Última atualização:** 2026-01-30
+**Última atualização:** 2026-01-30 (v2 - Adicionada Fase 9: Integração Home)
 
 ---
 
@@ -215,12 +215,60 @@
 
 ---
 
+## Fase 9: Integração Login na Home (Última Etapa)
+
+> **IMPORTANTE:** Esta fase só deve ser executada após todas as outras estarem completas.
+> A página inicial atual deve permanecer inalterada até esta etapa.
+
+### 9.1 Componentes da Home Integrada
+- [ ] Criar `src/components/home/home-guest.tsx`
+  - [ ] Cards dos mini-apps (igual atual)
+  - [ ] Formulário de login inline
+  - [ ] Link para cadastro
+  - [ ] Botão OAuth Google
+- [ ] Criar `src/components/home/home-authenticated.tsx`
+  - [ ] Cards dos mini-apps com mais recursos
+  - [ ] Informações do usuário logado
+  - [ ] Acesso rápido às configurações
+  - [ ] Botão de logout
+
+### 9.2 Lógica Condicional
+- [ ] Criar `src/components/home/home-content.tsx`
+  - [ ] Verificar sessão do usuário
+  - [ ] Renderizar HomeGuest se não autenticado
+  - [ ] Renderizar HomeAuthenticated se autenticado
+
+### 9.3 Página Principal
+- [ ] Modificar `app/page.tsx`
+  - [ ] Substituir conteúdo atual pelo HomeContent
+  - [ ] Manter layout e estrutura visual
+  - [ ] Garantir transição suave entre estados
+
+### 9.4 Recursos Extras para Usuários Autenticados
+- [ ] Definir recursos adicionais do launcher:
+  - [ ] Favoritos/Apps recentes
+  - [ ] Configurações rápidas
+  - [ ] Status de conexão com serviços (YouTube, etc)
+  - [ ] Notificações (futuro)
+
+### 9.5 Testes da Integração
+- [ ] Home sem autenticação mostra cards + login
+- [ ] Login inline funciona corretamente
+- [ ] Após login, home atualiza para versão autenticada
+- [ ] Logout retorna para versão guest
+- [ ] OAuth Google funciona da home
+- [ ] Links para cadastro funcionam
+- [ ] Responsividade mantida
+
+---
+
 ## Notas
 
 ### Prioridades
 1. **Alta:** Fases 1-3 (funcionalidade básica)
 2. **Média:** Fases 4-5 (e-mail e proteção)
-3. **Baixa:** Fases 6-7 (polish e testes)
+3. **Baixa:** Fases 6-8 (polish, testes e deploy)
+4. **Final:** Fase 9 (integração home - só após todas as outras)
 
 ### Bloqueadores Conhecidos
 - Nenhum identificado

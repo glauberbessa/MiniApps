@@ -2,7 +2,7 @@
 
 **Status:** Planejado
 **Criado em:** 2026-01-30
-**Última atualização:** 2026-01-30
+**Última atualização:** 2026-01-30 (v2 - Adicionada Fase 6: Integração Home)
 
 ---
 
@@ -249,6 +249,13 @@ DATABASE_URL=
 - Ajustar UX/feedback
 - Verificar segurança
 
+### Fase 6: Integração Login na Home (Última Etapa)
+- Manter página inicial atual até esta fase
+- Criar versão condicional da home:
+  - **Não autenticado:** Cards dos apps + formulário de login inline
+  - **Autenticado:** Launcher completo com recursos adicionais
+- Substituir página inicial apenas quando toda infraestrutura estiver pronta
+
 ---
 
 ## 9. Estimativas
@@ -260,6 +267,7 @@ DATABASE_URL=
 | Fase 3 | Média |
 | Fase 4 | Baixa |
 | Fase 5 | Baixa |
+| Fase 6 | Média |
 
 ---
 

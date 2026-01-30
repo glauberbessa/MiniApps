@@ -1,6 +1,6 @@
 # Contexto: Sistema de Autenticação MVP
 
-**Última atualização:** 2026-01-30
+**Última atualização:** 2026-01-30 (v2 - Adicionada Fase 9: Integração Home)
 
 ---
 
@@ -58,6 +58,15 @@
 | `app/redefinir-senha/[token]/page.tsx` | Página redefinir senha |
 | `app/perfil/alterar-senha/page.tsx` | Página alterar senha |
 
+### Novos Arquivos - Integração Home (Fase 9 - Última Etapa)
+
+| Arquivo | Descrição |
+|---------|-----------|
+| `src/components/home/home-guest.tsx` | Home para visitantes (cards + login) |
+| `src/components/home/home-authenticated.tsx` | Home para usuários logados |
+| `src/components/home/home-content.tsx` | Componente condicional da home |
+| `app/page.tsx` | MODIFICAR apenas na Fase 9 |
+
 ---
 
 ## Decisões Arquiteturais
@@ -108,6 +117,20 @@
 - Simplicidade para MVP
 - Um token por usuário por vez
 - Fácil verificação e limpeza
+
+### 6. Integração Login na Home
+
+**Decisão:** Implementar apenas na última fase (Fase 9)
+
+**Justificativa:**
+- Manter app funcional durante todo o desenvolvimento
+- Página atual continua funcionando enquanto auth é desenvolvido
+- Substituição só ocorre quando toda infraestrutura está pronta
+- Reduz risco de breaking changes durante desenvolvimento
+
+**Comportamento:**
+- **Não autenticado:** Mostra cards dos apps + formulário de login inline
+- **Autenticado:** Mostra launcher completo com recursos extras (favoritos, configs, status)
 
 ---
 

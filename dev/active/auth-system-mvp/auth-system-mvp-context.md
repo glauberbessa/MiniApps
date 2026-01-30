@@ -1,6 +1,6 @@
 # Contexto: Sistema de Autenticação MVP
 
-**Última atualização:** 2026-01-30 (v4 - Fase 2 Completa)
+**Última atualização:** 2026-01-30 (v5 - Fase 3 Completa)
 
 ---
 
@@ -10,7 +10,7 @@
 |------|--------|
 | Fase 1: Infraestrutura | ✅ Completa |
 | Fase 2: Backend | ✅ Completa |
-| Fase 3: Frontend | Pendente |
+| Fase 3: Frontend | ✅ Completa |
 | Fase 4: E-mail | Pendente |
 | Fase 5: Middleware | Pendente |
 | Fase 6: i18n e UX | Pendente |
@@ -42,18 +42,19 @@
 | `src/lib/rate-limit.ts` | ✅ | Controle de tentativas (5 tentativas, 15min bloqueio) |
 | `src/lib/validations/auth.ts` | ✅ | Schemas Zod + helpers de força da senha |
 
-### Novos Arquivos - Componentes
+### Novos Arquivos - Componentes (Fase 3 - ✅ CRIADOS)
 
-| Arquivo | Descrição |
-|---------|-----------|
-| `src/components/ui/form.tsx` | Wrapper React Hook Form |
-| `src/components/ui/password-input.tsx` | Input com toggle visibilidade |
-| `src/components/auth/login-form.tsx` | Formulário de login |
-| `src/components/auth/register-form.tsx` | Formulário de cadastro |
-| `src/components/auth/forgot-password-form.tsx` | Formulário recuperação |
-| `src/components/auth/reset-password-form.tsx` | Formulário redefinição |
-| `src/components/auth/change-password-form.tsx` | Formulário alteração |
-| `src/components/auth/password-strength.tsx` | Indicador força senha |
+| Arquivo | Status | Descrição |
+|---------|--------|-----------|
+| `src/components/ui/form.tsx` | ✅ | Wrapper React Hook Form (shadcn/ui) |
+| `src/components/ui/password-input.tsx` | ✅ | Input com toggle visibilidade (olho) |
+| `src/components/auth/login-form.tsx` | ✅ | Formulário de login com validação |
+| `src/components/auth/register-form.tsx` | ✅ | Formulário de cadastro com indicador de força |
+| `src/components/auth/forgot-password-form.tsx` | ✅ | Formulário recuperação de senha |
+| `src/components/auth/reset-password-form.tsx` | ✅ | Formulário redefinição de senha |
+| `src/components/auth/change-password-form.tsx` | ✅ | Formulário alteração de senha |
+| `src/components/auth/password-strength.tsx` | ✅ | Indicador visual de força da senha |
+| `src/hooks/use-password-strength.ts` | ✅ | Hook para cálculo de força da senha |
 
 ### Novos Arquivos - APIs (Fase 2 - ✅ CRIADOS)
 
@@ -64,15 +65,16 @@
 | `app/api/auth/reset-password/route.ts` | ✅ | Endpoint redefinição |
 | `app/api/auth/change-password/route.ts` | ✅ | Endpoint alteração |
 
-### Novos Arquivos - Páginas
+### Novos Arquivos - Páginas (Fase 3 - ✅ CRIADOS)
 
-| Arquivo | Descrição |
-|---------|-----------|
-| `app/login/page.tsx` | Página de login |
-| `app/cadastro/page.tsx` | Página de cadastro |
-| `app/esqueci-senha/page.tsx` | Página esqueci senha |
-| `app/redefinir-senha/[token]/page.tsx` | Página redefinir senha |
-| `app/perfil/alterar-senha/page.tsx` | Página alterar senha |
+| Arquivo | Status | Descrição |
+|---------|--------|-----------|
+| `app/login/page.tsx` | ✅ | Página de login (card centralizado, OAuth Google) |
+| `app/login/google-button.tsx` | ✅ | Botão de login com Google |
+| `app/cadastro/page.tsx` | ✅ | Página de cadastro |
+| `app/esqueci-senha/page.tsx` | ✅ | Página esqueci senha |
+| `app/redefinir-senha/[token]/page.tsx` | ✅ | Página redefinir senha (validação de token) |
+| `app/perfil/alterar-senha/page.tsx` | ✅ | Página alterar senha (protegida) |
 
 ### Novos Arquivos - Integração Home (Fase 9 - Última Etapa)
 
@@ -147,6 +149,15 @@
 **Comportamento:**
 - **Não autenticado:** Mostra cards dos apps + formulário de login inline
 - **Autenticado:** Mostra launcher completo com recursos extras (favoritos, configs, status)
+
+### 7. NextAuth v5 com auth()
+
+**Decisão:** Usar a função `auth()` exportada do NextAuth v5
+
+**Justificativa:**
+- NextAuth v5 não exporta mais `getServerSession`
+- A função `auth()` é a nova forma de obter sessão no servidor
+- Importar diretamente de `@/lib/auth` para manter consistência
 
 ---
 
@@ -223,17 +234,22 @@ logger.error('AUTH', 'Login failed', undefined, { email, reason });
 
 - `src/hooks/use-toast.ts` - Toast notifications
 
-### Configuração NextAuth Atual
+### Configuração NextAuth v5 Atual
 
 ```typescript
 // src/lib/auth.ts
-export const authOptions: NextAuthConfig = {
+export const { handlers, auth, signIn, signOut } = NextAuth({
   adapter: PrismaAdapter(prisma),
   session: { strategy: "jwt" },
-  providers: [GoogleProvider({ ... })],
-  callbacks: { jwt, session },
+  providers: [GoogleProvider({ ... }), CredentialsProvider({ ... })],
+  callbacks: { signIn, jwt, session },
   pages: { signIn: "/ytpm/login" },
-};
+});
+
+// Helper para obter sessão
+export async function getAuthSession() {
+  return await auth();
+}
 ```
 
 ### Schema Prisma Atualizado (User) - Fase 1 ✅

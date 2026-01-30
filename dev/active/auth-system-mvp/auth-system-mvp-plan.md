@@ -249,17 +249,76 @@ DATABASE_URL=
 - Ajustar UX/feedback
 - Verificar segurança
 
+### Fase 6: Integração na Home (ÚLTIMA ETAPA)
+- Modificar `app/page.js` para experiência híbrida
+- Se não autenticado: mostrar launcher + formulário de login integrado
+- Se autenticado: mostrar launcher completo com recursos adicionais
+- Remover ou redirecionar rotas `/login` e `/cadastro` para home
+- Atualizar links internos
+
+**Importante:** Esta fase só deve ser executada após todas as outras estarem completas e testadas. A página inicial atual permanece intacta durante o desenvolvimento.
+
 ---
 
-## 9. Estimativas
+## 9. Fluxo da Página Inicial (Fase 6)
 
-| Fase | Complexidade |
-|------|--------------|
-| Fase 1 | Baixa |
-| Fase 2 | Média |
-| Fase 3 | Média |
-| Fase 4 | Baixa |
-| Fase 5 | Baixa |
+### 9.1 Comportamento Híbrido
+
+```
+┌─────────────────────────────────────────────────────────────────┐
+│                        PÁGINA INICIAL (/)                        │
+├─────────────────────────────────────────────────────────────────┤
+│                                                                  │
+│  ┌─────────────────────┐    ┌─────────────────────────────────┐ │
+│  │                     │    │                                 │ │
+│  │   CARDS DOS APPS    │    │     ÁREA DE AUTENTICAÇÃO       │ │
+│  │   (sempre visível)  │    │                                 │ │
+│  │                     │    │  Se não logado:                 │ │
+│  │   ┌───────────────┐ │    │    • Formulário de login        │ │
+│  │   │ YouTube PM    │ │    │    • Link "Criar conta"         │ │
+│  │   └───────────────┘ │    │    • Link "Esqueci senha"       │ │
+│  │                     │    │    • Botão Google OAuth         │ │
+│  │   ┌───────────────┐ │    │                                 │ │
+│  │   │ Scanner QR    │ │    │  Se logado:                     │ │
+│  │   └───────────────┘ │    │    • "Olá, {nome}"              │ │
+│  │                     │    │    • Link perfil/configurações  │ │
+│  │                     │    │    • Botão sair                 │ │
+│  │                     │    │                                 │ │
+│  └─────────────────────┘    └─────────────────────────────────┘ │
+│                                                                  │
+└─────────────────────────────────────────────────────────────────┘
+```
+
+### 9.2 Componentes a Criar
+
+```
+src/components/home/
+├── home-auth-section.tsx     # Seção de auth na home
+├── home-user-panel.tsx       # Painel do usuário logado
+└── home-login-form.tsx       # Formulário de login compacto
+```
+
+### 9.3 Alterações na Home
+
+| Arquivo | Alteração |
+|---------|-----------|
+| `app/page.js` → `app/page.tsx` | Converter para TSX, adicionar lógica de sessão |
+| `app/layout.js` | Adicionar SessionProvider se necessário |
+| `app/login/page.tsx` | Redirecionar para `/` (ou manter como fallback) |
+| `app/cadastro/page.tsx` | Pode abrir em modal ou redirecionar para `/` |
+
+---
+
+## 10. Estimativas
+
+| Fase | Complexidade | Descrição |
+|------|--------------|-----------|
+| Fase 1 | Baixa | Infraestrutura (schema, utils) |
+| Fase 2 | Média | Backend (APIs, NextAuth) |
+| Fase 3 | Média | Frontend (páginas separadas) |
+| Fase 4 | Baixa | E-mail (Resend) |
+| Fase 5 | Baixa | Testes e polish |
+| **Fase 6** | **Média** | **Integração na home (ÚLTIMA)** |
 
 ---
 

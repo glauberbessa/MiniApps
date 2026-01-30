@@ -101,7 +101,7 @@
 - [ ] Criar `src/components/auth/reset-password-form.tsx`
 - [ ] Criar `src/components/auth/change-password-form.tsx`
 
-### 3.3 Páginas
+### 3.3 Páginas (Rotas Separadas - Temporário)
 - [ ] Criar `app/login/page.tsx`
   - [ ] Layout com card centralizado
   - [ ] LoginForm
@@ -201,17 +201,82 @@
 
 ---
 
-## Fase 8: Deploy
+## Fase 8: Integração na Home (ÚLTIMA ETAPA)
 
-### 8.1 Preparação
+**IMPORTANTE:** Esta fase só deve ser iniciada após as Fases 1-7 estarem completas e testadas. A página inicial atual (`app/page.js`) permanece intacta durante todo o desenvolvimento anterior.
+
+### 8.1 Componentes da Home
+- [ ] Criar `src/components/home/home-auth-section.tsx`
+  - [ ] Container para área de autenticação
+  - [ ] Alternar entre login e painel do usuário
+- [ ] Criar `src/components/home/home-login-form.tsx`
+  - [ ] Versão compacta do LoginForm
+  - [ ] Link "Criar conta" (abre modal ou redireciona)
+  - [ ] Link "Esqueci minha senha"
+  - [ ] Botão Google OAuth
+- [ ] Criar `src/components/home/home-user-panel.tsx`
+  - [ ] Saudação "Olá, {nome}"
+  - [ ] Link para perfil/configurações
+  - [ ] Botão sair
+- [ ] Criar `src/components/home/register-modal.tsx` (opcional)
+  - [ ] Modal com RegisterForm
+  - [ ] Ou redirecionar para `/cadastro`
+
+### 8.2 Modificar Página Inicial
+- [ ] Converter `app/page.js` para `app/page.tsx`
+- [ ] Adicionar verificação de sessão (server component)
+- [ ] Implementar layout híbrido:
+  - [ ] Lado esquerdo: cards dos apps (sempre visível)
+  - [ ] Lado direito: HomeAuthSection
+- [ ] Manter responsividade mobile
+
+### 8.3 Ajustar Rotas Antigas
+- [ ] Decidir destino de `/login`:
+  - [ ] Opção A: Redirecionar para `/`
+  - [ ] Opção B: Manter como fallback
+- [ ] Decidir destino de `/cadastro`:
+  - [ ] Opção A: Redirecionar para `/`
+  - [ ] Opção B: Manter como página separada
+- [ ] Atualizar links internos (navbar, footer, etc.)
+
+### 8.4 Testes da Integração
+- [ ] Home exibe login quando não autenticado
+- [ ] Home exibe painel do usuário quando autenticado
+- [ ] Login na home funciona corretamente
+- [ ] Logout na home funciona corretamente
+- [ ] Links para cadastro/esqueci senha funcionam
+- [ ] Layout responsivo funciona em mobile
+- [ ] Cards dos apps funcionam em ambos os estados
+
+---
+
+## Fase 9: Deploy Final
+
+### 9.1 Preparação
 - [ ] Adicionar RESEND_API_KEY na Vercel
 - [ ] Verificar variáveis de ambiente
 - [ ] Executar build local
 
-### 8.2 Deploy
+### 9.2 Deploy
 - [ ] Push para branch de feature
 - [ ] Criar PR
 - [ ] Review e merge
+
+---
+
+## Resumo das Fases
+
+| Fase | Descrição | Pré-requisito |
+|------|-----------|---------------|
+| 1 | Infraestrutura | - |
+| 2 | Backend/APIs | Fase 1 |
+| 3 | Frontend (páginas separadas) | Fase 2 |
+| 4 | E-mail | Fase 2 |
+| 5 | Middleware/Proteção | Fase 3 |
+| 6 | i18n/UX | Fase 3 |
+| 7 | Testes | Fases 1-6 |
+| **8** | **Integração na Home** | **Fases 1-7 completas** |
+| 9 | Deploy | Fase 8 |
 
 ---
 
@@ -219,8 +284,9 @@
 
 ### Prioridades
 1. **Alta:** Fases 1-3 (funcionalidade básica)
-2. **Média:** Fases 4-5 (e-mail e proteção)
-3. **Baixa:** Fases 6-7 (polish e testes)
+2. **Média:** Fases 4-6 (e-mail, proteção, polish)
+3. **Baixa:** Fase 7 (testes)
+4. **Final:** Fase 8 (integração na home)
 
 ### Bloqueadores Conhecidos
 - Nenhum identificado
@@ -228,3 +294,4 @@
 ### Decisões Pendentes
 - [ ] Domínio de e-mail para Resend (usar domínio próprio ou resend.dev)
 - [ ] Tempo de bloqueio por tentativas (sugestão: 15 min)
+- [ ] Cadastro na home: modal ou página separada?

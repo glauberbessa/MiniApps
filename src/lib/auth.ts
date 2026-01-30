@@ -1,9 +1,18 @@
 import NextAuth from "next-auth";
 import GoogleProvider from "next-auth/providers/google";
+import CredentialsProvider from "next-auth/providers/credentials";
 import { PrismaAdapter } from "@auth/prisma-adapter";
 import { prisma } from "./prisma";
 import { google } from "googleapis";
 import { logger } from "./logger";
+import { verifyPassword } from "./password";
+import { loginSchema } from "./validations/auth";
+import {
+  checkLoginAttempts,
+  incrementLoginAttempts,
+  resetLoginAttempts,
+  getLockoutMessage,
+} from "./rate-limit";
 
 // Get the auth secret with proper validation
 function getAuthSecret(): string {
@@ -238,6 +247,109 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
       // - Use next-auth >= 5.0.0-beta.25 which has improved PKCE handling
       checks: ["state"],
     }),
+    CredentialsProvider({
+      id: "credentials",
+      name: "E-mail e Senha",
+      credentials: {
+        email: { label: "E-mail", type: "email" },
+        password: { label: "Senha", type: "password" },
+      },
+      async authorize(credentials) {
+        try {
+          // Validar campos
+          const result = loginSchema.safeParse(credentials);
+          if (!result.success) {
+            logger.warn("AUTH", "Invalid login credentials format", {
+              errors: result.error.flatten().fieldErrors,
+            });
+            return null;
+          }
+
+          const { email, password } = result.data;
+
+          // Buscar usuário pelo e-mail
+          const user = await prisma.user.findUnique({
+            where: { email },
+            select: {
+              id: true,
+              email: true,
+              name: true,
+              image: true,
+              password: true,
+              isActive: true,
+              youtubeChannelId: true,
+            },
+          });
+
+          // Usuário não encontrado - mensagem genérica por segurança
+          if (!user) {
+            logger.warn("AUTH", "Login attempt for non-existent user", { email });
+            return null;
+          }
+
+          // Verificar se usuário está ativo
+          if (!user.isActive) {
+            logger.warn("AUTH", "Login attempt for inactive user", { email });
+            return null;
+          }
+
+          // Verificar se usuário tem senha (pode ser conta OAuth-only)
+          if (!user.password) {
+            logger.warn("AUTH", "Login attempt for OAuth-only user", { email });
+            return null;
+          }
+
+          // Verificar bloqueio por tentativas
+          const rateLimit = await checkLoginAttempts(user.id);
+          if (!rateLimit.allowed) {
+            const lockoutMessage = getLockoutMessage(rateLimit.lockedUntil);
+            logger.warn("AUTH", "Login blocked - rate limit", {
+              userId: user.id,
+              lockedUntil: rateLimit.lockedUntil?.toISOString(),
+            });
+            throw new Error(lockoutMessage || "Conta temporariamente bloqueada");
+          }
+
+          // Verificar senha
+          const isValidPassword = await verifyPassword(password, user.password);
+          if (!isValidPassword) {
+            await incrementLoginAttempts(user.id);
+            logger.warn("AUTH", "Invalid password attempt", {
+              userId: user.id,
+              attemptsRemaining: rateLimit.attemptsRemaining - 1,
+            });
+            return null;
+          }
+
+          // Login bem-sucedido - resetar tentativas
+          await resetLoginAttempts(user.id);
+          logger.info("AUTH", "Successful credentials login", {
+            userId: user.id,
+            email: user.email,
+          });
+
+          // Retornar objeto do usuário (sem a senha!)
+          return {
+            id: user.id,
+            email: user.email,
+            name: user.name,
+            image: user.image,
+            youtubeChannelId: user.youtubeChannelId,
+          };
+        } catch (error) {
+          // Re-throw se for erro de rate limit (com mensagem amigável)
+          if (error instanceof Error && error.message.includes("bloqueada")) {
+            throw error;
+          }
+          logger.error(
+            "AUTH",
+            "Credentials authorize error",
+            error instanceof Error ? error : undefined
+          );
+          return null;
+        }
+      },
+    }),
   ],
   pages: {
     signIn: "/ytpm/login",
@@ -245,6 +357,11 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
   },
   callbacks: {
     async signIn({ user, account }) {
+      // Para login com credentials, apenas verificar se usuário está ativo
+      if (account?.provider === "credentials") {
+        // Verificação de isActive já é feita no authorize
+        return true;
+      }
 
       if (account?.provider === "google" && account.access_token) {
         try {

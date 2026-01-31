@@ -1,6 +1,6 @@
+import NextAuth from "next-auth";
 import { NextResponse } from "next/server";
-import type { NextRequest } from "next/server";
-import { auth } from "@/lib/auth";
+import { authConfig } from "@/lib/auth.config";
 
 /**
  * Check if a cookie name is PKCE-related.
@@ -17,18 +17,8 @@ function isPkceCookie(cookieName: string): boolean {
   );
 }
 
-/**
- * Rotas que requerem autenticação
- * Usuários não autenticados serão redirecionados para /login
- */
-const protectedRoutes = ['/perfil'];
-
-/**
- * Verifica se a rota atual requer autenticação
- */
-function isProtectedRoute(pathname: string): boolean {
-  return protectedRoutes.some(route => pathname.startsWith(route));
-}
+// Create auth middleware from Edge-compatible config
+const { auth } = NextAuth(authConfig);
 
 /**
  * Middleware to handle:
@@ -37,22 +27,13 @@ function isProtectedRoute(pathname: string): boolean {
  *
  * This middleware runs BEFORE route handlers.
  */
-export const middleware = auth((request) => {
+export default auth((request) => {
   const url = new URL(request.url);
-  const session = request.auth;
 
   // [DEBUG] Log requests in development
   if (process.env.NODE_ENV === 'development') {
+    const session = request.auth;
     console.log(`[MIDDLEWARE] ${request.method} ${url.pathname} | Auth: ${session ? 'yes' : 'no'}`);
-  }
-
-  // ==== ROUTE PROTECTION ====
-  // Redirect unauthenticated users from protected routes to login
-  if (isProtectedRoute(url.pathname) && !session) {
-    console.log(`[MIDDLEWARE] Redirecting unauthenticated user from ${url.pathname} to /login`);
-    const loginUrl = new URL('/login', request.url);
-    loginUrl.searchParams.set('callbackUrl', url.pathname);
-    return NextResponse.redirect(loginUrl);
   }
 
   // ==== PKCE COOKIE CLEANUP ====
@@ -69,7 +50,7 @@ export const middleware = auth((request) => {
     return NextResponse.next();
   }
 
-  // Log detection of PKCE cookies (this runs before the route handler logging)
+  // Log detection of PKCE cookies
   console.log(`[MIDDLEWARE] Detected ${pkceCookies.length} PKCE cookie(s):`, pkceCookies.map(c => c.name));
 
   // Create response that will delete the PKCE cookies from the browser
@@ -79,7 +60,6 @@ export const middleware = auth((request) => {
   for (const cookie of pkceCookies) {
     console.log(`[MIDDLEWARE] Scheduling deletion of PKCE cookie: ${cookie.name}`);
 
-    // Delete with multiple configurations to ensure removal across different cookie settings
     response.cookies.set(cookie.name, '', {
       maxAge: 0,
       path: '/',
@@ -101,7 +81,7 @@ export const middleware = auth((request) => {
 
 // Configure middleware matcher
 export const config = {
-  // Match all routes except static files and API routes that don't need protection
+  // Match all routes except static files
   // This is needed for:
   // 1. Route protection (/perfil/*)
   // 2. PKCE cookie cleanup (/api/auth/*)

@@ -1,6 +1,6 @@
 # Contexto: Sistema de Autenticação MVP
 
-**Última atualização:** 2026-01-30 (v6 - Fase 4 Completa)
+**Última atualização:** 2026-01-30 (v7 - Fase 5 Completa)
 
 ---
 
@@ -12,7 +12,7 @@
 | Fase 2: Backend | ✅ Completa |
 | Fase 3: Frontend | ✅ Completa |
 | Fase 4: E-mail | ✅ Completa |
-| Fase 5: Middleware | Pendente |
+| Fase 5: Middleware | ✅ Completa |
 | Fase 6: i18n e UX | Pendente |
 | Fase 7: Testes | Pendente |
 | Fase 8: Deploy | Pendente |
@@ -29,7 +29,7 @@
 | `prisma/schema.prisma` | MODIFICAR | ✅ | Campos de auth adicionados ao User |
 | `package.json` | MODIFICAR | ✅ | bcryptjs e resend adicionados |
 | `src/lib/auth.ts` | MODIFICAR | ✅ | CredentialsProvider adicionado |
-| `middleware.ts` | MODIFICAR | Pendente | Proteger rotas de perfil |
+| `middleware.ts` | MODIFICAR | ✅ | Proteger rotas /perfil/* com auth wrapper |
 | `.env` | MODIFICAR | ✅ (vars em .env.example) | Adicionar RESEND_API_KEY e EMAIL_FROM |
 
 ### Novos Arquivos - Utilitários (Fase 1 - ✅ CRIADOS)
@@ -158,6 +158,35 @@
 - NextAuth v5 não exporta mais `getServerSession`
 - A função `auth()` é a nova forma de obter sessão no servidor
 - Importar diretamente de `@/lib/auth` para manter consistência
+
+### 8. Middleware com auth wrapper (Fase 5)
+
+**Decisão:** Usar `auth()` como middleware wrapper
+
+**Implementação:**
+```typescript
+// middleware.ts
+import { auth } from "@/lib/auth";
+
+export const middleware = auth((request) => {
+  const session = request.auth;
+
+  // Proteção de rotas
+  if (isProtectedRoute(url.pathname) && !session) {
+    return NextResponse.redirect(new URL('/login', request.url));
+  }
+
+  return NextResponse.next();
+});
+```
+
+**Rotas protegidas:**
+- `/perfil/*` - Todas as páginas de perfil
+
+**Comportamento:**
+- Se não autenticado → Redireciona para `/login?callbackUrl=/perfil/...`
+- Se autenticado → Permite acesso normalmente
+- Mantém limpeza de cookies PKCE para rotas `/api/auth/*`
 
 ---
 

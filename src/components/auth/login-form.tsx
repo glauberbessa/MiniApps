@@ -8,10 +8,12 @@ import { zodResolver } from "@hookform/resolvers/zod"
 import { Loader2 } from "lucide-react"
 
 import { loginSchema, LoginInput } from "@/lib/validations/auth"
+import { UI_TEXT } from "@/lib/i18n"
 import { cn } from "@/lib/utils"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { PasswordInput } from "@/components/ui/password-input"
+import { useToast } from "@/components/ui/use-toast"
 import {
   Form,
   FormControl,
@@ -21,6 +23,8 @@ import {
   FormMessage,
 } from "@/components/ui/form"
 
+const { authForms: txt } = UI_TEXT
+
 interface LoginFormProps {
   className?: string
   callbackUrl?: string
@@ -29,6 +33,7 @@ interface LoginFormProps {
 export function LoginForm({ className, callbackUrl }: LoginFormProps) {
   const router = useRouter()
   const searchParams = useSearchParams()
+  const { toast } = useToast()
   const [isLoading, setIsLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
 
@@ -54,14 +59,30 @@ export function LoginForm({ className, callbackUrl }: LoginFormProps) {
       })
 
       if (result?.error) {
-        setError("Credenciais inválidas. Verifique seu e-mail e senha.")
+        setError(txt.errors.invalidCredentials)
+        toast({
+          variant: "destructive",
+          title: UI_TEXT.authToasts.loginError.title,
+          description: UI_TEXT.authToasts.loginError.description,
+        })
         return
       }
+
+      toast({
+        variant: "success",
+        title: UI_TEXT.authToasts.loginSuccess.title,
+        description: UI_TEXT.authToasts.loginSuccess.description,
+      })
 
       router.push(defaultCallbackUrl)
       router.refresh()
     } catch {
-      setError("Ocorreu um erro ao fazer login. Tente novamente.")
+      setError(txt.errors.loginFailed)
+      toast({
+        variant: "destructive",
+        title: UI_TEXT.authToasts.loginError.title,
+        description: UI_TEXT.authToasts.loginError.description,
+      })
     } finally {
       setIsLoading(false)
     }
@@ -84,11 +105,11 @@ export function LoginForm({ className, callbackUrl }: LoginFormProps) {
           name="email"
           render={({ field }) => (
             <FormItem>
-              <FormLabel>E-mail</FormLabel>
+              <FormLabel>{txt.labels.email}</FormLabel>
               <FormControl>
                 <Input
                   type="email"
-                  placeholder="seu@email.com"
+                  placeholder={txt.placeholders.email}
                   autoComplete="email"
                   disabled={isLoading}
                   {...field}
@@ -104,10 +125,10 @@ export function LoginForm({ className, callbackUrl }: LoginFormProps) {
           name="password"
           render={({ field }) => (
             <FormItem>
-              <FormLabel>Senha</FormLabel>
+              <FormLabel>{txt.labels.password}</FormLabel>
               <FormControl>
                 <PasswordInput
-                  placeholder="Digite sua senha"
+                  placeholder={txt.placeholders.password}
                   autoComplete="current-password"
                   disabled={isLoading}
                   {...field}
@@ -120,7 +141,7 @@ export function LoginForm({ className, callbackUrl }: LoginFormProps) {
 
         <Button type="submit" className="w-full" disabled={isLoading}>
           {isLoading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-          Entrar
+          {isLoading ? txt.buttons.loggingIn : txt.buttons.login}
         </Button>
       </form>
     </Form>

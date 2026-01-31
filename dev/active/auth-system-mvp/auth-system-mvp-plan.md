@@ -1,8 +1,8 @@
 # Plano de Implementação: Sistema de Autenticação MVP
 
-**Status:** Em progresso (Fases 1-5 completas)
+**Status:** Em progresso (Fases 1-6 completas)
 **Criado em:** 2026-01-30
-**Última atualização:** 2026-01-30 (v3 - Fase 5 Completa)
+**Última atualização:** 2026-01-31 (v4 - Fase 6 Completa)
 
 ---
 
@@ -249,10 +249,11 @@ DATABASE_URL=
 - Redirecionar não-autenticados para /login
 - Passar callbackUrl para retorno após login
 
-### Fase 6: i18n e UX
-- Adicionar textos de auth centralizados
-- Loading states e feedback visual
-- Animações de transição
+### Fase 6: i18n e UX ✅
+- Adicionar textos de auth centralizados em `src/lib/i18n.ts`
+- Toaster adicionado ao layout principal
+- Formulários atualizados com textos centralizados e toasts
+- Animações de transição para cards e feedback
 
 ### Fase 7: Testes e Validação
 - Testar todos os fluxos manualmente
@@ -280,7 +281,7 @@ DATABASE_URL=
 | Fase 3 | Média | ✅ |
 | Fase 4 | Baixa | ✅ |
 | Fase 5 | Baixa | ✅ |
-| Fase 6 | Baixa | Pendente |
+| Fase 6 | Baixa | ✅ |
 | Fase 7 | Baixa | Pendente |
 | Fase 8 | Baixa | Pendente |
 | Fase 9 | Média | Pendente |

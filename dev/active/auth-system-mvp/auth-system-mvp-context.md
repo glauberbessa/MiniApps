@@ -1,6 +1,6 @@
 # Contexto: Sistema de Autenticação MVP
 
-**Última atualização:** 2026-01-30 (v7 - Fase 5 Completa)
+**Última atualização:** 2026-01-31 (v8 - Fase 6 Completa)
 
 ---
 
@@ -13,7 +13,7 @@
 | Fase 3: Frontend | ✅ Completa |
 | Fase 4: E-mail | ✅ Completa |
 | Fase 5: Middleware | ✅ Completa |
-| Fase 6: i18n e UX | Pendente |
+| Fase 6: i18n e UX | ✅ Completa |
 | Fase 7: Testes | Pendente |
 | Fase 8: Deploy | Pendente |
 | Fase 9: Integração Home | Pendente |
@@ -75,6 +75,19 @@
 | `app/esqueci-senha/page.tsx` | ✅ | Página esqueci senha |
 | `app/redefinir-senha/[token]/page.tsx` | ✅ | Página redefinir senha (validação de token) |
 | `app/perfil/alterar-senha/page.tsx` | ✅ | Página alterar senha (protegida) |
+
+### Arquivos Modificados - Fase 6 (i18n e UX) ✅
+
+| Arquivo | Ação | Descrição |
+|---------|------|-----------|
+| `src/lib/i18n.ts` | MODIFICADO | Adicionado `authForms` e `authToasts` com textos centralizados |
+| `app/layout.js` | MODIFICADO | Adicionado componente `<Toaster />` |
+| `src/components/auth/login-form.tsx` | MODIFICADO | Textos do i18n, toasts, loading state |
+| `src/components/auth/register-form.tsx` | MODIFICADO | Textos do i18n, toasts, loading state |
+| `src/components/auth/forgot-password-form.tsx` | MODIFICADO | Textos do i18n, toasts, loading state |
+| `src/components/auth/reset-password-form.tsx` | MODIFICADO | Textos do i18n, toasts, loading state |
+| `src/components/auth/change-password-form.tsx` | MODIFICADO | Textos do i18n, toasts, loading state |
+| `src/styles/animations.css` | MODIFICADO | Animações específicas para autenticação |
 
 ### Novos Arquivos - Integração Home (Fase 9 - Última Etapa)
 

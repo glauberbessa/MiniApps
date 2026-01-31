@@ -6,9 +6,11 @@ import { zodResolver } from "@hookform/resolvers/zod"
 import { Loader2, Mail } from "lucide-react"
 
 import { forgotPasswordSchema, ForgotPasswordInput } from "@/lib/validations/auth"
+import { UI_TEXT } from "@/lib/i18n"
 import { cn } from "@/lib/utils"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
+import { useToast } from "@/components/ui/use-toast"
 import {
   Form,
   FormControl,
@@ -18,11 +20,14 @@ import {
   FormMessage,
 } from "@/components/ui/form"
 
+const { authForms: txt } = UI_TEXT
+
 interface ForgotPasswordFormProps {
   className?: string
 }
 
 export function ForgotPasswordForm({ className }: ForgotPasswordFormProps) {
+  const { toast } = useToast()
   const [isLoading, setIsLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const [success, setSuccess] = useState(false)
@@ -48,13 +53,18 @@ export function ForgotPasswordForm({ className }: ForgotPasswordFormProps) {
       const result = await response.json()
 
       if (!response.ok) {
-        setError(result.error || "Erro ao processar solicitação. Tente novamente.")
+        setError(result.error || txt.errors.forgotPasswordFailed)
         return
       }
 
       setSuccess(true)
+      toast({
+        variant: "success",
+        title: UI_TEXT.authToasts.passwordResetEmailSent.title,
+        description: UI_TEXT.authToasts.passwordResetEmailSent.description,
+      })
     } catch {
-      setError("Ocorreu um erro. Tente novamente.")
+      setError(txt.errors.forgotPasswordError)
     } finally {
       setIsLoading(false)
     }
@@ -62,15 +72,14 @@ export function ForgotPasswordForm({ className }: ForgotPasswordFormProps) {
 
   if (success) {
     return (
-      <div className="space-y-4 text-center">
+      <div className="space-y-4 text-center animate-in fade-in-0 zoom-in-95 duration-300">
         <div className="mx-auto flex h-12 w-12 items-center justify-center rounded-full bg-green-100">
           <Mail className="h-6 w-6 text-green-600" />
         </div>
         <div className="space-y-2">
-          <h3 className="text-lg font-medium">Verifique seu e-mail</h3>
+          <h3 className="text-lg font-medium">{txt.verification.checkEmail}</h3>
           <p className="text-sm text-muted-foreground">
-            Se o e-mail informado estiver cadastrado, você receberá instruções para
-            redefinir sua senha.
+            {txt.success.emailSent}
           </p>
         </div>
       </div>
@@ -94,11 +103,11 @@ export function ForgotPasswordForm({ className }: ForgotPasswordFormProps) {
           name="email"
           render={({ field }) => (
             <FormItem>
-              <FormLabel>E-mail</FormLabel>
+              <FormLabel>{txt.labels.email}</FormLabel>
               <FormControl>
                 <Input
                   type="email"
-                  placeholder="seu@email.com"
+                  placeholder={txt.placeholders.email}
                   autoComplete="email"
                   disabled={isLoading}
                   {...field}
@@ -111,7 +120,7 @@ export function ForgotPasswordForm({ className }: ForgotPasswordFormProps) {
 
         <Button type="submit" className="w-full" disabled={isLoading}>
           {isLoading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-          Enviar Instruções
+          {isLoading ? txt.buttons.sendingInstructions : txt.buttons.forgotPassword}
         </Button>
       </form>
     </Form>

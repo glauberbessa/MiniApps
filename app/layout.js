@@ -2,6 +2,7 @@ import './globals.css'
 import { Playfair_Display, DM_Sans, Space_Grotesk, JetBrains_Mono, Inter } from 'next/font/google'
 import { ThemeProvider } from '@/components/providers/theme-provider'
 import { AccessibilityProvider } from '@/components/providers/accessibility-provider'
+import { Toaster } from '@/components/ui/toaster'
 
 // Fonts distintivas por aplicação
 const playfairDisplay = Playfair_Display({
@@ -72,6 +73,7 @@ export default function RootLayout({ children }) {
               Pular para o conteúdo principal
             </a>
             {children}
+            <Toaster />
           </AccessibilityProvider>
         </ThemeProvider>
       </body>

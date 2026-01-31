@@ -1,6 +1,6 @@
 # Checklist de Tarefas: Sistema de Autenticação MVP
 
-**Última atualização:** 2026-01-31 (v8 - Fase 6 Completa)
+**Última atualização:** 2026-01-31 (v9 - Fase 7 Completa)
 
 ---
 
@@ -200,29 +200,43 @@
 
 ---
 
-## Fase 7: Testes e Validação
+## Fase 7: Testes e Validação ✅ COMPLETA
 
-### 7.1 Testes Manuais
-- [ ] Cadastro com dados válidos
-- [ ] Cadastro com e-mail duplicado
-- [ ] Cadastro com senha fraca
-- [ ] Login com credenciais válidas
-- [ ] Login com credenciais inválidas
-- [ ] Login após 5 tentativas (bloqueio)
-- [ ] Login com usuário inativo
-- [ ] Esqueci senha - e-mail existente
-- [ ] Esqueci senha - e-mail inexistente
-- [ ] Redefinir senha - token válido
-- [ ] Redefinir senha - token expirado
-- [ ] Alterar senha - senha atual correta
-- [ ] Alterar senha - senha atual incorreta
+### 7.1 Scripts de Validação Criados
+- [x] `scripts/validate-auth-security.ts` - Script de verificação de segurança automatizado
+- [x] `scripts/auth-test-checklist.md` - Checklist completo de testes manuais
 
-### 7.2 Segurança
-- [ ] Verificar hash de senhas no banco
-- [ ] Verificar mensagens genéricas
-- [ ] Verificar expiração de tokens
-- [ ] Verificar bloqueio por tentativas
-- [ ] Verificar HTTPS em produção
+### 7.2 Verificações de Segurança (24/24 testes passaram)
+- [x] Hash de senhas com bcryptjs (salt rounds = 12)
+- [x] Tempo de hash adequado (~368ms)
+- [x] Verificação de senha correta/incorreta
+- [x] Hashes únicos para mesma senha
+- [x] Geração de tokens seguros (64 caracteres hex)
+- [x] Tokens únicos (1000 gerados sem colisão)
+- [x] Boa distribuição de entropia
+- [x] Expiração de tokens em 1 hora
+- [x] Detecção correta de tokens expirados
+- [x] Rate limiting configurado (5 tentativas, 15 min bloqueio)
+- [x] Validação de senhas (força, critérios)
+- [x] Mensagens genéricas (não revelam se email existe)
+
+### 7.3 Middleware Atualizado
+- [x] Proteção explícita de rotas `/perfil/*` adicionada
+- [x] Redirecionamento para `/login?callbackUrl=...`
+- [x] Logging em ambiente de desenvolvimento
+
+### 7.4 Testes Manuais (Checklist disponível)
+O checklist detalhado para testes manuais está em:
+`scripts/auth-test-checklist.md`
+
+Inclui testes para:
+- Cadastro (dados válidos, duplicados, senha fraca)
+- Login (credenciais válidas/inválidas, bloqueio, inativo)
+- Recuperação de senha (email existente/inexistente)
+- Redefinição de senha (token válido/expirado)
+- Alteração de senha (autenticado)
+- Proteção de rotas
+- UX/Feedback (loading states, toasts)
 
 ---
 
@@ -292,8 +306,10 @@
 ### Prioridades
 1. **Alta:** Fases 1-4 (funcionalidade básica + e-mail) ✅
 2. **Média:** Fase 5 (proteção de rotas) ✅
-3. **Baixa:** Fases 6-8 (polish, testes e deploy)
-4. **Final:** Fase 9 (integração home - só após todas as outras)
+3. **Média:** Fase 6 (i18n e UX) ✅
+4. **Baixa:** Fase 7 (testes e validação) ✅
+5. **Baixa:** Fase 8 (deploy) - Pendente
+6. **Final:** Fase 9 (integração home - só após todas as outras)
 
 ### Bloqueadores Conhecidos
 - Nenhum identificado

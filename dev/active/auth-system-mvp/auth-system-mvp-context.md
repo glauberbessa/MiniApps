@@ -1,6 +1,6 @@
 # Contexto: Sistema de Autenticação MVP
 
-**Última atualização:** 2026-01-31 (v9 - Fase 7 Completa)
+**Última atualização:** 2026-01-31 (v10 - Fase 8 Completa)
 
 ---
 
@@ -15,7 +15,7 @@
 | Fase 5: Middleware | ✅ Completa |
 | Fase 6: i18n e UX | ✅ Completa |
 | Fase 7: Testes | ✅ Completa |
-| Fase 8: Deploy | Pendente |
+| Fase 8: Deploy | ✅ Completa |
 | Fase 9: Integração Home | Pendente |
 
 ---
@@ -101,6 +101,12 @@
 | Arquivo | Ação | Descrição |
 |---------|------|-----------|
 | `middleware.ts` | MODIFICADO | Adicionada proteção explícita de rotas `/perfil/*` com redirect |
+
+### Novos Arquivos - Fase 8 (Deploy) ✅
+
+| Arquivo | Status | Descrição |
+|---------|--------|-----------|
+| `docs/DEPLOY_AUTH_SYSTEM.md` | ✅ | Guia completo de deploy do sistema de autenticação |
 
 ### Novos Arquivos - Integração Home (Fase 9 - Última Etapa)
 

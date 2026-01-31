@@ -17,6 +17,14 @@ function isPkceCookie(cookieName: string): boolean {
   );
 }
 
+/**
+ * Check if the current path is a protected route that requires authentication.
+ */
+function isProtectedRoute(pathname: string): boolean {
+  const protectedPaths = ['/perfil'];
+  return protectedPaths.some(path => pathname.startsWith(path));
+}
+
 // Create auth middleware from Edge-compatible config
 const { auth } = NextAuth(authConfig);
 
@@ -26,14 +34,29 @@ const { auth } = NextAuth(authConfig);
  * 2. PKCE cookie cleanup - removes stale PKCE cookies that could cause auth errors
  *
  * This middleware runs BEFORE route handlers.
+ *
+ * Note: The `authorized` callback in auth.config.ts handles the primary route protection.
+ * This middleware provides additional protection check and PKCE cookie cleanup.
  */
 export default auth((request) => {
   const url = new URL(request.url);
+  const session = request.auth;
 
   // [DEBUG] Log requests in development
   if (process.env.NODE_ENV === 'development') {
-    const session = request.auth;
     console.log(`[MIDDLEWARE] ${request.method} ${url.pathname} | Auth: ${session ? 'yes' : 'no'}`);
+  }
+
+  // ==== ROUTE PROTECTION ====
+  // Additional check for protected routes (primary check is in auth.config.ts authorized callback)
+  // This ensures protection even if the authorized callback doesn't fire properly
+  if (isProtectedRoute(url.pathname) && !session?.user) {
+    if (process.env.NODE_ENV === 'development') {
+      console.log(`[MIDDLEWARE] Protected route ${url.pathname} - redirecting to login`);
+    }
+    const loginUrl = new URL('/login', request.url);
+    loginUrl.searchParams.set('callbackUrl', url.pathname);
+    return NextResponse.redirect(loginUrl);
   }
 
   // ==== PKCE COOKIE CLEANUP ====

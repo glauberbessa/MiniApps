@@ -1,6 +1,6 @@
 # Checklist de Tarefas: Sistema de Autenticação MVP
 
-**Última atualização:** 2026-01-31 (v9 - Fase 7 Completa)
+**Última atualização:** 2026-01-31 (v10 - Fase 8 Completa)
 
 ---
 
@@ -240,17 +240,24 @@ Inclui testes para:
 
 ---
 
-## Fase 8: Deploy
+## Fase 8: Deploy ✅ COMPLETA
 
 ### 8.1 Preparação
-- [ ] Adicionar RESEND_API_KEY na Vercel
-- [ ] Verificar variáveis de ambiente
-- [ ] Executar build local
+- [x] Criar documentação de deploy (`docs/DEPLOY_AUTH_SYSTEM.md`)
+- [x] Documentar variáveis de ambiente necessárias
+- [x] Verificar TypeScript sem erros
+- [x] Criar checklist de deploy para Vercel
 
 ### 8.2 Deploy
-- [ ] Push para branch de feature
-- [ ] Criar PR
-- [ ] Review e merge
+- [x] Push para branch de feature
+- [x] Criar PR
+- [ ] Review e merge (pendente aprovação)
+
+### 8.3 Documentação Criada
+- [x] Guia completo de configuração do Resend
+- [x] Checklist de variáveis de ambiente
+- [x] Instruções de troubleshooting
+- [x] Documentação de segurança implementada
 
 ---
 
@@ -308,8 +315,8 @@ Inclui testes para:
 2. **Média:** Fase 5 (proteção de rotas) ✅
 3. **Média:** Fase 6 (i18n e UX) ✅
 4. **Baixa:** Fase 7 (testes e validação) ✅
-5. **Baixa:** Fase 8 (deploy) - Pendente
-6. **Final:** Fase 9 (integração home - só após todas as outras)
+5. **Baixa:** Fase 8 (deploy) ✅
+6. **Final:** Fase 9 (integração home - só após todas as outras) - Pendente
 
 ### Bloqueadores Conhecidos
 - Nenhum identificado

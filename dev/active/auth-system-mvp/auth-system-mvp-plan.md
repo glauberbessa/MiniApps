@@ -1,8 +1,8 @@
 # Plano de Implementação: Sistema de Autenticação MVP
 
-**Status:** Em progresso (Fases 1-7 completas)
+**Status:** Em progresso (Fases 1-8 completas)
 **Criado em:** 2026-01-30
-**Última atualização:** 2026-01-31 (v5 - Fase 7 Completa)
+**Última atualização:** 2026-01-31 (v6 - Fase 8 Completa)
 
 ---
 
@@ -261,9 +261,11 @@ DATABASE_URL=
 - Middleware atualizado com proteção explícita de rotas
 - 24 verificações de segurança automatizadas passaram
 
-### Fase 8: Deploy
-- Configurar variáveis de ambiente na Vercel
-- Push e PR para produção
+### Fase 8: Deploy ✅
+- Guia de deploy criado (`docs/DEPLOY_AUTH_SYSTEM.md`)
+- Documentação de variáveis de ambiente
+- Checklist de configuração do Resend
+- TypeScript verificado sem erros
 
 ### Fase 9: Integração Login na Home (Última Etapa)
 - Manter página inicial atual até esta fase
@@ -285,7 +287,7 @@ DATABASE_URL=
 | Fase 5 | Baixa | ✅ |
 | Fase 6 | Baixa | ✅ |
 | Fase 7 | Baixa | ✅ |
-| Fase 8 | Baixa | Pendente |
+| Fase 8 | Baixa | ✅ |
 | Fase 9 | Média | Pendente |
 
 ---

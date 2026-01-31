@@ -1,9 +1,24 @@
-'use client'
+"use client"
 
-import { useState } from 'react'
+import { useState } from "react"
+import Link from "next/link"
+import { signOut } from "next-auth/react"
+import { Session } from "next-auth"
+import {
+  LogOut,
+  Settings,
+  User,
+  ChevronRight,
+  Shield,
+  ExternalLink
+} from "lucide-react"
 
-// Ícone do YouTube usando Lucide-style
-function YouTubeIcon({ className }) {
+import { Button } from "@/components/ui/button"
+import { UI_TEXT } from "@/lib/i18n"
+import { useToast } from "@/components/ui/use-toast"
+
+// Ícone do YouTube
+function YouTubeIcon({ className }: { className?: string }) {
   return (
     <svg
       className={className}
@@ -16,32 +31,8 @@ function YouTubeIcon({ className }) {
   )
 }
 
-// Ícone de QR Code
-function QRCodeIcon({ className }) {
-  return (
-    <svg
-      className={className}
-      viewBox="0 0 24 24"
-      fill="none"
-      stroke="currentColor"
-      strokeWidth="2"
-      strokeLinecap="round"
-      strokeLinejoin="round"
-      aria-hidden="true"
-    >
-      <rect x="3" y="3" width="7" height="7" />
-      <rect x="14" y="3" width="7" height="7" />
-      <rect x="3" y="14" width="7" height="7" />
-      <rect x="14" y="14" width="3" height="3" />
-      <rect x="18" y="14" width="3" height="3" />
-      <rect x="14" y="18" width="3" height="3" />
-      <rect x="18" y="18" width="3" height="3" />
-    </svg>
-  )
-}
-
 // Ícone de Camera para Scanner
-function CameraIcon({ className }) {
+function CameraIcon({ className }: { className?: string }) {
   return (
     <svg
       className={className}
@@ -60,7 +51,7 @@ function CameraIcon({ className }) {
 }
 
 // Ícone de Check
-function CheckIcon({ className }) {
+function CheckIcon({ className }: { className?: string }) {
   return (
     <svg
       className={className}
@@ -78,7 +69,7 @@ function CheckIcon({ className }) {
 }
 
 // Ícone de Arrow Right
-function ArrowRightIcon({ className }) {
+function ArrowRightIcon({ className }: { className?: string }) {
   return (
     <svg
       className={className}
@@ -97,7 +88,7 @@ function ArrowRightIcon({ className }) {
 }
 
 // Ícone de GitHub
-function GitHubIcon({ className }) {
+function GitHubIcon({ className }: { className?: string }) {
   return (
     <svg
       className={className}
@@ -110,8 +101,20 @@ function GitHubIcon({ className }) {
   )
 }
 
-// Componente de Card de App com estilo editorial Premium
-function AppCard({ title, subtitle, description, icon: Icon, href, iconBg, glowColor, openInNewTab, features }) {
+interface AppCardProps {
+  title: string
+  subtitle: string
+  description: string
+  icon: React.ComponentType<{ className?: string }>
+  href: string
+  iconBg: string
+  glowColor: string
+  openInNewTab?: boolean
+  features: string[]
+}
+
+// Componente de Card de App
+function AppCard({ title, subtitle, description, icon: Icon, href, iconBg, glowColor, openInNewTab, features }: AppCardProps) {
   const [isHovered, setIsHovered] = useState(false)
 
   return (
@@ -146,9 +149,8 @@ function AppCard({ title, subtitle, description, icon: Icon, href, iconBg, glowC
       />
 
       <div className="relative z-10">
-        {/* Header do card com ícone e título lado a lado */}
+        {/* Header do card */}
         <div className="flex items-start gap-5 mb-6">
-          {/* Ícone com gradiente e glow */}
           <div className={`
             relative w-16 h-16 rounded-xl flex items-center justify-center flex-shrink-0
             bg-gradient-to-br ${iconBg}
@@ -156,7 +158,6 @@ function AppCard({ title, subtitle, description, icon: Icon, href, iconBg, glowC
             ${isHovered ? `shadow-xl ${glowColor}` : ''}
           `}>
             <Icon className="w-8 h-8 text-white" />
-            {/* Glow interno no hover */}
             <div className={`
               absolute inset-0 rounded-xl bg-white/20
               transition-opacity duration-300
@@ -164,28 +165,24 @@ function AppCard({ title, subtitle, description, icon: Icon, href, iconBg, glowC
             `} />
           </div>
 
-          {/* Título e subtítulo */}
           <div className="flex-1 pt-1">
             {subtitle && (
               <span className="text-data-sm text-launcher-muted tracking-widest uppercase block mb-1">
                 {subtitle}
               </span>
             )}
-            <h2 className="text-heading-lg text-launcher-highlight leading-tight">
+            <h3 className="text-heading-lg text-launcher-highlight leading-tight">
               {title}
-            </h2>
+            </h3>
           </div>
         </div>
 
-        {/* Linha decorativa com gradiente */}
         <div className={`h-px mb-5 transition-all duration-300 ${isHovered ? 'bg-gradient-to-r from-transparent via-white/30 to-transparent' : 'bg-launcher-border'}`} aria-hidden="true" />
 
-        {/* Descrição */}
         <p className="text-ui text-launcher-muted leading-relaxed mb-6">
           {description}
         </p>
 
-        {/* Features list com design melhorado */}
         {features && (
           <ul className="space-y-3 mb-8">
             {features.map((feature, index) => (
@@ -199,7 +196,6 @@ function AppCard({ title, subtitle, description, icon: Icon, href, iconBg, glowC
           </ul>
         )}
 
-        {/* CTA Button com animação */}
         <div className={`
           inline-flex items-center gap-2 px-5 py-2.5 rounded-full
           text-button text-sm font-medium
@@ -218,138 +214,177 @@ function AppCard({ title, subtitle, description, icon: Icon, href, iconBg, glowC
   )
 }
 
-// Seção "Começando" para novos usuários
-function GettingStartedSection() {
-  const steps = [
-    {
-      number: '01',
-      title: 'Faça login com Google',
-      description: 'Use sua conta para acessar recursos completos',
-    },
-    {
-      number: '02',
-      title: 'Escolha seu aplicativo',
-      description: 'Selecione um dos mini-apps disponíveis',
-    },
-    {
-      number: '03',
-      title: 'Comece a usar',
-      description: 'Explore todas as funcionalidades',
-    },
-  ]
+// Componente de Card do Usuário
+function UserCard({ session }: { session: Session }) {
+  const { toast } = useToast()
+  const [isLoggingOut, setIsLoggingOut] = useState(false)
+
+  const user = session.user
+  const displayName = user?.name || user?.email?.split("@")[0] || "Usuário"
+  const initials = displayName
+    .split(" ")
+    .map((n) => n[0])
+    .slice(0, 2)
+    .join("")
+    .toUpperCase()
+
+  async function handleLogout() {
+    setIsLoggingOut(true)
+    try {
+      toast({
+        title: UI_TEXT.authToasts.logoutSuccess.title,
+        description: UI_TEXT.authToasts.logoutSuccess.description,
+      })
+      await signOut({ callbackUrl: "/" })
+    } catch {
+      setIsLoggingOut(false)
+    }
+  }
 
   return (
-    <section
-      aria-labelledby="getting-started-heading"
-      className="px-6 py-16 opacity-0 launcher-animate-unfold launcher-stagger-3"
-    >
-      <div className="max-w-4xl mx-auto">
-        <div className="launcher-card p-8 md:p-10 relative overflow-hidden">
-          {/* Background decorativo */}
-          <div className="absolute top-0 right-0 w-64 h-64 bg-gradient-to-bl from-white/[0.02] to-transparent rounded-full -translate-y-1/2 translate-x-1/2" aria-hidden="true" />
+    <div className="launcher-card p-6 md:p-8 relative overflow-hidden">
+      {/* Background decorativo */}
+      <div className="absolute top-0 right-0 w-48 h-48 bg-gradient-to-bl from-emerald-500/5 to-transparent rounded-full -translate-y-1/2 translate-x-1/2" aria-hidden="true" />
 
-          <h2
-            id="getting-started-heading"
-            className="text-heading-xs text-launcher-muted mb-8 tracking-[0.2em]"
-          >
-            COMEÇANDO
-          </h2>
+      <div className="relative">
+        {/* Header com avatar e info */}
+        <div className="flex items-center gap-4 mb-6">
+          {user?.image ? (
+            <img
+              src={user.image}
+              alt={displayName}
+              className="w-14 h-14 rounded-full ring-2 ring-emerald-500/30"
+            />
+          ) : (
+            <div className="w-14 h-14 rounded-full bg-gradient-to-br from-emerald-500 to-teal-600 flex items-center justify-center text-white font-semibold text-lg">
+              {initials}
+            </div>
+          )}
 
-          <div className="space-y-8 relative">
-            {steps.map((step, index) => (
-              <div key={step.number} className="flex items-start gap-5 group">
-                {/* Número com estilo editorial */}
-                <div className="flex items-center gap-4 flex-shrink-0">
-                  <span className="text-display-sm text-launcher-muted/50 font-display tabular-nums">
-                    {step.number}
-                  </span>
-                  <span className="w-12 h-px bg-gradient-to-r from-launcher-border to-transparent group-hover:from-launcher-accent/50 transition-colors duration-300" aria-hidden="true" />
-                </div>
+          <div className="flex-1">
+            <h2 className="text-heading-md text-launcher-highlight">
+              Olá, {displayName.split(" ")[0]}!
+            </h2>
+            <p className="text-ui-sm text-launcher-muted truncate">
+              {user?.email}
+            </p>
+          </div>
 
-                {/* Conteúdo */}
-                <div className="flex-1 pt-1">
-                  <h3 className="text-ui-md text-launcher-highlight mb-1 group-hover:text-white transition-colors duration-200">{step.title}</h3>
-                  <p className="text-ui-sm text-launcher-muted">{step.description}</p>
-                </div>
-              </div>
-            ))}
+          {/* Badge de status */}
+          <div className="flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-emerald-500/10 border border-emerald-500/20">
+            <span className="w-1.5 h-1.5 rounded-full bg-emerald-500" />
+            <span className="text-xs text-emerald-400">Online</span>
           </div>
         </div>
+
+        {/* Linha separadora */}
+        <div className="h-px bg-launcher-border mb-6" />
+
+        {/* Quick Actions */}
+        <div className="space-y-2">
+          <Link
+            href="/perfil/alterar-senha"
+            className="flex items-center justify-between p-3 rounded-lg hover:bg-white/5 transition-colors group"
+          >
+            <div className="flex items-center gap-3">
+              <Shield className="w-5 h-5 text-launcher-muted group-hover:text-launcher-highlight transition-colors" />
+              <span className="text-ui text-launcher-accent group-hover:text-launcher-highlight transition-colors">
+                Alterar senha
+              </span>
+            </div>
+            <ChevronRight className="w-4 h-4 text-launcher-muted group-hover:text-launcher-highlight transition-colors" />
+          </Link>
+        </div>
+
+        {/* Linha separadora */}
+        <div className="h-px bg-launcher-border my-4" />
+
+        {/* Logout Button */}
+        <Button
+          variant="ghost"
+          className="w-full justify-start text-launcher-muted hover:text-red-400 hover:bg-red-500/10"
+          onClick={handleLogout}
+          disabled={isLoggingOut}
+        >
+          <LogOut className="mr-3 h-4 w-4" />
+          {isLoggingOut ? "Saindo..." : UI_TEXT.auth.logout}
+        </Button>
       </div>
-    </section>
+    </div>
   )
 }
 
-export default function Home() {
-  // URLs dos apps
-  // Em desenvolvimento: usa localhost com portas diferentes
-  // Em produção (Vercel): usa paths relativos (/ytpm e /scanner)
-  const isDev = process.env.NODE_ENV === 'development'
-  const ytpmUrl = isDev ? 'http://localhost:3001/ytpm' : '/ytpm'
-  const scannerUrl = isDev ? 'http://localhost:3002/scanner' : '/scanner'
+interface HomeAuthenticatedProps {
+  session: Session
+}
 
-  const apps = [
+export function HomeAuthenticated({ session }: HomeAuthenticatedProps) {
+  // URLs dos apps
+  const isDev = process.env.NODE_ENV === "development"
+  const ytpmUrl = isDev ? "http://localhost:3001/ytpm" : "/ytpm"
+  const scannerUrl = isDev ? "http://localhost:3002/scanner" : "/scanner"
+
+  const apps: AppCardProps[] = [
     {
-      title: 'Playlist Manager',
-      subtitle: 'YouTube',
-      description: 'Gerencie suas playlists do YouTube como um profissional. Sincronização automática, transferência de vídeos e monitoramento de quota em tempo real.',
+      title: "Playlist Manager",
+      subtitle: "YouTube",
+      description: "Gerencie suas playlists do YouTube como um profissional. Sincronização automática, transferência de vídeos e monitoramento de quota em tempo real.",
       icon: YouTubeIcon,
       href: ytpmUrl,
-      iconBg: 'from-red-500 to-red-700',
-      glowColor: 'shadow-red-500/30',
+      iconBg: "from-red-500 to-red-700",
+      glowColor: "shadow-red-500/30",
       openInNewTab: isDev,
       features: [
-        'Sincronização automática',
-        'Transfer entre playlists',
-        'Monitoramento de quota',
+        "Sincronização automática",
+        "Transfer entre playlists",
+        "Monitoramento de quota",
       ],
     },
     {
-      title: 'QR Code & Barras',
-      subtitle: 'Scanner',
-      description: 'Escaneie códigos QR e de barras instantaneamente. Interface minimalista focada na velocidade e precisão.',
+      title: "QR Code & Barras",
+      subtitle: "Scanner",
+      description: "Escaneie códigos QR e de barras instantaneamente. Interface minimalista focada na velocidade e precisão.",
       icon: CameraIcon,
       href: scannerUrl,
-      iconBg: 'from-cyan-500 to-teal-600',
-      glowColor: 'shadow-cyan-500/30',
+      iconBg: "from-cyan-500 to-teal-600",
+      glowColor: "shadow-cyan-500/30",
       openInNewTab: isDev,
       features: [
-        'QR Code e códigos de barras',
-        'OCR para texto',
-        'Zoom progressivo',
+        "QR Code e códigos de barras",
+        "OCR para texto",
+        "Zoom progressivo",
       ],
     },
   ]
 
+  const displayName = session.user?.name || session.user?.email?.split("@")[0] || "Usuário"
+
   return (
     <div className="min-h-screen flex flex-col launcher-bg-mesh launcher-grain launcher-selection">
-      {/* Header com estilo editorial refinado */}
-      <header className="pt-20 pb-16 px-6 hero-launcher relative" role="banner">
-        {/* Background decorativo */}
+      {/* Header */}
+      <header className="pt-16 pb-12 px-6 hero-launcher relative" role="banner">
         <div className="absolute inset-0 overflow-hidden" aria-hidden="true">
           <div className="absolute top-1/4 left-1/4 w-96 h-96 bg-gradient-to-br from-white/[0.02] to-transparent rounded-full blur-3xl" />
           <div className="absolute bottom-1/4 right-1/4 w-64 h-64 bg-gradient-to-br from-white/[0.01] to-transparent rounded-full blur-2xl" />
         </div>
 
         <div className="max-w-4xl mx-auto text-center relative">
-          {/* Badge acima do título */}
-          <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-launcher-surface border border-launcher-border mb-8 opacity-0 launcher-animate-unfold">
+          <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-launcher-surface border border-launcher-border mb-6 opacity-0 launcher-animate-unfold">
             <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
-            <span className="text-data-sm text-launcher-muted tracking-wider uppercase">v2.0 disponível</span>
+            <span className="text-data-sm text-launcher-muted tracking-wider uppercase">
+              Bem-vindo de volta, {displayName.split(" ")[0]}
+            </span>
           </div>
 
-          {/* Título principal com tipografia display */}
-          <h1 className="text-display-xl text-launcher-highlight mb-6 launcher-animate-title tracking-[0.15em]">
+          <h1 className="text-display-xl text-launcher-highlight mb-4 launcher-animate-title tracking-[0.15em]">
             MINIAPPS
           </h1>
 
-          {/* Subtítulo editorial em itálico */}
           <p className="text-editorial-lg text-launcher-muted max-w-md mx-auto opacity-0 launcher-animate-unfold launcher-stagger-1">
-            "Sua central de aplicativos"
+            &ldquo;Escolha um aplicativo para começar&rdquo;
           </p>
 
-          {/* Linha decorativa animada */}
-          <div className="relative max-w-sm mx-auto mt-10 launcher-animate-line" aria-hidden="true">
+          <div className="relative max-w-sm mx-auto mt-8 launcher-animate-line" aria-hidden="true">
             <div className="h-px bg-gradient-to-r from-transparent via-launcher-border to-transparent" />
             <div className="absolute inset-0 h-px bg-gradient-to-r from-transparent via-white/20 to-transparent animate-pulse" />
           </div>
@@ -358,39 +393,40 @@ export default function Home() {
 
       {/* Conteúdo Principal */}
       <main id="main-content" tabIndex={-1} className="flex-1 outline-none">
-        {/* Grid de Apps */}
-        <section
-          aria-labelledby="apps-heading"
-          className="px-6 py-8"
-        >
-          <h2 id="apps-heading" className="sr-only">Aplicativos disponíveis</h2>
-          <div className="max-w-5xl mx-auto">
-            <div className="grid md:grid-cols-2 gap-8 launcher-stagger-children">
-              {apps.map((app, index) => (
-                <div key={app.title} className={`launcher-stagger-${index + 1}`}>
-                  <AppCard {...app} />
+        <section className="px-6 py-8">
+          <div className="max-w-6xl mx-auto">
+            <div className="grid lg:grid-cols-3 gap-8">
+              {/* Grid de Apps (2 colunas em desktop) */}
+              <div className="lg:col-span-2">
+                <h2 className="sr-only">Aplicativos disponíveis</h2>
+                <div className="grid md:grid-cols-2 gap-8 launcher-stagger-children">
+                  {apps.map((app, index) => (
+                    <div key={app.title} className={`launcher-stagger-${index + 1}`}>
+                      <AppCard {...app} />
+                    </div>
+                  ))}
                 </div>
-              ))}
+              </div>
+
+              {/* Card do Usuário (sidebar) */}
+              <div className="lg:col-span-1 opacity-0 launcher-animate-unfold launcher-stagger-2">
+                <UserCard session={session} />
+              </div>
             </div>
           </div>
         </section>
-
-        {/* Seção Começando */}
-        <GettingStartedSection />
       </main>
 
-      {/* Footer com estilo editorial refinado */}
+      {/* Footer */}
       <footer className="py-10 px-6 border-t border-launcher-border/50 bg-gradient-to-t from-black/20 to-transparent" role="contentinfo">
         <div className="max-w-5xl mx-auto">
           <div className="flex flex-col md:flex-row justify-between items-center gap-8">
-            {/* Logo e tagline */}
             <div className="flex items-center gap-3">
               <span className="text-display-sm text-launcher-highlight tracking-[0.1em]">MINIAPPS</span>
               <span className="w-px h-4 bg-launcher-border" aria-hidden="true" />
               <span className="text-ui-sm text-launcher-muted">Hub de Aplicativos</span>
             </div>
 
-            {/* Links */}
             <nav aria-label="Links do rodapé">
               <ul className="flex items-center gap-8 text-ui-sm">
                 <li>
@@ -423,9 +459,8 @@ export default function Home() {
               </ul>
             </nav>
 
-            {/* Copyright */}
             <p className="text-ui-sm text-launcher-muted/60">
-              © {new Date().getFullYear()} MiniApps
+              &copy; {new Date().getFullYear()} MiniApps
             </p>
           </div>
         </div>

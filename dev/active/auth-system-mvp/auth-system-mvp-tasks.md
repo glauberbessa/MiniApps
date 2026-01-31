@@ -1,6 +1,6 @@
 # Checklist de Tarefas: Sistema de Autenticação MVP
 
-**Última atualização:** 2026-01-31 (v10 - Fase 8 Completa)
+**Última atualização:** 2026-01-31 (v11 - Fase 9 Completa - MVP FINALIZADO)
 
 ---
 
@@ -261,50 +261,57 @@ Inclui testes para:
 
 ---
 
-## Fase 9: Integração Login na Home (Última Etapa)
-
-> **IMPORTANTE:** Esta fase só deve ser executada após todas as outras estarem completas.
-> A página inicial atual deve permanecer inalterada até esta etapa.
+## Fase 9: Integração Login na Home (Última Etapa) ✅ COMPLETA
 
 ### 9.1 Componentes da Home Integrada
-- [ ] Criar `src/components/home/home-guest.tsx`
-  - [ ] Cards dos mini-apps (igual atual)
-  - [ ] Formulário de login inline
-  - [ ] Link para cadastro
-  - [ ] Botão OAuth Google
-- [ ] Criar `src/components/home/home-authenticated.tsx`
-  - [ ] Cards dos mini-apps com mais recursos
-  - [ ] Informações do usuário logado
-  - [ ] Acesso rápido às configurações
-  - [ ] Botão de logout
+- [x] Criar `src/components/home/home-guest.tsx`
+  - [x] Cards dos mini-apps (igual atual)
+  - [x] Formulário de login inline
+  - [x] Link para cadastro
+  - [x] Botão OAuth Google
+- [x] Criar `src/components/home/home-authenticated.tsx`
+  - [x] Cards dos mini-apps com mais recursos
+  - [x] Informações do usuário logado
+  - [x] Acesso rápido às configurações (alterar senha)
+  - [x] Botão de logout
 
 ### 9.2 Lógica Condicional
-- [ ] Criar `src/components/home/home-content.tsx`
-  - [ ] Verificar sessão do usuário
-  - [ ] Renderizar HomeGuest se não autenticado
-  - [ ] Renderizar HomeAuthenticated se autenticado
+- [x] Criar `src/components/home/home-content.tsx`
+  - [x] Verificar sessão do usuário
+  - [x] Renderizar HomeGuest se não autenticado
+  - [x] Renderizar HomeAuthenticated se autenticado
 
 ### 9.3 Página Principal
-- [ ] Modificar `app/page.tsx`
-  - [ ] Substituir conteúdo atual pelo HomeContent
-  - [ ] Manter layout e estrutura visual
-  - [ ] Garantir transição suave entre estados
+- [x] Modificar `app/page.tsx`
+  - [x] Substituir conteúdo atual pelo HomeContent
+  - [x] Manter layout e estrutura visual
+  - [x] Garantir transição suave entre estados
 
 ### 9.4 Recursos Extras para Usuários Autenticados
-- [ ] Definir recursos adicionais do launcher:
-  - [ ] Favoritos/Apps recentes
-  - [ ] Configurações rápidas
-  - [ ] Status de conexão com serviços (YouTube, etc)
+- [x] Definir recursos adicionais do launcher:
+  - [x] Card do usuário com avatar/iniciais
+  - [x] Status online
+  - [x] Acesso rápido para alterar senha
+  - [ ] Favoritos/Apps recentes (futuro)
+  - [ ] Status de conexão com serviços (futuro)
   - [ ] Notificações (futuro)
 
-### 9.5 Testes da Integração
-- [ ] Home sem autenticação mostra cards + login
-- [ ] Login inline funciona corretamente
-- [ ] Após login, home atualiza para versão autenticada
-- [ ] Logout retorna para versão guest
-- [ ] OAuth Google funciona da home
-- [ ] Links para cadastro funcionam
-- [ ] Responsividade mantida
+### 9.5 Testes da Integração (Checklist Manual)
+- [x] Home sem autenticação mostra cards + login
+- [x] Login inline funciona corretamente
+- [x] Após login, home atualiza para versão autenticada
+- [x] Logout retorna para versão guest
+- [x] OAuth Google funciona da home
+- [x] Links para cadastro funcionam
+- [x] Responsividade mantida
+
+### 9.6 Arquivos Criados
+- `src/components/home/home-guest.tsx` - Home para visitantes
+- `src/components/home/home-authenticated.tsx` - Home para usuários logados
+- `src/components/home/home-content.tsx` - Componente condicional
+- `src/components/home/index.ts` - Exports
+- `app/page.tsx` - Página principal atualizada
+- `src/lib/i18n.ts` - Textos da home adicionados
 
 ---
 
@@ -316,11 +323,14 @@ Inclui testes para:
 3. **Média:** Fase 6 (i18n e UX) ✅
 4. **Baixa:** Fase 7 (testes e validação) ✅
 5. **Baixa:** Fase 8 (deploy) ✅
-6. **Final:** Fase 9 (integração home - só após todas as outras) - Pendente
+6. **Final:** Fase 9 (integração home) ✅
+
+### Status Final
+**TODAS AS FASES COMPLETAS** - Sistema de autenticação MVP implementado com sucesso!
 
 ### Bloqueadores Conhecidos
 - Nenhum identificado
 
-### Decisões Pendentes
-- [ ] Domínio de e-mail para Resend (usar domínio próprio ou resend.dev)
-- [ ] Tempo de bloqueio por tentativas (sugestão: 15 min)
+### Decisões Tomadas
+- [x] Domínio de e-mail para Resend: usar resend.dev em dev, domínio próprio em produção
+- [x] Tempo de bloqueio por tentativas: 15 min após 5 tentativas

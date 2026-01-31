@@ -1,6 +1,6 @@
 # Checklist de Tarefas: Sistema de Autenticação MVP
 
-**Última atualização:** 2026-01-30 (v6 - Fase 4 Completa)
+**Última atualização:** 2026-01-30 (v7 - Fase 5 Completa)
 
 ---
 
@@ -164,11 +164,12 @@
 
 ---
 
-## Fase 5: Middleware e Proteção
+## Fase 5: Middleware e Proteção ✅ COMPLETA
 
 ### 5.1 Middleware
-- [ ] Atualizar `middleware.ts` para proteger `/perfil/*`
-- [ ] Redirecionar não-autenticados para login
+- [x] Atualizar `middleware.ts` para proteger `/perfil/*`
+- [x] Redirecionar não-autenticados para login
+- [x] Passar `callbackUrl` para retornar após login
 
 ---
 
@@ -279,7 +280,7 @@
 
 ### Prioridades
 1. **Alta:** Fases 1-4 (funcionalidade básica + e-mail) ✅
-2. **Média:** Fase 5 (proteção de rotas)
+2. **Média:** Fase 5 (proteção de rotas) ✅
 3. **Baixa:** Fases 6-8 (polish, testes e deploy)
 4. **Final:** Fase 9 (integração home - só após todas as outras)
 

@@ -1,8 +1,8 @@
 # Plano de Implementação: Sistema de Autenticação MVP
 
-**Status:** Planejado
+**Status:** Em progresso (Fases 1-5 completas)
 **Criado em:** 2026-01-30
-**Última atualização:** 2026-01-30 (v2 - Adicionada Fase 6: Integração Home)
+**Última atualização:** 2026-01-30 (v3 - Fase 5 Completa)
 
 ---
 
@@ -223,33 +223,46 @@ DATABASE_URL=
 
 ## 8. Fases de Implementação
 
-### Fase 1: Infraestrutura (Base)
+### Fase 1: Infraestrutura (Base) ✅
 - Atualizar schema Prisma
 - Criar utilitários (password, tokens, rate-limit)
 - Instalar dependências
 
-### Fase 2: Backend (APIs)
+### Fase 2: Backend (APIs) ✅
 - Configurar CredentialsProvider no NextAuth
 - Criar rotas de API (register, forgot, reset, change)
 - Implementar validações server-side
 
-### Fase 3: Frontend (UI)
+### Fase 3: Frontend (UI) ✅
 - Criar componentes de formulário
 - Criar páginas de autenticação
 - Implementar validações client-side
 - Adicionar indicador de força da senha
 
-### Fase 4: E-mail
+### Fase 4: E-mail ✅
 - Configurar Resend
 - Criar templates de e-mail
 - Implementar envio de recuperação
 
-### Fase 5: Testes e Polish
-- Testar todos os fluxos
-- Ajustar UX/feedback
-- Verificar segurança
+### Fase 5: Middleware e Proteção ✅
+- Atualizar middleware.ts para proteger rotas /perfil/*
+- Redirecionar não-autenticados para /login
+- Passar callbackUrl para retorno após login
 
-### Fase 6: Integração Login na Home (Última Etapa)
+### Fase 6: i18n e UX
+- Adicionar textos de auth centralizados
+- Loading states e feedback visual
+- Animações de transição
+
+### Fase 7: Testes e Validação
+- Testar todos os fluxos manualmente
+- Verificar segurança (hash, tokens, rate-limit)
+
+### Fase 8: Deploy
+- Configurar variáveis de ambiente na Vercel
+- Push e PR para produção
+
+### Fase 9: Integração Login na Home (Última Etapa)
 - Manter página inicial atual até esta fase
 - Criar versão condicional da home:
   - **Não autenticado:** Cards dos apps + formulário de login inline
@@ -260,14 +273,17 @@ DATABASE_URL=
 
 ## 9. Estimativas
 
-| Fase | Complexidade |
-|------|--------------|
-| Fase 1 | Baixa |
-| Fase 2 | Média |
-| Fase 3 | Média |
-| Fase 4 | Baixa |
-| Fase 5 | Baixa |
-| Fase 6 | Média |
+| Fase | Complexidade | Status |
+|------|--------------|--------|
+| Fase 1 | Baixa | ✅ |
+| Fase 2 | Média | ✅ |
+| Fase 3 | Média | ✅ |
+| Fase 4 | Baixa | ✅ |
+| Fase 5 | Baixa | ✅ |
+| Fase 6 | Baixa | Pendente |
+| Fase 7 | Baixa | Pendente |
+| Fase 8 | Baixa | Pendente |
+| Fase 9 | Média | Pendente |
 
 ---
 

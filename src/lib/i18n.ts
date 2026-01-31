@@ -162,6 +162,161 @@ export const UI_TEXT = {
       "Organize seus vídeos, transfira entre playlists e monitore seu uso da API do YouTube.",
   },
 
+  // Formulários de Autenticação (e-mail/senha)
+  authForms: {
+    // Labels de formulário
+    labels: {
+      email: "E-mail",
+      password: "Senha",
+      currentPassword: "Senha Atual",
+      newPassword: "Nova Senha",
+      confirmPassword: "Confirmar Senha",
+      confirmNewPassword: "Confirmar Nova Senha",
+      name: "Nome",
+    },
+
+    // Placeholders
+    placeholders: {
+      email: "seu@email.com",
+      password: "Digite sua senha",
+      currentPassword: "Digite sua senha atual",
+      newPassword: "Digite sua nova senha",
+      confirmPassword: "Confirme sua senha",
+      confirmNewPassword: "Confirme sua nova senha",
+      name: "Seu nome",
+    },
+
+    // Botões
+    buttons: {
+      login: "Entrar",
+      loggingIn: "Entrando...",
+      register: "Criar Conta",
+      registering: "Criando conta...",
+      forgotPassword: "Enviar Instruções",
+      sendingInstructions: "Enviando...",
+      resetPassword: "Redefinir Senha",
+      resettingPassword: "Redefinindo...",
+      changePassword: "Alterar Senha",
+      changingPassword: "Alterando...",
+      loginWithGoogle: "Continuar com Google",
+      backToLogin: "Voltar para o login",
+      requestNewLink: "Solicitar Novo Link",
+      setPassword: "Definir Senha",
+    },
+
+    // Títulos de páginas
+    titles: {
+      login: "Entrar",
+      register: "Criar Conta",
+      forgotPassword: "Esqueceu sua senha?",
+      resetPassword: "Redefinir Senha",
+      changePassword: "Alterar Senha",
+      invalidLink: "Link Inválido",
+    },
+
+    // Descrições de páginas
+    descriptions: {
+      login: "Entre com seu e-mail e senha ou use sua conta Google",
+      register: "Preencha os dados abaixo para criar sua conta",
+      forgotPassword: "Digite seu e-mail e enviaremos instruções para redefinir sua senha",
+      resetPassword: "Digite sua nova senha abaixo",
+      changePassword: "Digite sua senha atual e escolha uma nova senha",
+      changePasswordOAuth: "Defina uma senha para sua conta",
+    },
+
+    // Mensagens de erro
+    errors: {
+      invalidCredentials: "Credenciais inválidas. Verifique seu e-mail e senha.",
+      loginFailed: "Ocorreu um erro ao fazer login. Tente novamente.",
+      registerFailed: "Erro ao criar conta. Tente novamente.",
+      registerError: "Ocorreu um erro ao criar a conta. Tente novamente.",
+      forgotPasswordFailed: "Erro ao processar solicitação. Tente novamente.",
+      forgotPasswordError: "Ocorreu um erro. Tente novamente.",
+      resetPasswordFailed: "Erro ao redefinir senha. Tente novamente.",
+      resetPasswordError: "Ocorreu um erro. Tente novamente.",
+      changePasswordFailed: "Erro ao alterar senha. Tente novamente.",
+      changePasswordError: "Ocorreu um erro. Tente novamente.",
+      invalidToken: "Este link de recuperação de senha expirou ou é inválido.",
+      tokenExpiredInfo: "Os links de recuperação são válidos por 1 hora. Se seu link expirou, solicite um novo.",
+    },
+
+    // Mensagens de sucesso
+    success: {
+      registered: "Conta criada com sucesso! Redirecionando para o login...",
+      registeredBanner: "Conta criada com sucesso! Faça login para continuar.",
+      passwordReset: "Sua senha foi alterada com sucesso. Redirecionando para o login...",
+      passwordResetBanner: "Senha redefinida com sucesso! Faça login com sua nova senha.",
+      passwordChanged: "Senha alterada com sucesso!",
+      emailSent: "Se o e-mail informado estiver cadastrado, você receberá instruções para redefinir sua senha.",
+    },
+
+    // Links e navegação
+    links: {
+      forgotPassword: "Esqueceu sua senha?",
+      noAccount: "Não tem uma conta?",
+      hasAccount: "Já tem uma conta?",
+      register: "Cadastre-se",
+      login: "Entrar",
+    },
+
+    // Divisores
+    dividers: {
+      orContinueWith: "Ou continue com",
+    },
+
+    // Estados de verificação
+    verification: {
+      checkEmail: "Verifique seu e-mail",
+      passwordRedefined: "Senha redefinida",
+    },
+
+    // Informações adicionais
+    info: {
+      oauthNoPassword: 'Sua conta foi criada usando Google. Para definir uma senha, use a opção "Esqueci minha senha" no login.',
+      oauthNoPasswordTitle: "Conta sem senha",
+    },
+  },
+
+  // Toasts de autenticação
+  authToasts: {
+    loginSuccess: {
+      title: "Bem-vindo!",
+      description: "Login realizado com sucesso.",
+    },
+    loginError: {
+      title: "Erro no login",
+      description: "Não foi possível fazer login. Tente novamente.",
+    },
+    registerSuccess: {
+      title: "Conta criada!",
+      description: "Sua conta foi criada com sucesso. Faça login para continuar.",
+    },
+    registerError: {
+      title: "Erro no cadastro",
+      description: "Não foi possível criar sua conta. Tente novamente.",
+    },
+    passwordResetEmailSent: {
+      title: "E-mail enviado!",
+      description: "Verifique sua caixa de entrada.",
+    },
+    passwordResetSuccess: {
+      title: "Senha redefinida!",
+      description: "Sua senha foi alterada. Faça login com a nova senha.",
+    },
+    passwordChangeSuccess: {
+      title: "Senha alterada!",
+      description: "Sua senha foi alterada com sucesso.",
+    },
+    passwordChangeError: {
+      title: "Erro ao alterar senha",
+      description: "Não foi possível alterar sua senha. Tente novamente.",
+    },
+    logoutSuccess: {
+      title: "Até logo!",
+      description: "Você saiu da sua conta.",
+    },
+  },
+
   // Geral
   general: {
     loading: "Carregando...",

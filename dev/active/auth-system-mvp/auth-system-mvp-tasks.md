@@ -1,6 +1,6 @@
 # Checklist de Tarefas: Sistema de Autenticação MVP
 
-**Última atualização:** 2026-01-30 (v7 - Fase 5 Completa)
+**Última atualização:** 2026-01-31 (v8 - Fase 6 Completa)
 
 ---
 
@@ -173,19 +173,30 @@
 
 ---
 
-## Fase 6: i18n e UX
+## Fase 6: i18n e UX ✅ COMPLETA
 
 ### 6.1 Traduções
-- [ ] Adicionar textos de auth em `src/lib/i18n.ts`:
-  - [ ] Labels de formulário
-  - [ ] Mensagens de erro
-  - [ ] Mensagens de sucesso
-  - [ ] Textos de botão
+- [x] Adicionar textos de auth em `src/lib/i18n.ts`:
+  - [x] Labels de formulário (authForms.labels)
+  - [x] Placeholders (authForms.placeholders)
+  - [x] Mensagens de erro (authForms.errors)
+  - [x] Mensagens de sucesso (authForms.success)
+  - [x] Textos de botão (authForms.buttons)
+  - [x] Textos de toasts (authToasts)
 
 ### 6.2 Feedback Visual
-- [ ] Loading states nos botões
-- [ ] Toast de sucesso/erro
-- [ ] Animações de transição
+- [x] Loading states nos botões (texto muda quando isLoading)
+- [x] Toast de sucesso/erro integrado em todos os formulários
+- [x] Toaster adicionado ao layout principal (`app/layout.js`)
+
+### 6.3 Animações de Transição
+- [x] Animações CSS adicionadas em `src/styles/animations.css`:
+  - [x] `animate-auth-card` - entrada suave para cards
+  - [x] `animate-form-transition` - transição entre estados
+  - [x] `animate-success-check` - checkmark com bounce
+  - [x] `animate-feedback-in` - entrada de mensagens
+  - [x] Classes para OAuth button e links
+- [x] Animações inline do Tailwind CSS nos componentes
 
 ---
 

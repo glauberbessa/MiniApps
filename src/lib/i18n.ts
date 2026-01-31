@@ -356,6 +356,46 @@ export const UI_TEXT = {
     success: "Atribuição concluída!",
     error: "Erro na atribuição",
   },
+
+  // Home (Launcher)
+  home: {
+    title: "MINIAPPS",
+    subtitle: "Sua central de aplicativos",
+    badgeVersion: "v2.0 disponível",
+    welcomeBack: "Bem-vindo de volta, {name}",
+    chooseApp: "Escolha um aplicativo para começar",
+    access: "ACESSO",
+    enterAccount: "Entre na sua conta",
+    userOnline: "Online",
+    changePassword: "Alterar senha",
+    apps: {
+      ytpm: {
+        title: "Playlist Manager",
+        subtitle: "YouTube",
+        description: "Gerencie suas playlists do YouTube como um profissional. Sincronização automática, transferência de vídeos e monitoramento de quota em tempo real.",
+        features: [
+          "Sincronização automática",
+          "Transfer entre playlists",
+          "Monitoramento de quota",
+        ],
+      },
+      scanner: {
+        title: "QR Code & Barras",
+        subtitle: "Scanner",
+        description: "Escaneie códigos QR e de barras instantaneamente. Interface minimalista focada na velocidade e precisão.",
+        features: [
+          "QR Code e códigos de barras",
+          "OCR para texto",
+          "Zoom progressivo",
+        ],
+      },
+    },
+    footer: {
+      hub: "Hub de Aplicativos",
+      about: "Sobre",
+      privacy: "Privacidade",
+    },
+  },
 };
 
 // Função helper para substituir placeholders

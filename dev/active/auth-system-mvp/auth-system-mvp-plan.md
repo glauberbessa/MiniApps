@@ -1,8 +1,8 @@
 # Plano de Implementação: Sistema de Autenticação MVP
 
-**Status:** Em progresso (Fases 1-8 completas)
+**Status:** ✅ COMPLETO
 **Criado em:** 2026-01-30
-**Última atualização:** 2026-01-31 (v6 - Fase 8 Completa)
+**Última atualização:** 2026-01-31 (v7 - MVP FINALIZADO)
 
 ---
 
@@ -267,12 +267,12 @@ DATABASE_URL=
 - Checklist de configuração do Resend
 - TypeScript verificado sem erros
 
-### Fase 9: Integração Login na Home (Última Etapa)
-- Manter página inicial atual até esta fase
-- Criar versão condicional da home:
-  - **Não autenticado:** Cards dos apps + formulário de login inline
-  - **Autenticado:** Launcher completo com recursos adicionais
-- Substituir página inicial apenas quando toda infraestrutura estiver pronta
+### Fase 9: Integração Login na Home ✅
+- Componente `HomeGuest` com cards + login inline
+- Componente `HomeAuthenticated` com card do usuário
+- Componente `HomeContent` com lógica condicional
+- Página principal atualizada para usar novos componentes
+- Textos da home adicionados ao i18n
 
 ---
 
@@ -288,7 +288,9 @@ DATABASE_URL=
 | Fase 6 | Baixa | ✅ |
 | Fase 7 | Baixa | ✅ |
 | Fase 8 | Baixa | ✅ |
-| Fase 9 | Média | Pendente |
+| Fase 9 | Média | ✅ |
+
+**TODAS AS FASES COMPLETAS!**
 
 ---
 

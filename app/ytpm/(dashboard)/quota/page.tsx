@@ -23,8 +23,8 @@ export default function QuotaPage() {
 
   const getProgressColor = (percent: number) => {
     if (percent >= 80) return "bg-destructive";
-    if (percent >= 50) return "bg-yellow-500";
-    return "bg-green-500";
+    if (percent >= 50) return "bg-warning";
+    return "bg-success";
   };
 
   return (
@@ -75,7 +75,7 @@ export default function QuotaPage() {
                 </CardTitle>
               </CardHeader>
               <CardContent>
-                <div className="text-3xl font-bold text-green-600">
+                <div className="text-3xl font-bold text-success">
                   {formatNumber(quota?.remainingUnits || 0)}
                 </div>
                 <p className="text-sm text-muted-foreground">
@@ -97,8 +97,8 @@ export default function QuotaPage() {
                     (quota?.percentUsed || 0) >= 80
                       ? "text-destructive"
                       : (quota?.percentUsed || 0) >= 50
-                      ? "text-yellow-600"
-                      : "text-green-600"
+                      ? "text-warning"
+                      : "text-success"
                   )}
                 >
                   {(quota?.percentUsed || 0).toFixed(1)}%
@@ -154,8 +154,8 @@ export default function QuotaPage() {
                             percent >= 80
                               ? "text-destructive"
                               : percent >= 50
-                              ? "text-yellow-600"
-                              : "text-green-600"
+                              ? "text-warning"
+                              : "text-success"
                           )}
                         >
                           {percent.toFixed(1)}%

@@ -16,7 +16,7 @@ export default function Error({
 
     return (
         <div className="flex flex-col items-center justify-center p-6 text-center">
-            <h2 className="text-2xl font-bold text-red-600 mb-4">Algo deu errado!</h2>
+            <h2 className="text-2xl font-bold text-destructive mb-4">Algo deu errado!</h2>
             <p className="text-muted-foreground mb-6 max-w-md">
                 {error.message || "Ocorreu um erro inesperado."}
             </p>

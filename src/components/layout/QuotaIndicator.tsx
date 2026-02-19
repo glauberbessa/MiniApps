@@ -42,8 +42,8 @@ export function QuotaIndicator() {
 
   const getColorClass = (percent: number) => {
     if (percent >= 80) return "bg-destructive";
-    if (percent >= 50) return "bg-yellow-500";
-    return "bg-green-500";
+    if (percent >= 50) return "bg-warning";
+    return "bg-success";
   };
 
   return (

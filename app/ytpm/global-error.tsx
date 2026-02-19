@@ -18,7 +18,7 @@ export default function GlobalError({
         <html>
             <body>
                 <div className="flex min-h-screen flex-col items-center justify-center p-6 text-center">
-                    <h2 className="text-2xl font-bold text-red-600 mb-4">
+                    <h2 className="text-2xl font-bold text-destructive mb-4">
                         Erro Crítico no Sistema
                     </h2>
                     <p className="text-muted-foreground mb-6 max-w-md">

@@ -26,8 +26,14 @@ async function fetchPlaylists(): Promise<PlaylistWithConfig[]> {
     credentials: "include",
   });
   if (!res.ok) {
-    const text = await res.text();
-    throw new Error(`Erro ${res.status}: ${text}`);
+    let errorMessage = `Erro ${res.status}`;
+    try {
+      const errorData = await res.json();
+      errorMessage = errorData.error || errorData.message || errorMessage;
+    } catch {
+      errorMessage = `Erro ${res.status}: ${res.statusText || "Erro desconhecido"}`;
+    }
+    throw new Error(errorMessage);
   }
   return res.json();
 }

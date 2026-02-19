@@ -302,7 +302,7 @@ export default function PlaylistsPage() {
       {/* Sticky Transfer Bar */}
       {activeSourceId && (
         <div
-          className="fixed bottom-0 left-0 right-0 bg-background border-t p-4 z-50 shadow-lg md:pl-[250px]"
+          className="fixed bottom-0 left-0 right-0 bg-background/95 backdrop-blur-sm border-t border-border p-4 z-50 shadow-lg md:pl-[250px]"
           role="region"
           aria-label="Ações de vídeos selecionados"
         >

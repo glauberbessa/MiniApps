@@ -47,6 +47,50 @@
 }
 
 /* ==========================================
+ * YTPM SEMANTIC TOKEN OVERRIDES
+ * Override shadcn/UI semantic tokens for YTPM zinc palette
+ * ========================================== */
+
+[data-theme="ytpm"] {
+  /* Backgrounds - Neutral zinc instead of blue-tinted gray */
+  --background: 240 10% 4%;          /* #09090b - ytpm-bg */
+  --foreground: 0 0% 98%;            /* #fafafa - ytpm-text */
+  --card: 240 5% 13%;                /* #1f1f23 - ytpm-card */
+  --card-foreground: 0 0% 98%;       /* #fafafa */
+  --popover: 240 5% 13%;             /* #1f1f23 */
+  --popover-foreground: 0 0% 98%;    /* #fafafa */
+
+  /* Primary - YouTube Red instead of blue */
+  --primary: 348 100% 50%;           /* #ff0033 - ytpm-accent */
+  --primary-foreground: 0 0% 100%;   /* white */
+
+  /* Secondary & Muted - Zinc tones */
+  --secondary: 240 6% 10%;           /* #18181b - ytpm-surface */
+  --secondary-foreground: 0 0% 98%;  /* #fafafa */
+  --muted: 240 6% 10%;               /* #18181b - ytpm-surface */
+  --muted-foreground: 240 5% 65%;    /* #a1a1aa - ytpm-muted */
+  --accent: 240 6% 10%;              /* #18181b - ytpm-surface */
+  --accent-foreground: 0 0% 98%;     /* #fafafa */
+
+  /* Destructive */
+  --destructive: 0 84% 60%;          /* #ef4444 - ytpm-error */
+  --destructive-foreground: 0 0% 98%;
+
+  /* Borders */
+  --border: 240 4% 16%;              /* #27272a - ytpm-border */
+  --input: 240 4% 16%;               /* #27272a */
+  --ring: 348 100% 50%;              /* YouTube Red for focus rings */
+
+  /* Semantic status colors */
+  --success: 160 84% 39%;            /* #10b981 - emerald */
+  --success-foreground: 0 0% 100%;
+  --warning: 38 92% 50%;             /* #f59e0b - amber */
+  --warning-foreground: 0 0% 7%;
+  --info: 217 91% 60%;               /* #3b82f6 */
+  --info-foreground: 0 0% 100%;
+}
+
+/* ==========================================
  * YTPM BACKGROUND PATTERNS
  * ========================================== */
 

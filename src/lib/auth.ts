@@ -176,6 +176,13 @@ function extractMissingTable(message: string): string | null {
   return null;
 }
 
+function extractMissingColumn(message: string): string | null {
+  const columnMatch = message.match(/The column `([^`]+)` does not exist/i);
+  if (columnMatch?.[1]) {
+    return columnMatch[1];
+  }
+  return null;
+}
 function extractErrorCauseChain(err: unknown, maxDepth = 10): { message: string; rootError?: Error } {
   const messages: string[] = [];
   let current: unknown = err;
@@ -259,6 +266,17 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
           isVercel: !!process.env.VERCEL,
           hasDatabaseUrl: !!process.env.DATABASE_URL,
           guidance: "Run `prisma migrate deploy` (or `prisma db push`) against the production database and confirm DATABASE_URL points to that database.",
+        });
+      }
+
+      // Check for missing column in the cause chain (schema drift)
+      const missingColumn = extractMissingColumn(causeChain.message);
+      if (missingColumn) {
+        logger.critical("DATABASE", "Missing database column detected - schema out of sync", causeChain.rootError, {
+          missingColumn,
+          isVercel: !!process.env.VERCEL,
+          hasDatabaseUrl: !!process.env.DATABASE_URL,
+          guidance: "The Prisma schema has columns that don't exist in the database. Run `prisma migrate deploy` (or `prisma db push`) against the production database to add the missing columns.",
         });
       }
     },

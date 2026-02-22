@@ -1,7 +1,16 @@
 import { Button } from "@/components/ui/button";
-import { Youtube, ListVideo, Radio, Gauge, Check, Shield, BarChart3, ArrowRight, Zap } from "lucide-react";
+import { Youtube, ListVideo, Radio, Gauge, Check, Shield, BarChart3, ArrowRight, Zap, AlertCircle } from "lucide-react";
 import { UI_TEXT } from "@/lib/i18n";
 import { signInWithGoogle } from "./actions";
+
+const authErrorMessages: Record<string, string> = {
+  AdapterError: "Erro de conexão com o banco de dados. Tente novamente em alguns instantes.",
+  OAuthCallback: "Erro ao autenticar com o Google. Tente novamente.",
+  OAuthSignin: "Erro ao iniciar autenticação com o Google.",
+  OAuthAccountNotLinked: "Esta conta já está vinculada a outro método de login.",
+  AccessDenied: "Acesso negado. Verifique as permissões da sua conta Google.",
+  Default: "Ocorreu um erro na autenticação. Tente novamente.",
+};
 
 // Ícone do Google com cores oficiais
 function GoogleIcon({ className }: { className?: string }) {
@@ -32,7 +41,16 @@ function GoogleIcon({ className }: { className?: string }) {
   );
 }
 
-export default function LoginPage() {
+export default async function LoginPage({
+  searchParams,
+}: {
+  searchParams: Promise<{ error?: string }>;
+}) {
+  const { error: errorCode } = await searchParams;
+  const errorMessage = errorCode
+    ? authErrorMessages[errorCode] || authErrorMessages.Default
+    : null;
+
   const features = [
     {
       icon: ListVideo,
@@ -108,6 +126,17 @@ export default function LoginPage() {
             <div className="w-2 h-2 rounded-full bg-ytpm-accent/50" />
           </div>
         </div>
+
+        {/* Mensagem de erro */}
+        {errorMessage && (
+          <div
+            className="flex items-start gap-3 p-4 mb-6 rounded-lg bg-red-500/10 border border-red-500/30 text-sm text-red-300"
+            role="alert"
+          >
+            <AlertCircle className="h-5 w-5 shrink-0 text-red-400 mt-0.5" />
+            <span>{errorMessage}</span>
+          </div>
+        )}
 
         {/* Botão de Login - Destaque principal */}
         <form action={signInWithGoogle} className="mb-8">

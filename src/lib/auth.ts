@@ -535,8 +535,44 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
           session.user.youtubeChannelId = dbUser.youtubeChannelId;
         }
 
-        // Use access token from JWT
-        if (token.accessToken) {
+        // Check if JWT access token might be expired
+        const now = Math.floor(Date.now() / 1000);
+        const jwtTokenExpired = token.expiresAt && typeof token.expiresAt === "number"
+          ? (token.expiresAt as number) < now - 60
+          : false;
+
+        if (token.accessToken && !jwtTokenExpired) {
+          // JWT token is fresh, use it directly
+          session.accessToken = token.accessToken as string;
+        } else if (dbUser) {
+          // JWT token expired or missing, try to get a fresh one from DB account
+          console.log(`[ROOT_AUTH_CALLBACK:session] JWT token expired or missing, trying DB account refresh`);
+          const googleAccount = dbUser.accounts.find((a) => a.provider === "google");
+
+          if (googleAccount?.access_token) {
+            const dbTokenExpired = (googleAccount.expires_at || 0) < now - 60;
+
+            if (dbTokenExpired && googleAccount.refresh_token) {
+              // DB token also expired, try to refresh
+              console.log(`[ROOT_AUTH_CALLBACK:session] DB token also expired, refreshing...`);
+              const newToken = await refreshAccessToken({
+                id: googleAccount.id,
+                refresh_token: googleAccount.refresh_token,
+              });
+              session.accessToken = newToken ?? googleAccount.access_token ?? null;
+            } else if (!dbTokenExpired) {
+              // DB has a fresher token (possibly refreshed by another request)
+              console.log(`[ROOT_AUTH_CALLBACK:session] Using fresher token from DB account`);
+              session.accessToken = googleAccount.access_token;
+            } else {
+              // Token expired, no refresh token available
+              session.accessToken = (token.accessToken as string) ?? null;
+            }
+          } else if (token.accessToken) {
+            // No Google account found, use JWT token as-is
+            session.accessToken = token.accessToken as string;
+          }
+        } else if (token.accessToken) {
           session.accessToken = token.accessToken as string;
         }
 

@@ -31,7 +31,7 @@ export default async function LoginPage({ searchParams }: LoginPageProps) {
   const reset = params.reset === "true"
 
   return (
-    <div className="flex min-h-screen items-center justify-center bg-gradient-to-b from-gray-50 to-gray-100 dark:from-gray-950 dark:to-gray-900 px-4 py-12">
+    <div className="flex min-h-screen items-center justify-center bg-gradient-to-b from-gray-50 to-gray-100 px-4 py-12">
       <Card className="w-full max-w-md">
         <CardHeader className="space-y-1 text-center">
           <CardTitle className="text-2xl font-bold">Entrar</CardTitle>
@@ -41,17 +41,17 @@ export default async function LoginPage({ searchParams }: LoginPageProps) {
         </CardHeader>
         <CardContent className="space-y-4">
           {registered && (
-            <div className="rounded-md bg-green-50 dark:bg-green-950 p-3 text-sm text-green-800 dark:text-green-300">
+            <div className="rounded-md bg-green-50 p-3 text-sm text-green-800">
               Conta criada com sucesso! Faça login para continuar.
             </div>
           )}
           {reset && (
-            <div className="rounded-md bg-green-50 dark:bg-green-950 p-3 text-sm text-green-800 dark:text-green-300">
+            <div className="rounded-md bg-green-50 p-3 text-sm text-green-800">
               Senha redefinida com sucesso! Faça login com sua nova senha.
             </div>
           )}
 
-          <Suspense fallback={<div className="h-[200px] animate-pulse bg-gray-100 dark:bg-gray-800 rounded-md" />}>
+          <Suspense fallback={<div className="h-[200px] animate-pulse bg-gray-100 rounded-md" />}>
             <LoginForm />
           </Suspense>
 

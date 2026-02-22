@@ -31,7 +31,7 @@ export default async function AlterarSenhaPage() {
   const hasPassword = !!user?.password
 
   return (
-    <div className="flex min-h-screen items-center justify-center bg-gradient-to-b from-gray-50 to-gray-100 dark:from-gray-950 dark:to-gray-900 px-4 py-12">
+    <div className="flex min-h-screen items-center justify-center bg-gradient-to-b from-gray-50 to-gray-100 px-4 py-12">
       <Card className="w-full max-w-md">
         <CardHeader className="space-y-1">
           <div className="flex items-center gap-2">
@@ -53,11 +53,11 @@ export default async function AlterarSenhaPage() {
         <CardContent>
           {!hasPassword ? (
             <div className="space-y-4">
-              <div className="flex items-start gap-3 rounded-md bg-blue-50 dark:bg-blue-950 p-4">
-                <AlertCircle className="mt-0.5 h-5 w-5 text-blue-600 dark:text-blue-400" />
-                <div className="text-sm text-blue-800 dark:text-blue-300">
+              <div className="flex items-start gap-3 rounded-md bg-blue-50 p-4">
+                <AlertCircle className="mt-0.5 h-5 w-5 text-blue-600" />
+                <div className="text-sm text-blue-800">
                   <p className="font-medium">Conta sem senha</p>
-                  <p className="mt-1 text-blue-700 dark:text-blue-400">
+                  <p className="mt-1 text-blue-700">
                     Sua conta foi criada usando Google. Para definir uma senha,
                     use a opção &quot;Esqueci minha senha&quot; no login.
                   </p>
@@ -68,7 +68,7 @@ export default async function AlterarSenhaPage() {
               </Button>
             </div>
           ) : (
-            <Suspense fallback={<div className="h-[300px] animate-pulse bg-gray-100 dark:bg-gray-800 rounded-md" />}>
+            <Suspense fallback={<div className="h-[300px] animate-pulse bg-gray-100 rounded-md" />}>
               <ChangePasswordForm />
             </Suspense>
           )}

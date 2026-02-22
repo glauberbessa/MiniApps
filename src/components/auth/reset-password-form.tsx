@@ -84,8 +84,8 @@ export function ResetPasswordForm({ token, className }: ResetPasswordFormProps) 
   if (success) {
     return (
       <div className="space-y-4 text-center animate-in fade-in-0 zoom-in-95 duration-300">
-        <div className="mx-auto flex h-12 w-12 items-center justify-center rounded-full bg-green-100">
-          <CheckCircle className="h-6 w-6 text-green-600" />
+        <div className="mx-auto flex h-12 w-12 items-center justify-center rounded-full bg-green-100 dark:bg-green-900/30">
+          <CheckCircle className="h-6 w-6 text-green-600 dark:text-green-400" />
         </div>
         <div className="space-y-2">
           <h3 className="text-lg font-medium">{txt.verification.passwordRedefined}</h3>

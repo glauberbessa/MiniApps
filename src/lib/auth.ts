@@ -164,25 +164,6 @@ async function refreshAccessToken(account: {
 const useSecureCookies = process.env.NODE_ENV === "production";
 const cookiePrefix = useSecureCookies ? "__Secure-" : "";
 
-function extractAuthErrorMessage(messages: unknown[]): string {
-  return messages
-    .map((entry) => {
-      if (entry instanceof Error) {
-        return entry.message;
-      }
-      if (typeof entry === "string") {
-        return entry;
-      }
-      if (entry && typeof entry === "object" && "message" in entry) {
-        const message = (entry as { message?: unknown }).message;
-        return typeof message === "string" ? message : JSON.stringify(entry);
-      }
-      return JSON.stringify(entry);
-    })
-    .filter(Boolean)
-    .join(" ");
-}
-
 function extractMissingTable(message: string): string | null {
   const prismaMatch = message.match(/The table `([^`]+)` does not exist/i);
   if (prismaMatch?.[1]) {
@@ -195,16 +176,27 @@ function extractMissingTable(message: string): string | null {
   return null;
 }
 
-function extractErrorCauseChain(err: unknown): { message: string; rootError?: Error } {
+function extractErrorCauseChain(err: unknown, maxDepth = 10): { message: string; rootError?: Error } {
   const messages: string[] = [];
   let current: unknown = err;
   let rootError: Error | undefined;
+  let depth = 0;
 
-  while (current) {
+  while (current && depth < maxDepth) {
+    depth++;
     if (current instanceof Error) {
       messages.push(`[${current.name}] ${current.message}`);
       rootError = current;
-      current = current.cause;
+      // NextAuth v5 sets cause as { err: Error, ...metadata }
+      const cause = (current as { cause?: unknown }).cause;
+      if (cause && typeof cause === "object" && cause !== null && "err" in cause) {
+        const causeObj = cause as Record<string, unknown>;
+        if (causeObj.err instanceof Error) {
+          current = causeObj.err;
+          continue;
+        }
+      }
+      current = cause;
     } else if (typeof current === "object" && current !== null && "message" in current) {
       messages.push(String((current as { message: unknown }).message));
       current = (current as { cause?: unknown }).cause;
@@ -217,6 +209,11 @@ function extractErrorCauseChain(err: unknown): { message: string; rootError?: Er
 }
 
 function withRetryAdapter(adapter: ReturnType<typeof PrismaAdapter>) {
+  const isTransientError = (error: unknown): boolean => {
+    const msg = error instanceof Error ? error.message : String(error);
+    return /connection|timeout|ECONNREFUSED|ECONNRESET|socket|fetch failed|Can't reach database/i.test(msg);
+  };
+
   const handler: ProxyHandler<typeof adapter> = {
     get(target, prop: string) {
       const original = target[prop as keyof typeof target];
@@ -226,7 +223,9 @@ function withRetryAdapter(adapter: ReturnType<typeof PrismaAdapter>) {
         try {
           return await (original as (...a: unknown[]) => Promise<unknown>).apply(target, args);
         } catch (error) {
-          logger.warn("DATABASE", `Adapter method "${prop}" failed, retrying once...`, {
+          if (!isTransientError(error)) throw error;
+
+          logger.warn("DATABASE", `Adapter method "${prop}" failed with transient error, retrying once...`, {
             error: error instanceof Error ? error.message : String(error),
           });
           await new Promise((r) => setTimeout(r, 500));
@@ -245,20 +244,15 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
   debug: process.env.NODE_ENV === "development" || process.env.AUTH_DEBUG === "true",
   logger: {
     error(code, ...message) {
-      const combinedMessage = extractAuthErrorMessage(message);
-
-      // Extract the full cause chain from the error object (code is the AdapterError)
+      // Extract the full cause chain from the error object (code is the AdapterError in NextAuth v5)
       const causeChain = extractErrorCauseChain(code);
-      const fullMessage = [combinedMessage, causeChain.message].filter(Boolean).join(" | ");
 
       logger.error("AUTH", `NextAuth internal error: ${code}`, causeChain.rootError, {
-        code,
-        combinedMessage: combinedMessage.substring(0, 500),
         causeChain: causeChain.message.substring(0, 1000),
       });
 
-      // Check for missing table in the FULL message (including cause chain)
-      const missingTable = extractMissingTable(fullMessage);
+      // Check for missing table in the cause chain
+      const missingTable = extractMissingTable(causeChain.message);
       if (missingTable) {
         logger.critical("DATABASE", "Missing Prisma table detected during auth", causeChain.rootError, {
           missingTable,

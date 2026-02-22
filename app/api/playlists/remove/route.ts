@@ -3,6 +3,7 @@ import { auth } from "@/lib/auth";
 import { YouTubeService } from "@/lib/youtube";
 import { checkQuotaAvailable } from "@/lib/quota";
 import { calculateRemoveCost } from "@/lib/quota.shared";
+import { logger, generateTraceId, setTraceId, clearTraceId } from "@/lib/logger";
 
 export const dynamic = "force-dynamic";
 
@@ -15,46 +16,68 @@ interface RemoveRequest {
 }
 
 export async function POST(request: NextRequest) {
+  const traceId = generateTraceId();
+  setTraceId(traceId);
+  const startTime = Date.now();
+
   try {
+    logger.info("API", "POST /api/playlists/remove - Request started", { traceId });
+
     const session = await auth();
 
+    logger.info("API", "POST /api/playlists/remove - Session retrieved", {
+      traceId,
+      hasSession: !!session,
+      hasUserId: !!session?.user?.id,
+      userId: session?.user?.id,
+      hasAccessToken: !!session?.accessToken,
+      accessTokenLength: session?.accessToken?.length || 0,
+    });
+
     if (!session?.user?.id || !session.accessToken) {
-      return NextResponse.json({ error: "Não autorizado" }, { status: 401 });
+      const reason = !session ? "no_session" : !session.user?.id ? "no_user_id" : "no_access_token";
+      logger.warn("API", "POST /api/playlists/remove - Unauthorized", { traceId, reason });
+      clearTraceId();
+      return NextResponse.json({ error: "Não autorizado", reason, traceId }, { status: 401 });
     }
 
     const body: RemoveRequest = await request.json();
 
+    logger.info("API", "POST /api/playlists/remove - Request body parsed", {
+      traceId,
+      sourcePlaylistId: body.sourcePlaylistId,
+      videosCount: body.videos?.length || 0,
+    });
+
     if (!body.sourcePlaylistId) {
-      return NextResponse.json(
-        { error: "ID da playlist de origem é obrigatório" },
-        { status: 400 }
-      );
+      logger.warn("API", "POST /api/playlists/remove - Missing source playlist ID", { traceId });
+      clearTraceId();
+      return NextResponse.json({ error: "ID da playlist de origem é obrigatório", traceId }, { status: 400 });
     }
 
     if (!body.videos || body.videos.length === 0) {
-      return NextResponse.json(
-        { error: "Nenhum vídeo selecionado" },
-        { status: 400 }
-      );
+      logger.warn("API", "POST /api/playlists/remove - No videos selected", { traceId });
+      clearTraceId();
+      return NextResponse.json({ error: "Nenhum vídeo selecionado", traceId }, { status: 400 });
     }
 
     const requiredQuota = calculateRemoveCost(body.videos.length);
     const hasQuota = await checkQuotaAvailable(session.user.id, requiredQuota);
 
+    logger.info("API", "POST /api/playlists/remove - Quota check", {
+      traceId,
+      requiredQuota,
+      hasQuota,
+      videoCount: body.videos.length,
+    });
+
     if (!hasQuota) {
-      return NextResponse.json(
-        {
-          error: "Quota insuficiente para esta operação",
-          requiredQuota,
-        },
-        { status: 429 }
-      );
+      logger.warn("API", "POST /api/playlists/remove - Insufficient quota", { traceId, requiredQuota });
+      clearTraceId();
+      return NextResponse.json({ error: "Quota insuficiente para esta operação", requiredQuota, traceId }, { status: 429 });
     }
 
-    const youtubeService = new YouTubeService(
-      session.accessToken,
-      session.user.id
-    );
+    const youtubeService = new YouTubeService(session.accessToken, session.user.id);
 
     let removed = 0;
     let errors = 0;
@@ -64,10 +87,15 @@ export async function POST(request: NextRequest) {
       error?: string;
     }> = [];
 
-    for (const video of body.videos) {
-      const result = await youtubeService.removeVideoFromPlaylist(
-        video.playlistItemId
-      );
+    for (let i = 0; i < body.videos.length; i++) {
+      const video = body.videos[i];
+      logger.debug("API", `POST /api/playlists/remove - Removing video ${i + 1}/${body.videos.length}`, {
+        traceId,
+        videoId: video.videoId,
+        playlistItemId: video.playlistItemId,
+      });
+
+      const result = await youtubeService.removeVideoFromPlaylist(video.playlistItemId);
       if (result.success) {
         removed++;
         details.push({ videoId: video.videoId, status: "success" });
@@ -81,6 +109,18 @@ export async function POST(request: NextRequest) {
       }
     }
 
+    const totalElapsed = Date.now() - startTime;
+
+    logger.info("API", "POST /api/playlists/remove - Request completed", {
+      traceId,
+      success: errors === 0,
+      removed,
+      errors,
+      totalElapsed: `${totalElapsed}ms`,
+    });
+
+    clearTraceId();
+
     return NextResponse.json({
       success: errors === 0,
       removed,
@@ -88,9 +128,15 @@ export async function POST(request: NextRequest) {
       details,
     });
   } catch (error) {
-    console.error("Erro ao remover vídeos da playlist:", error);
+    const totalElapsed = Date.now() - startTime;
+    logger.error("API", "POST /api/playlists/remove - Request FAILED", error instanceof Error ? error : undefined, {
+      traceId,
+      elapsed: `${totalElapsed}ms`,
+      errorMessage: error instanceof Error ? error.message : String(error),
+    });
+    clearTraceId();
     return NextResponse.json(
-      { error: "Erro ao remover vídeos da playlist" },
+      { error: "Erro ao remover vídeos da playlist", traceId, details: error instanceof Error ? error.message : String(error) },
       { status: 500 }
     );
   }

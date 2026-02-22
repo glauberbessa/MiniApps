@@ -8,26 +8,70 @@ export class YouTubeService {
   private youtube: youtube_v3.Youtube;
   private userId: string;
   private accessTokenPreview: string;
+  private instanceId: string;
 
   constructor(accessToken: string, userId: string) {
-    logger.info("YOUTUBE_API", "YouTubeService instantiated", {
+    this.instanceId = `yt-${Date.now().toString(36)}-${Math.random().toString(36).substring(2, 6)}`;
+
+    logger.info("YOUTUBE_API", "YouTubeService constructor START", {
+      instanceId: this.instanceId,
       userId,
-      accessTokenLength: accessToken.length,
-      accessTokenPreview: `${accessToken.substring(0, 20)}...`,
+      accessTokenLength: accessToken?.length ?? 0,
+      accessTokenPreview: accessToken ? `${accessToken.substring(0, 20)}...` : "EMPTY/NULL",
+      accessTokenType: typeof accessToken,
+      hasAccessToken: !!accessToken,
     });
 
-    const oauth2Client = new google.auth.OAuth2();
-    oauth2Client.setCredentials({ access_token: accessToken });
+    if (!accessToken) {
+      logger.error("YOUTUBE_API", "YouTubeService constructor called with EMPTY/NULL access token!", undefined, {
+        instanceId: this.instanceId,
+        userId,
+        accessTokenValue: String(accessToken),
+      });
+    }
 
-    this.youtube = google.youtube({ version: "v3", auth: oauth2Client });
+    try {
+      const oauth2Client = new google.auth.OAuth2();
+      logger.debug("YOUTUBE_API", "OAuth2 client created for YouTubeService", {
+        instanceId: this.instanceId,
+      });
+
+      oauth2Client.setCredentials({ access_token: accessToken });
+      logger.debug("YOUTUBE_API", "OAuth2 credentials set on client", {
+        instanceId: this.instanceId,
+      });
+
+      this.youtube = google.youtube({ version: "v3", auth: oauth2Client });
+      logger.info("YOUTUBE_API", "YouTube API v3 client initialized successfully", {
+        instanceId: this.instanceId,
+        userId,
+      });
+    } catch (error) {
+      logger.error("YOUTUBE_API", "YouTubeService constructor FAILED to initialize API client", error instanceof Error ? error : undefined, {
+        instanceId: this.instanceId,
+        userId,
+        errorMessage: error instanceof Error ? error.message : String(error),
+        errorName: error instanceof Error ? error.name : "unknown",
+      });
+      throw error;
+    }
+
     this.userId = userId;
-    this.accessTokenPreview = `${accessToken.substring(0, 20)}...`;
+    this.accessTokenPreview = accessToken ? `${accessToken.substring(0, 20)}...` : "EMPTY";
+
+    logger.info("YOUTUBE_API", "YouTubeService constructor END - instance ready", {
+      instanceId: this.instanceId,
+      userId,
+      accessTokenPreview: this.accessTokenPreview,
+    });
   }
 
   // Listar playlists do usuário
   async getPlaylists(): Promise<Playlist[]> {
-    logger.info("YOUTUBE_API", "getPlaylists called", {
+    logger.info("YOUTUBE_API", "getPlaylists START", {
+      instanceId: this.instanceId,
       userId: this.userId,
+      accessTokenPreview: this.accessTokenPreview,
     });
 
     const playlists: Playlist[] = [];
@@ -39,8 +83,10 @@ export class YouTubeService {
         pageCount++;
         const startTime = Date.now();
 
-        logger.info("YOUTUBE_API", `Fetching playlists page ${pageCount}`, {
+        logger.info("YOUTUBE_API", `getPlaylists - Fetching page ${pageCount}`, {
+          instanceId: this.instanceId,
           pageToken: pageToken || "initial",
+          playlistsSoFar: playlists.length,
         });
 
         const response = await this.youtube.playlists.list({
@@ -55,10 +101,13 @@ export class YouTubeService {
         await trackQuotaUsage(this.userId, "playlists.list");
 
         logger.youtubeApi(`playlists.list page ${pageCount}`, true, {
+          instanceId: this.instanceId,
           elapsed: `${elapsed}ms`,
           itemsCount: response.data.items?.length || 0,
           hasNextPage: !!response.data.nextPageToken,
           totalResults: response.data.pageInfo?.totalResults,
+          responseStatus: response.status,
+          responseStatusText: response.statusText,
         });
 
         for (const item of response.data.items || []) {
@@ -75,22 +124,32 @@ export class YouTubeService {
         pageToken = response.data.nextPageToken || undefined;
       } while (pageToken);
 
-      logger.youtubeApi("getPlaylists completed", true, {
+      logger.youtubeApi("getPlaylists END - completed successfully", true, {
+        instanceId: this.instanceId,
         totalPlaylists: playlists.length,
         pagesLoaded: pageCount,
+        playlistIds: playlists.map(p => p.id).slice(0, 10),
+        playlistTitles: playlists.map(p => p.title).slice(0, 10),
       });
 
       return playlists;
     } catch (error) {
+      const gaxiosError = error as { code?: number; response?: { status?: number; statusText?: string; data?: unknown; headers?: unknown } };
       logger.youtubeApi(
-        "getPlaylists failed",
+        "getPlaylists FAILED",
         false,
         {
+          instanceId: this.instanceId,
           userId: this.userId,
+          accessTokenPreview: this.accessTokenPreview,
           pagesLoadedBeforeError: pageCount,
           playlistsLoadedBeforeError: playlists.length,
-          errorCode: (error as { code?: number })?.code,
+          errorCode: gaxiosError?.code,
           errorMessage: error instanceof Error ? error.message : String(error),
+          errorName: error instanceof Error ? error.name : "unknown",
+          httpStatus: gaxiosError?.response?.status,
+          httpStatusText: gaxiosError?.response?.statusText,
+          responseData: gaxiosError?.response?.data ? JSON.stringify(gaxiosError.response.data).substring(0, 500) : undefined,
         },
         error instanceof Error ? error : undefined
       );
@@ -100,9 +159,11 @@ export class YouTubeService {
 
   // Listar vídeos de uma playlist
   async getPlaylistItems(playlistId: string): Promise<Video[]> {
-    logger.info("YOUTUBE_API", "getPlaylistItems called", {
+    logger.info("YOUTUBE_API", "getPlaylistItems START", {
+      instanceId: this.instanceId,
       playlistId,
       userId: this.userId,
+      accessTokenPreview: this.accessTokenPreview,
     });
 
     const items: Video[] = [];
@@ -116,6 +177,13 @@ export class YouTubeService {
         pageCount++;
         const startTime = Date.now();
 
+        logger.debug("YOUTUBE_API", `getPlaylistItems - Fetching items page ${pageCount}`, {
+          instanceId: this.instanceId,
+          playlistId,
+          pageToken: pageToken || "initial",
+          itemsSoFar: items.length,
+        });
+
         const response = await this.youtube.playlistItems.list({
           part: ["snippet", "contentDetails"],
           playlistId,
@@ -127,10 +195,13 @@ export class YouTubeService {
         await trackQuotaUsage(this.userId, "playlistItems.list");
 
         logger.youtubeApi(`playlistItems.list page ${pageCount}`, true, {
+          instanceId: this.instanceId,
           playlistId,
           elapsed: `${elapsed}ms`,
           itemsCount: response.data.items?.length || 0,
           hasNextPage: !!response.data.nextPageToken,
+          totalResults: response.data.pageInfo?.totalResults,
+          responseStatus: response.status,
         });
 
         for (const item of response.data.items || []) {
@@ -159,10 +230,12 @@ export class YouTubeService {
         pageToken = response.data.nextPageToken || undefined;
       } while (pageToken);
 
-      logger.info("YOUTUBE_API", "Playlist items fetched, now fetching video details", {
+      logger.info("YOUTUBE_API", "getPlaylistItems - Items fetched, now fetching video details", {
+        instanceId: this.instanceId,
         playlistId,
         totalItems: items.length,
         pagesLoaded: pageCount,
+        totalVideoIds: videoIds.length,
       });
 
       // 2. Buscar metadados completos em batches de 50
@@ -171,6 +244,11 @@ export class YouTubeService {
         const batchNum = Math.floor(i / 50) + 1;
         const batch = videoIds.slice(i, i + 50);
         const startTime = Date.now();
+
+        logger.debug("YOUTUBE_API", `getPlaylistItems - Fetching video details batch ${batchNum}/${totalBatches}`, {
+          instanceId: this.instanceId,
+          batchSize: batch.length,
+        });
 
         try {
           const response = await this.youtube.videos.list({
@@ -182,9 +260,11 @@ export class YouTubeService {
           await trackQuotaUsage(this.userId, "videos.list");
 
           logger.youtubeApi(`videos.list batch ${batchNum}/${totalBatches}`, true, {
+            instanceId: this.instanceId,
             elapsed: `${elapsed}ms`,
             batchSize: batch.length,
             returnedCount: response.data.items?.length || 0,
+            responseStatus: response.status,
           });
 
           for (const video of response.data.items || []) {
@@ -200,29 +280,47 @@ export class YouTubeService {
             }
           }
         } catch (error) {
+          const gaxiosError = error as { code?: number; response?: { status?: number; data?: unknown } };
           logger.youtubeApi(
-            `videos.list batch ${batchNum}/${totalBatches} failed`,
+            `videos.list batch ${batchNum}/${totalBatches} FAILED`,
             false,
-            { batchSize: batch.length },
+            {
+              instanceId: this.instanceId,
+              batchSize: batch.length,
+              httpStatus: gaxiosError?.response?.status,
+              errorCode: gaxiosError?.code,
+              errorMessage: error instanceof Error ? error.message : String(error),
+            },
             error instanceof Error ? error : undefined
           );
         }
       }
 
-      logger.youtubeApi("getPlaylistItems completed", true, {
+      logger.youtubeApi("getPlaylistItems END - completed successfully", true, {
+        instanceId: this.instanceId,
         playlistId,
         totalItems: items.length,
+        totalBatches,
       });
 
       return items;
     } catch (error) {
+      const gaxiosError = error as { code?: number; response?: { status?: number; statusText?: string; data?: unknown } };
       logger.youtubeApi(
-        "getPlaylistItems failed",
+        "getPlaylistItems FAILED",
         false,
         {
+          instanceId: this.instanceId,
           playlistId,
+          accessTokenPreview: this.accessTokenPreview,
           pagesLoadedBeforeError: pageCount,
           itemsLoadedBeforeError: items.length,
+          errorCode: gaxiosError?.code,
+          errorMessage: error instanceof Error ? error.message : String(error),
+          errorName: error instanceof Error ? error.name : "unknown",
+          httpStatus: gaxiosError?.response?.status,
+          httpStatusText: gaxiosError?.response?.statusText,
+          responseData: gaxiosError?.response?.data ? JSON.stringify(gaxiosError.response.data).substring(0, 500) : undefined,
         },
         error instanceof Error ? error : undefined
       );
@@ -235,7 +333,8 @@ export class YouTubeService {
     playlistId: string,
     videoId: string
   ): Promise<{ success: boolean; error?: string }> {
-    logger.info("YOUTUBE_API", "addVideoToPlaylist called", {
+    logger.info("YOUTUBE_API", "addVideoToPlaylist START", {
+      instanceId: this.instanceId,
       playlistId,
       videoId,
       userId: this.userId,
@@ -260,7 +359,8 @@ export class YouTubeService {
       const elapsed = Date.now() - startTime;
       await trackQuotaUsage(this.userId, "playlistItems.insert");
 
-      logger.youtubeApi("playlistItems.insert", true, {
+      logger.youtubeApi("playlistItems.insert SUCCESS", true, {
+        instanceId: this.instanceId,
         playlistId,
         videoId,
         elapsed: `${elapsed}ms`,
@@ -272,15 +372,20 @@ export class YouTubeService {
       const isDuplicate =
         errorMessage.includes("videoAlreadyInPlaylist") ||
         errorMessage.includes("duplicate");
+      const gaxiosError = error as { code?: number; response?: { status?: number; data?: unknown } };
 
       logger.youtubeApi(
-        "playlistItems.insert",
+        "playlistItems.insert FAILED",
         false,
         {
+          instanceId: this.instanceId,
           playlistId,
           videoId,
           isDuplicate,
           errorMessage,
+          errorCode: gaxiosError?.code,
+          httpStatus: gaxiosError?.response?.status,
+          responseData: gaxiosError?.response?.data ? JSON.stringify(gaxiosError.response.data).substring(0, 500) : undefined,
         },
         error instanceof Error ? error : undefined
       );
@@ -296,7 +401,8 @@ export class YouTubeService {
   async removeVideoFromPlaylist(
     playlistItemId: string
   ): Promise<{ success: boolean; error?: string }> {
-    logger.info("YOUTUBE_API", "removeVideoFromPlaylist called", {
+    logger.info("YOUTUBE_API", "removeVideoFromPlaylist START", {
+      instanceId: this.instanceId,
       playlistItemId,
       userId: this.userId,
     });
@@ -311,7 +417,8 @@ export class YouTubeService {
       const elapsed = Date.now() - startTime;
       await trackQuotaUsage(this.userId, "playlistItems.delete");
 
-      logger.youtubeApi("playlistItems.delete", true, {
+      logger.youtubeApi("playlistItems.delete SUCCESS", true, {
+        instanceId: this.instanceId,
         playlistItemId,
         elapsed: `${elapsed}ms`,
       });
@@ -319,11 +426,19 @@ export class YouTubeService {
       return { success: true };
     } catch (error: unknown) {
       const errorMessage = error instanceof Error ? error.message : "Erro desconhecido";
+      const gaxiosError = error as { code?: number; response?: { status?: number; data?: unknown } };
 
       logger.youtubeApi(
-        "playlistItems.delete",
+        "playlistItems.delete FAILED",
         false,
-        { playlistItemId, errorMessage },
+        {
+          instanceId: this.instanceId,
+          playlistItemId,
+          errorMessage,
+          errorCode: gaxiosError?.code,
+          httpStatus: gaxiosError?.response?.status,
+          responseData: gaxiosError?.response?.data ? JSON.stringify(gaxiosError.response.data).substring(0, 500) : undefined,
+        },
         error instanceof Error ? error : undefined
       );
 
@@ -346,11 +461,13 @@ export class YouTubeService {
       error?: string;
     }>;
   }> {
-    logger.info("YOUTUBE_API", "transferVideos called", {
+    logger.info("YOUTUBE_API", "transferVideos START", {
+      instanceId: this.instanceId,
       sourcePlaylistId,
       destinationPlaylistId,
       videosCount: videos.length,
       userId: this.userId,
+      videoIds: videos.map(v => v.videoId),
     });
 
     const details: Array<{
@@ -360,12 +477,16 @@ export class YouTubeService {
     }> = [];
     let transferred = 0;
     let errors = 0;
+    const overallStartTime = Date.now();
 
     for (let i = 0; i < videos.length; i++) {
       const video = videos[i];
-      logger.debug("YOUTUBE_API", `Transferring video ${i + 1}/${videos.length}`, {
+      logger.info("YOUTUBE_API", `transferVideos - Processing video ${i + 1}/${videos.length}`, {
+        instanceId: this.instanceId,
         videoId: video.videoId,
         playlistItemId: video.playlistItemId,
+        transferredSoFar: transferred,
+        errorsSoFar: errors,
       });
 
       try {
@@ -384,12 +505,21 @@ export class YouTubeService {
           if (removeResult.success) {
             transferred++;
             details.push({ videoId: video.videoId, status: "success" });
+            logger.debug("YOUTUBE_API", `transferVideos - Video ${i + 1} transferred successfully`, {
+              instanceId: this.instanceId,
+              videoId: video.videoId,
+            });
           } else {
             errors++;
             details.push({
               videoId: video.videoId,
               status: "error",
               error: removeResult.error || "Erro ao remover da playlist de origem",
+            });
+            logger.warn("YOUTUBE_API", `transferVideos - Video ${i + 1} added but failed to remove from source`, {
+              instanceId: this.instanceId,
+              videoId: video.videoId,
+              removeError: removeResult.error,
             });
           }
         } else {
@@ -399,6 +529,11 @@ export class YouTubeService {
             status: "error",
             error: addResult.error || "Erro ao adicionar à playlist de destino",
           });
+          logger.warn("YOUTUBE_API", `transferVideos - Video ${i + 1} failed to add to destination`, {
+            instanceId: this.instanceId,
+            videoId: video.videoId,
+            addError: addResult.error,
+          });
         }
       } catch (error) {
         errors++;
@@ -407,15 +542,24 @@ export class YouTubeService {
           status: "error",
           error: error instanceof Error ? error.message : "Erro desconhecido",
         });
+        logger.error("YOUTUBE_API", `transferVideos - Video ${i + 1} threw exception`, error instanceof Error ? error : undefined, {
+          instanceId: this.instanceId,
+          videoId: video.videoId,
+        });
       }
     }
 
-    logger.youtubeApi("transferVideos completed", errors === 0, {
+    const totalElapsed = Date.now() - overallStartTime;
+
+    logger.youtubeApi("transferVideos END", errors === 0, {
+      instanceId: this.instanceId,
       sourcePlaylistId,
       destinationPlaylistId,
       totalVideos: videos.length,
       transferred,
       errors,
+      totalElapsed: `${totalElapsed}ms`,
+      avgPerVideo: videos.length > 0 ? `${Math.round(totalElapsed / videos.length)}ms` : "N/A",
     });
 
     return {
@@ -428,8 +572,10 @@ export class YouTubeService {
 
   // Listar canais inscritos
   async getSubscribedChannels(): Promise<Channel[]> {
-    logger.info("YOUTUBE_API", "getSubscribedChannels called", {
+    logger.info("YOUTUBE_API", "getSubscribedChannels START", {
+      instanceId: this.instanceId,
       userId: this.userId,
+      accessTokenPreview: this.accessTokenPreview,
     });
 
     const channels: Channel[] = [];
@@ -444,6 +590,12 @@ export class YouTubeService {
         pageCount++;
         const startTime = Date.now();
 
+        logger.debug("YOUTUBE_API", `getSubscribedChannels - Fetching subscriptions page ${pageCount}`, {
+          instanceId: this.instanceId,
+          pageToken: pageToken || "initial",
+          channelsSoFar: channels.length,
+        });
+
         const response = await this.youtube.subscriptions.list({
           part: ["snippet"],
           mine: true,
@@ -455,9 +607,12 @@ export class YouTubeService {
         await trackQuotaUsage(this.userId, "subscriptions.list");
 
         logger.youtubeApi(`subscriptions.list page ${pageCount}`, true, {
+          instanceId: this.instanceId,
           elapsed: `${elapsed}ms`,
           itemsCount: response.data.items?.length || 0,
           hasNextPage: !!response.data.nextPageToken,
+          totalResults: response.data.pageInfo?.totalResults,
+          responseStatus: response.status,
         });
 
         for (const item of response.data.items || []) {
@@ -480,12 +635,24 @@ export class YouTubeService {
         pageToken = response.data.nextPageToken || undefined;
       } while (pageToken);
 
+      logger.info("YOUTUBE_API", "getSubscribedChannels - Subscriptions fetched, now fetching channel details", {
+        instanceId: this.instanceId,
+        totalChannels: channels.length,
+        pagesLoaded: pageCount,
+        duplicatesFiltered: pageCount * 50 - channels.length,
+      });
+
       // 2. Buscar detalhes dos canais em batches de 50
       const totalBatches = Math.ceil(channelIds.length / 50);
       for (let i = 0; i < channelIds.length; i += 50) {
         const batchNum = Math.floor(i / 50) + 1;
         const batch = channelIds.slice(i, i + 50);
         const startTime = Date.now();
+
+        logger.debug("YOUTUBE_API", `getSubscribedChannels - Fetching channel details batch ${batchNum}/${totalBatches}`, {
+          instanceId: this.instanceId,
+          batchSize: batch.length,
+        });
 
         try {
           const response = await this.youtube.channels.list({
@@ -497,9 +664,11 @@ export class YouTubeService {
           await trackQuotaUsage(this.userId, "channels.list");
 
           logger.youtubeApi(`channels.list batch ${batchNum}/${totalBatches}`, true, {
+            instanceId: this.instanceId,
             elapsed: `${elapsed}ms`,
             batchSize: batch.length,
             returnedCount: response.data.items?.length || 0,
+            responseStatus: response.status,
           });
 
           for (const channel of response.data.items || []) {
@@ -512,26 +681,47 @@ export class YouTubeService {
             }
           }
         } catch (error) {
+          const gaxiosError = error as { code?: number; response?: { status?: number; data?: unknown } };
           logger.youtubeApi(
-            `channels.list batch ${batchNum}/${totalBatches} failed`,
+            `channels.list batch ${batchNum}/${totalBatches} FAILED`,
             false,
-            { batchSize: batch.length },
+            {
+              instanceId: this.instanceId,
+              batchSize: batch.length,
+              errorCode: gaxiosError?.code,
+              httpStatus: gaxiosError?.response?.status,
+              errorMessage: error instanceof Error ? error.message : String(error),
+            },
             error instanceof Error ? error : undefined
           );
         }
       }
 
-      logger.youtubeApi("getSubscribedChannels completed", true, {
+      logger.youtubeApi("getSubscribedChannels END - completed successfully", true, {
+        instanceId: this.instanceId,
         totalChannels: channels.length,
         pagesLoaded: pageCount,
+        batchesProcessed: totalBatches,
       });
 
       return channels;
     } catch (error) {
+      const gaxiosError = error as { code?: number; response?: { status?: number; statusText?: string; data?: unknown } };
       logger.youtubeApi(
-        "getSubscribedChannels failed",
+        "getSubscribedChannels FAILED",
         false,
-        { pagesLoadedBeforeError: pageCount, channelsLoadedBeforeError: channels.length },
+        {
+          instanceId: this.instanceId,
+          accessTokenPreview: this.accessTokenPreview,
+          pagesLoadedBeforeError: pageCount,
+          channelsLoadedBeforeError: channels.length,
+          errorCode: gaxiosError?.code,
+          errorMessage: error instanceof Error ? error.message : String(error),
+          errorName: error instanceof Error ? error.name : "unknown",
+          httpStatus: gaxiosError?.response?.status,
+          httpStatusText: gaxiosError?.response?.statusText,
+          responseData: gaxiosError?.response?.data ? JSON.stringify(gaxiosError.response.data).substring(0, 500) : undefined,
+        },
         error instanceof Error ? error : undefined
       );
       throw error;
@@ -540,13 +730,20 @@ export class YouTubeService {
 
   // Buscar vídeos de um canal (CARO: 100 unidades!)
   async getChannelVideos(channelId: string): Promise<Video[]> {
-    logger.info("YOUTUBE_API", "getChannelVideos called (expensive: 100 units)", {
+    logger.info("YOUTUBE_API", "getChannelVideos START (expensive: 100 units)", {
+      instanceId: this.instanceId,
       channelId,
       userId: this.userId,
+      accessTokenPreview: this.accessTokenPreview,
     });
 
     try {
       const searchStartTime = Date.now();
+
+      logger.debug("YOUTUBE_API", "getChannelVideos - Calling search.list", {
+        instanceId: this.instanceId,
+        channelId,
+      });
 
       const response = await this.youtube.search.list({
         part: ["snippet"],
@@ -560,9 +757,12 @@ export class YouTubeService {
       await trackQuotaUsage(this.userId, "search.list");
 
       logger.youtubeApi("search.list (channel videos)", true, {
+        instanceId: this.instanceId,
         channelId,
         elapsed: `${searchElapsed}ms`,
         itemsCount: response.data.items?.length || 0,
+        totalResults: response.data.pageInfo?.totalResults,
+        responseStatus: response.status,
       });
 
       const videoIds =
@@ -570,9 +770,20 @@ export class YouTubeService {
         [];
       const videos: Video[] = [];
 
+      logger.debug("YOUTUBE_API", "getChannelVideos - Video IDs extracted from search", {
+        instanceId: this.instanceId,
+        videoIdsCount: videoIds.length,
+        videoIds: videoIds.slice(0, 10),
+      });
+
       // Buscar metadados completos
       if (videoIds.length > 0) {
         const detailsStartTime = Date.now();
+
+        logger.debug("YOUTUBE_API", "getChannelVideos - Fetching video details", {
+          instanceId: this.instanceId,
+          videoIdsCount: videoIds.length,
+        });
 
         const detailsResponse = await this.youtube.videos.list({
           part: ["snippet", "contentDetails", "statistics"],
@@ -583,9 +794,11 @@ export class YouTubeService {
         await trackQuotaUsage(this.userId, "videos.list");
 
         logger.youtubeApi("videos.list (channel video details)", true, {
+          instanceId: this.instanceId,
           elapsed: `${detailsElapsed}ms`,
           videoIdsCount: videoIds.length,
           returnedCount: detailsResponse.data.items?.length || 0,
+          responseStatus: detailsResponse.status,
         });
 
         for (const video of detailsResponse.data.items || []) {
@@ -607,19 +820,36 @@ export class YouTubeService {
             isSelected: false,
           });
         }
+      } else {
+        logger.warn("YOUTUBE_API", "getChannelVideos - No video IDs found from search", {
+          instanceId: this.instanceId,
+          channelId,
+        });
       }
 
-      logger.youtubeApi("getChannelVideos completed", true, {
+      logger.youtubeApi("getChannelVideos END - completed successfully", true, {
+        instanceId: this.instanceId,
         channelId,
         totalVideos: videos.length,
       });
 
       return videos;
     } catch (error) {
+      const gaxiosError = error as { code?: number; response?: { status?: number; statusText?: string; data?: unknown } };
       logger.youtubeApi(
-        "getChannelVideos failed",
+        "getChannelVideos FAILED",
         false,
-        { channelId },
+        {
+          instanceId: this.instanceId,
+          channelId,
+          accessTokenPreview: this.accessTokenPreview,
+          errorCode: gaxiosError?.code,
+          errorMessage: error instanceof Error ? error.message : String(error),
+          errorName: error instanceof Error ? error.name : "unknown",
+          httpStatus: gaxiosError?.response?.status,
+          httpStatusText: gaxiosError?.response?.statusText,
+          responseData: gaxiosError?.response?.data ? JSON.stringify(gaxiosError.response.data).substring(0, 500) : undefined,
+        },
         error instanceof Error ? error : undefined
       );
       throw error;
@@ -640,10 +870,12 @@ export class YouTubeService {
       error?: string;
     }>;
   }> {
-    logger.info("YOUTUBE_API", "assignVideosToPlaylist called", {
+    logger.info("YOUTUBE_API", "assignVideosToPlaylist START", {
+      instanceId: this.instanceId,
       playlistId,
       videosCount: videoIds.length,
       userId: this.userId,
+      videoIds: videoIds.slice(0, 10),
     });
 
     const details: Array<{
@@ -653,12 +885,16 @@ export class YouTubeService {
     }> = [];
     let added = 0;
     let errors = 0;
+    const overallStartTime = Date.now();
 
     for (let i = 0; i < videoIds.length; i++) {
       const videoId = videoIds[i];
-      logger.debug("YOUTUBE_API", `Assigning video ${i + 1}/${videoIds.length}`, {
+      logger.debug("YOUTUBE_API", `assignVideosToPlaylist - Processing video ${i + 1}/${videoIds.length}`, {
+        instanceId: this.instanceId,
         videoId,
         playlistId,
+        addedSoFar: added,
+        errorsSoFar: errors,
       });
 
       try {
@@ -682,14 +918,23 @@ export class YouTubeService {
           status: "error",
           error: error instanceof Error ? error.message : "Erro desconhecido",
         });
+        logger.error("YOUTUBE_API", `assignVideosToPlaylist - Video ${i + 1} threw exception`, error instanceof Error ? error : undefined, {
+          instanceId: this.instanceId,
+          videoId,
+        });
       }
     }
 
-    logger.youtubeApi("assignVideosToPlaylist completed", errors === 0, {
+    const totalElapsed = Date.now() - overallStartTime;
+
+    logger.youtubeApi("assignVideosToPlaylist END", errors === 0, {
+      instanceId: this.instanceId,
       playlistId,
       totalVideos: videoIds.length,
       added,
       errors,
+      totalElapsed: `${totalElapsed}ms`,
+      avgPerVideo: videoIds.length > 0 ? `${Math.round(totalElapsed / videoIds.length)}ms` : "N/A",
     });
 
     return {

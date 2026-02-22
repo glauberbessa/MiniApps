@@ -23,6 +23,9 @@ interface TransferResponse {
 }
 
 async function transferVideos(data: TransferRequest): Promise<TransferResponse> {
+  console.log(`[HOOK:useTransfer] Transferring videos | source: ${data.sourcePlaylistId} | dest: ${data.destinationPlaylistId} | count: ${data.videos.length} | timestamp: ${new Date().toISOString()}`);
+  const startTime = Date.now();
+
   const res = await fetch("/api/playlists/transfer", {
     method: "POST",
     headers: { "Content-Type": "application/json" },
@@ -30,12 +33,24 @@ async function transferVideos(data: TransferRequest): Promise<TransferResponse> 
     credentials: "include",
   });
 
+  const elapsed = Date.now() - startTime;
+  console.log(`[HOOK:useTransfer] Response received | status: ${res.status} ${res.statusText} | ok: ${res.ok} | elapsed: ${elapsed}ms`);
+
   if (!res.ok) {
-    const error = await res.json();
-    throw new Error(error.error || "Erro ao transferir vídeos");
+    let errorDetails = "";
+    try {
+      const errorBody = await res.json();
+      errorDetails = JSON.stringify(errorBody);
+      console.error(`[HOOK:useTransfer] ERROR response body: ${errorDetails}`);
+    } catch {
+      console.error(`[HOOK:useTransfer] Could not parse error response body`);
+    }
+    throw new Error(errorDetails ? JSON.parse(errorDetails)?.error || `HTTP ${res.status}` : "Erro ao transferir vídeos");
   }
 
-  return res.json();
+  const result = await res.json();
+  console.log(`[HOOK:useTransfer] SUCCESS | transferred: ${result.transferred} | errors: ${result.errors} | success: ${result.success}`);
+  return result;
 }
 
 export function useTransfer() {
@@ -43,8 +58,8 @@ export function useTransfer() {
 
   return useMutation({
     mutationFn: transferVideos,
-    onSuccess: (_, variables) => {
-      // Invalidar cache das playlists afetadas
+    onSuccess: (result, variables) => {
+      console.log(`[HOOK:useTransfer] onSuccess - Invalidating queries | source: ${variables.sourcePlaylistId} | dest: ${variables.destinationPlaylistId} | transferred: ${result.transferred}`);
       queryClient.invalidateQueries({
         queryKey: ["playlistItems", variables.sourcePlaylistId],
       });
@@ -53,6 +68,9 @@ export function useTransfer() {
       });
       queryClient.invalidateQueries({ queryKey: ["playlists"] });
       queryClient.invalidateQueries({ queryKey: ["quota"] });
+    },
+    onError: (error) => {
+      console.error(`[HOOK:useTransfer] onError: ${error instanceof Error ? error.message : String(error)}`);
     },
   });
 }
@@ -74,6 +92,9 @@ interface AssignResponse {
 }
 
 async function assignVideos(data: AssignRequest): Promise<AssignResponse> {
+  console.log(`[HOOK:useAssign] Assigning videos | playlistId: ${data.playlistId} | count: ${data.videoIds.length} | timestamp: ${new Date().toISOString()}`);
+  const startTime = Date.now();
+
   const res = await fetch("/api/channels/assign", {
     method: "POST",
     headers: { "Content-Type": "application/json" },
@@ -81,12 +102,24 @@ async function assignVideos(data: AssignRequest): Promise<AssignResponse> {
     credentials: "include",
   });
 
+  const elapsed = Date.now() - startTime;
+  console.log(`[HOOK:useAssign] Response received | status: ${res.status} ${res.statusText} | ok: ${res.ok} | elapsed: ${elapsed}ms`);
+
   if (!res.ok) {
-    const error = await res.json();
-    throw new Error(error.error || "Erro ao atribuir vídeos");
+    let errorDetails = "";
+    try {
+      const errorBody = await res.json();
+      errorDetails = JSON.stringify(errorBody);
+      console.error(`[HOOK:useAssign] ERROR response body: ${errorDetails}`);
+    } catch {
+      console.error(`[HOOK:useAssign] Could not parse error response body`);
+    }
+    throw new Error(errorDetails ? JSON.parse(errorDetails)?.error || `HTTP ${res.status}` : "Erro ao atribuir vídeos");
   }
 
-  return res.json();
+  const result = await res.json();
+  console.log(`[HOOK:useAssign] SUCCESS | added: ${result.added} | errors: ${result.errors} | success: ${result.success}`);
+  return result;
 }
 
 export function useAssign() {
@@ -94,13 +127,16 @@ export function useAssign() {
 
   return useMutation({
     mutationFn: assignVideos,
-    onSuccess: (_, variables) => {
-      // Invalidar cache da playlist afetada
+    onSuccess: (result, variables) => {
+      console.log(`[HOOK:useAssign] onSuccess - Invalidating queries | playlistId: ${variables.playlistId} | added: ${result.added}`);
       queryClient.invalidateQueries({
         queryKey: ["playlistItems", variables.playlistId],
       });
       queryClient.invalidateQueries({ queryKey: ["playlists"] });
       queryClient.invalidateQueries({ queryKey: ["quota"] });
+    },
+    onError: (error) => {
+      console.error(`[HOOK:useAssign] onError: ${error instanceof Error ? error.message : String(error)}`);
     },
   });
 }
@@ -127,6 +163,9 @@ interface RemoveResponse {
 async function removeVideosFromPlaylist(
   data: RemoveRequest
 ): Promise<RemoveResponse> {
+  console.log(`[HOOK:useRemoveFromPlaylist] Removing videos | sourcePlaylistId: ${data.sourcePlaylistId} | count: ${data.videos.length} | timestamp: ${new Date().toISOString()}`);
+  const startTime = Date.now();
+
   const res = await fetch("/api/playlists/remove", {
     method: "POST",
     headers: { "Content-Type": "application/json" },
@@ -134,12 +173,24 @@ async function removeVideosFromPlaylist(
     credentials: "include",
   });
 
+  const elapsed = Date.now() - startTime;
+  console.log(`[HOOK:useRemoveFromPlaylist] Response received | status: ${res.status} ${res.statusText} | ok: ${res.ok} | elapsed: ${elapsed}ms`);
+
   if (!res.ok) {
-    const error = await res.json();
-    throw new Error(error.error || "Erro ao remover vídeos");
+    let errorDetails = "";
+    try {
+      const errorBody = await res.json();
+      errorDetails = JSON.stringify(errorBody);
+      console.error(`[HOOK:useRemoveFromPlaylist] ERROR response body: ${errorDetails}`);
+    } catch {
+      console.error(`[HOOK:useRemoveFromPlaylist] Could not parse error response body`);
+    }
+    throw new Error(errorDetails ? JSON.parse(errorDetails)?.error || `HTTP ${res.status}` : "Erro ao remover vídeos");
   }
 
-  return res.json();
+  const result = await res.json();
+  console.log(`[HOOK:useRemoveFromPlaylist] SUCCESS | removed: ${result.removed} | errors: ${result.errors} | success: ${result.success}`);
+  return result;
 }
 
 export function useRemoveFromPlaylist() {
@@ -147,12 +198,16 @@ export function useRemoveFromPlaylist() {
 
   return useMutation({
     mutationFn: removeVideosFromPlaylist,
-    onSuccess: (_, variables) => {
+    onSuccess: (result, variables) => {
+      console.log(`[HOOK:useRemoveFromPlaylist] onSuccess - Invalidating queries | sourcePlaylistId: ${variables.sourcePlaylistId} | removed: ${result.removed}`);
       queryClient.invalidateQueries({
         queryKey: ["playlistItems", variables.sourcePlaylistId],
       });
       queryClient.invalidateQueries({ queryKey: ["playlists"] });
       queryClient.invalidateQueries({ queryKey: ["quota"] });
+    },
+    onError: (error) => {
+      console.error(`[HOOK:useRemoveFromPlaylist] onError: ${error instanceof Error ? error.message : String(error)}`);
     },
   });
 }

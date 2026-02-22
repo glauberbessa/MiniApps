@@ -100,7 +100,7 @@ export function ChangePasswordForm({ className }: ChangePasswordFormProps) {
         )}
 
         {success && (
-          <div className="flex items-center gap-2 rounded-md bg-green-50 p-3 text-sm text-green-800 animate-in fade-in-0 zoom-in-95 duration-300">
+          <div className="flex items-center gap-2 rounded-md bg-green-50 dark:bg-green-950 p-3 text-sm text-green-800 dark:text-green-300 animate-in fade-in-0 zoom-in-95 duration-300">
             <CheckCircle className="h-4 w-4" />
             {txt.success.passwordChanged}
           </div>

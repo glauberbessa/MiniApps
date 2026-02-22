@@ -21,7 +21,7 @@ export default async function CadastroPage() {
   }
 
   return (
-    <div className="flex min-h-screen items-center justify-center bg-gradient-to-b from-gray-50 to-gray-100 px-4 py-12">
+    <div className="flex min-h-screen items-center justify-center bg-gradient-to-b from-gray-50 to-gray-100 dark:from-gray-950 dark:to-gray-900 px-4 py-12">
       <Card className="w-full max-w-md">
         <CardHeader className="space-y-1 text-center">
           <CardTitle className="text-2xl font-bold">Criar Conta</CardTitle>
@@ -30,7 +30,7 @@ export default async function CadastroPage() {
           </CardDescription>
         </CardHeader>
         <CardContent>
-          <Suspense fallback={<div className="h-[350px] animate-pulse bg-gray-100 rounded-md" />}>
+          <Suspense fallback={<div className="h-[350px] animate-pulse bg-gray-100 dark:bg-gray-800 rounded-md" />}>
             <RegisterForm />
           </Suspense>
         </CardContent>

@@ -137,7 +137,7 @@ export const OptimizedImage = forwardRef<HTMLDivElement, OptimizedImageProps>(
         {/* Error fallback */}
         {hasError && (
           <div
-            className="absolute inset-0 flex items-center justify-center bg-zinc-900 text-zinc-500"
+            className="absolute inset-0 flex items-center justify-center bg-zinc-100 text-zinc-400 dark:bg-zinc-900 dark:text-zinc-500"
             role="img"
             aria-label={`Erro ao carregar: ${alt}`}
           >

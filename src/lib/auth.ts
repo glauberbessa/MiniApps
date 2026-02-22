@@ -195,21 +195,72 @@ function extractMissingTable(message: string): string | null {
   return null;
 }
 
+function extractErrorCauseChain(err: unknown): { message: string; rootError?: Error } {
+  const messages: string[] = [];
+  let current: unknown = err;
+  let rootError: Error | undefined;
+
+  while (current) {
+    if (current instanceof Error) {
+      messages.push(`[${current.name}] ${current.message}`);
+      rootError = current;
+      current = current.cause;
+    } else if (typeof current === "object" && current !== null && "message" in current) {
+      messages.push(String((current as { message: unknown }).message));
+      current = (current as { cause?: unknown }).cause;
+    } else {
+      break;
+    }
+  }
+
+  return { message: messages.join(" → "), rootError };
+}
+
+function withRetryAdapter(adapter: ReturnType<typeof PrismaAdapter>) {
+  const handler: ProxyHandler<typeof adapter> = {
+    get(target, prop: string) {
+      const original = target[prop as keyof typeof target];
+      if (typeof original !== "function") return original;
+
+      return async (...args: unknown[]) => {
+        try {
+          return await (original as (...a: unknown[]) => Promise<unknown>).apply(target, args);
+        } catch (error) {
+          logger.warn("DATABASE", `Adapter method "${prop}" failed, retrying once...`, {
+            error: error instanceof Error ? error.message : String(error),
+          });
+          await new Promise((r) => setTimeout(r, 500));
+          return await (original as (...a: unknown[]) => Promise<unknown>).apply(target, args);
+        }
+      };
+    },
+  };
+  return new Proxy(adapter, handler);
+}
+
 export const { handlers, auth, signIn, signOut } = NextAuth({
-  adapter: PrismaAdapter(prisma),
+  adapter: withRetryAdapter(PrismaAdapter(prisma)),
   trustHost: true,
   secret: getAuthSecret(),
   debug: process.env.NODE_ENV === "development" || process.env.AUTH_DEBUG === "true",
   logger: {
     error(code, ...message) {
       const combinedMessage = extractAuthErrorMessage(message);
-      logger.error("AUTH", `NextAuth internal error: ${code}`, undefined, {
+
+      // Extract the full cause chain from the error object (code is the AdapterError)
+      const causeChain = extractErrorCauseChain(code);
+      const fullMessage = [combinedMessage, causeChain.message].filter(Boolean).join(" | ");
+
+      logger.error("AUTH", `NextAuth internal error: ${code}`, causeChain.rootError, {
         code,
         combinedMessage: combinedMessage.substring(0, 500),
+        causeChain: causeChain.message.substring(0, 1000),
       });
-      const missingTable = extractMissingTable(combinedMessage);
+
+      // Check for missing table in the FULL message (including cause chain)
+      const missingTable = extractMissingTable(fullMessage);
       if (missingTable) {
-        logger.critical("DATABASE", "Missing Prisma table detected during auth", undefined, {
+        logger.critical("DATABASE", "Missing Prisma table detected during auth", causeChain.rootError, {
           missingTable,
           isVercel: !!process.env.VERCEL,
           hasDatabaseUrl: !!process.env.DATABASE_URL,

@@ -13,17 +13,8 @@ import { formatNumber, formatDuration } from "@/lib/utils";
 import { Settings } from "lucide-react";
 
 async function fetchPlaylists(): Promise<PlaylistWithConfig[]> {
-  const res = await fetch(`/api/playlists?t=${Date.now()}`, { credentials: "include" });
-  if (!res.ok) {
-    let errorMessage = `Erro ${res.status}`;
-    try {
-      const errorData = await res.json();
-      errorMessage = errorData.error || errorData.message || errorMessage;
-    } catch {
-      errorMessage = `Erro ${res.status}: ${res.statusText || "Erro desconhecido"}`;
-    }
-    throw new Error(errorMessage);
-  }
+  const res = await fetch("/api/playlists", { credentials: "include" });
+  if (!res.ok) throw new Error("Erro ao buscar playlists");
   return res.json();
 }
 
@@ -46,11 +37,9 @@ export default function ConfigPlaylistsPage() {
   const [enabledMap, setEnabledMap] = useState<Record<string, boolean>>({});
   const [showOnlyEnabled, setShowOnlyEnabled] = useState(false);
 
-  const { data: playlists, isLoading, isError, error, refetch } = useQuery({
+  const { data: playlists, isLoading } = useQuery({
     queryKey: ["playlists"],
     queryFn: fetchPlaylists,
-    retry: 2,
-    retryDelay: (attemptIndex) => Math.min(1000 * 2 ** attemptIndex, 5000),
   });
 
   const saveMutation = useMutation({
@@ -167,20 +156,6 @@ export default function ConfigPlaylistsPage() {
           {UI_TEXT.config.disableAll}
         </Button>
       </div>
-
-      {/* Error State */}
-      {isError && (
-        <div className="text-sm text-destructive p-4 border border-destructive/50 rounded-md space-y-2">
-          <p>
-            {error?.message?.includes("Sessão expirada") || error?.message?.includes("401")
-              ? "Sessão expirada. Faça login novamente para acessar suas playlists."
-              : `Erro ao carregar playlists: ${error?.message || "Erro desconhecido"}`}
-          </p>
-          <Button variant="outline" size="sm" onClick={() => refetch()}>
-            Tentar novamente
-          </Button>
-        </div>
-      )}
 
       {/* Playlists List */}
       {isLoading ? (

@@ -3,5 +3,5 @@
 import { signIn } from "@/lib/auth";
 
 export async function signInWithGoogle() {
-  await signIn("google", { redirectTo: "/playlists" });
+  await signIn("google", { redirectTo: "/ytpm/playlists" });
 }

@@ -3,6 +3,7 @@ import { auth } from "@/lib/auth";
 import { YouTubeService } from "@/lib/youtube";
 import { prisma } from "@/lib/prisma";
 import { logger, generateTraceId, setTraceId, clearTraceId } from "@/lib/logger";
+import { google } from "googleapis";
 
 export const dynamic = "force-dynamic";
 
@@ -67,14 +68,92 @@ export async function GET() {
       accessTokenPreview: `${session.accessToken.substring(0, 20)}...`,
     });
 
-    const youtubeService = new YouTubeService(
-      session.accessToken,
+    let currentAccessToken = session.accessToken;
+    let youtubeService = new YouTubeService(
+      currentAccessToken,
       session.user.id
     );
 
     logger.info("API", "Fetching playlists from YouTube API", { traceId });
     const youtubeStartTime = Date.now();
-    const playlists = await youtubeService.getPlaylists();
+    let playlists;
+
+    try {
+      playlists = await youtubeService.getPlaylists();
+    } catch (ytError) {
+      const errorCode = (ytError as { code?: number })?.code;
+
+      if (errorCode === 401) {
+        // Access token expired/invalid - attempt refresh and retry
+        logger.warn("API", "YouTube API returned 401, attempting token refresh and retry", {
+          traceId,
+          userId: session.user.id,
+        });
+
+        const account = await prisma.account.findFirst({
+          where: { userId: session.user.id, provider: "google" },
+        });
+
+        if (account?.refresh_token) {
+          try {
+            const oauth2Client = new google.auth.OAuth2(
+              process.env.GOOGLE_CLIENT_ID,
+              process.env.GOOGLE_CLIENT_SECRET
+            );
+            oauth2Client.setCredentials({ refresh_token: account.refresh_token });
+            const { credentials } = await oauth2Client.refreshAccessToken();
+
+            if (credentials.access_token) {
+              await prisma.account.update({
+                where: { id: account.id },
+                data: {
+                  access_token: credentials.access_token,
+                  expires_at: credentials.expiry_date
+                    ? Math.floor(credentials.expiry_date / 1000)
+                    : null,
+                },
+              });
+
+              currentAccessToken = credentials.access_token;
+              youtubeService = new YouTubeService(currentAccessToken, session.user.id);
+              playlists = await youtubeService.getPlaylists();
+
+              logger.info("API", "YouTube API retry succeeded after token refresh", { traceId });
+            } else {
+              throw ytError;
+            }
+          } catch (refreshError) {
+            if (refreshError === ytError) throw ytError;
+            logger.error("API", "Token refresh/retry failed", refreshError instanceof Error ? refreshError : undefined, { traceId });
+
+            clearTraceId();
+            return NextResponse.json(
+              {
+                error: "Sessão expirada",
+                reason: "token_refresh_failed",
+                traceId,
+                hint: "Não foi possível renovar o acesso ao YouTube. Faça login novamente.",
+              },
+              { status: 401 }
+            );
+          }
+        } else {
+          clearTraceId();
+          return NextResponse.json(
+            {
+              error: "Sessão expirada",
+              reason: "no_refresh_token",
+              traceId,
+              hint: "Token de acesso expirado e sem refresh token. Faça login novamente.",
+            },
+            { status: 401 }
+          );
+        }
+      } else {
+        throw ytError;
+      }
+    }
+
     const youtubeElapsed = Date.now() - youtubeStartTime;
 
     logger.info("API", "Playlists fetched from YouTube", {

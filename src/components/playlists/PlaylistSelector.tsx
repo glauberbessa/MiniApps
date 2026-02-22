@@ -50,9 +50,12 @@ export function PlaylistSelector({
     isLoading,
     isError,
     error,
+    refetch,
   } = useQuery({
     queryKey: ["playlists"],
     queryFn: fetchPlaylists,
+    retry: 2,
+    retryDelay: (attemptIndex) => Math.min(1000 * 2 ** attemptIndex, 5000),
   });
 
   if (isLoading) {
@@ -65,11 +68,25 @@ export function PlaylistSelector({
   }
 
   if (isError) {
+    const isAuthError = error?.message?.includes("Sessão expirada") ||
+      error?.message?.includes("Não autorizado") ||
+      error?.message?.includes("401");
+
     return (
       <div className="space-y-2">
         {label && <label className="text-sm font-medium">{label}</label>}
-        <div className="text-sm text-destructive p-2 border border-destructive/50 rounded-md">
-          Erro ao carregar playlists: {error?.message || "Erro desconhecido"}
+        <div className="text-sm text-destructive p-2 border border-destructive/50 rounded-md space-y-2">
+          <p>
+            {isAuthError
+              ? "Sessão expirada. Faça login novamente para acessar suas playlists."
+              : `Erro ao carregar playlists: ${error?.message || "Erro desconhecido"}`}
+          </p>
+          <button
+            onClick={() => refetch()}
+            className="text-xs underline hover:no-underline text-destructive/80 hover:text-destructive"
+          >
+            Tentar novamente
+          </button>
         </div>
       </div>
     );

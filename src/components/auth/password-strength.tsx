@@ -39,7 +39,7 @@ export function PasswordStrength({
             {label}
           </span>
         </div>
-        <div className="h-2 w-full overflow-hidden rounded-full bg-gray-200 dark:bg-gray-700">
+        <div className="h-2 w-full overflow-hidden rounded-full bg-gray-200">
           <div
             className={cn("h-full transition-all duration-300", color)}
             style={{ width: `${percentage}%` }}
@@ -55,7 +55,7 @@ export function PasswordStrength({
               key={key}
               className={cn(
                 "flex items-center gap-1.5 transition-colors",
-                criteria[key] ? "text-green-600 dark:text-green-400" : "text-muted-foreground"
+                criteria[key] ? "text-green-600" : "text-muted-foreground"
               )}
             >
               {criteria[key] ? (

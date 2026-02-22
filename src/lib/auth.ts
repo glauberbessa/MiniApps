@@ -183,7 +183,6 @@ function extractMissingColumn(message: string): string | null {
   }
   return null;
 }
-
 function extractErrorCauseChain(err: unknown, maxDepth = 10): { message: string; rootError?: Error } {
   const messages: string[] = [];
   let current: unknown = err;

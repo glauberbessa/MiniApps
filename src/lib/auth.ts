@@ -591,12 +591,13 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
 
       if (token.expiresAt && typeof token.expiresAt === "number") {
         const now = Math.floor(Date.now() / 1000);
-        const expiresIn = token.expiresAt - now;
-        const isExpired = token.expiresAt < now - 60;
+        const expiresAtNum = token.expiresAt as number;
+        const expiresIn = expiresAtNum - now;
+        const isExpired = expiresAtNum < now - 60;
 
         logger.info("AUTH_JWT", "jwt - Token expiry check", {
-          expiresAt: token.expiresAt,
-          expiresAtDate: new Date(token.expiresAt * 1000).toISOString(),
+          expiresAt: expiresAtNum,
+          expiresAtDate: new Date(expiresAtNum * 1000).toISOString(),
           nowDate: new Date(now * 1000).toISOString(),
           expiresInSeconds: expiresIn,
           expiresInMinutes: Math.round(expiresIn / 60),
@@ -637,7 +638,7 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
                 logger.info("AUTH_JWT", "jwt - Token refreshed SUCCESSFULLY", {
                   newAccessTokenPreview: `${newAccessToken.substring(0, 20)}...`,
                   newExpiresAt: token.expiresAt,
-                  newExpiresAtDate: new Date(token.expiresAt * 1000).toISOString(),
+                  newExpiresAtDate: new Date((token.expiresAt as number) * 1000).toISOString(),
                 });
               } else {
                 logger.error("AUTH_JWT", "jwt - Token refresh returned null (failed)", undefined, {

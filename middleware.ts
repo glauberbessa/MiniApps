@@ -32,35 +32,40 @@ const { auth } = NextAuth(authConfig);
  * Middleware to handle:
  * 1. Route protection - redirects unauthenticated users from protected routes
  * 2. PKCE cookie cleanup - removes stale PKCE cookies that could cause auth errors
- *
- * This middleware runs BEFORE route handlers.
- *
- * Note: The `authorized` callback in auth.config.ts handles the primary route protection.
- * This middleware provides additional protection check and PKCE cookie cleanup.
  */
 export default auth((request) => {
   const url = new URL(request.url);
   const session = request.auth;
 
-  // [DEBUG] Log requests in development
-  if (process.env.NODE_ENV === 'development') {
-    console.log(`[MIDDLEWARE] ${request.method} ${url.pathname} | Auth: ${session ? 'yes' : 'no'}`);
+  // Always log middleware invocations for YouTube connection debugging
+  console.log(`[MIDDLEWARE] ${request.method} ${url.pathname} | Auth: ${session ? 'yes' : 'no'} | HasUser: ${!!session?.user} | UserId: ${session?.user?.id || 'N/A'}`);
+
+  // Log all cookies for auth-related and YouTube API routes
+  if (url.pathname.includes('/api/auth') || url.pathname.includes('/api/playlists') || url.pathname.includes('/api/channels') || url.pathname.includes('/api/quota')) {
+    const allCookies = request.cookies.getAll();
+    const cookieNames = allCookies.map(c => c.name);
+    const sessionCookie = allCookies.find(c => c.name.includes('session-token'));
+    console.log(`[MIDDLEWARE] API route detected: ${url.pathname}`);
+    console.log(`[MIDDLEWARE] Total cookies: ${allCookies.length} | Cookie names: ${cookieNames.join(', ')}`);
+    console.log(`[MIDDLEWARE] Session cookie present: ${!!sessionCookie} | Session cookie name: ${sessionCookie?.name || 'N/A'} | Session cookie value length: ${sessionCookie?.value?.length || 0}`);
+    console.log(`[MIDDLEWARE] Session from auth(): ${JSON.stringify({
+      hasSession: !!session,
+      hasUser: !!session?.user,
+      userId: session?.user?.id,
+      userEmail: session?.user?.email,
+      userName: session?.user?.name,
+    })}`);
   }
 
   // ==== ROUTE PROTECTION ====
-  // Additional check for protected routes (primary check is in auth.config.ts authorized callback)
-  // This ensures protection even if the authorized callback doesn't fire properly
   if (isProtectedRoute(url.pathname) && !session?.user) {
-    if (process.env.NODE_ENV === 'development') {
-      console.log(`[MIDDLEWARE] Protected route ${url.pathname} - redirecting to login`);
-    }
+    console.log(`[MIDDLEWARE] Protected route ${url.pathname} - redirecting to login (no session user)`);
     const loginUrl = new URL('/login', request.url);
     loginUrl.searchParams.set('callbackUrl', url.pathname);
     return NextResponse.redirect(loginUrl);
   }
 
   // ==== PKCE COOKIE CLEANUP ====
-  // Only process auth-related routes for PKCE cleanup
   if (!url.pathname.includes('/api/auth')) {
     return NextResponse.next();
   }
@@ -70,18 +75,19 @@ export default auth((request) => {
   const pkceCookies = allCookies.filter(c => isPkceCookie(c.name));
 
   if (pkceCookies.length === 0) {
+    console.log(`[MIDDLEWARE] Auth route ${url.pathname} - No PKCE cookies found, proceeding`);
     return NextResponse.next();
   }
 
   // Log detection of PKCE cookies
-  console.log(`[MIDDLEWARE] Detected ${pkceCookies.length} PKCE cookie(s):`, pkceCookies.map(c => c.name));
+  console.log(`[MIDDLEWARE] WARNING: Detected ${pkceCookies.length} PKCE cookie(s): ${pkceCookies.map(c => c.name).join(', ')}`);
 
   // Create response that will delete the PKCE cookies from the browser
   const response = NextResponse.next();
 
   // Delete PKCE cookies by setting them with maxAge=0
   for (const cookie of pkceCookies) {
-    console.log(`[MIDDLEWARE] Scheduling deletion of PKCE cookie: ${cookie.name}`);
+    console.log(`[MIDDLEWARE] Scheduling deletion of PKCE cookie: ${cookie.name} (value length: ${cookie.value?.length || 0})`);
 
     response.cookies.set(cookie.name, '', {
       maxAge: 0,
@@ -104,18 +110,7 @@ export default auth((request) => {
 
 // Configure middleware matcher
 export const config = {
-  // Match all routes except static files
-  // This is needed for:
-  // 1. Route protection (/perfil/*)
-  // 2. PKCE cookie cleanup (/api/auth/*)
   matcher: [
-    /*
-     * Match all request paths except:
-     * - _next/static (static files)
-     * - _next/image (image optimization files)
-     * - favicon.ico (favicon file)
-     * - public files (images, etc)
-     */
     '/((?!_next/static|_next/image|favicon.ico|.*\\.(?:svg|png|jpg|jpeg|gif|webp)$).*)',
   ],
 };

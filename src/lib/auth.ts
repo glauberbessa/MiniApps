@@ -164,25 +164,6 @@ async function refreshAccessToken(account: {
 const useSecureCookies = process.env.NODE_ENV === "production";
 const cookiePrefix = useSecureCookies ? "__Secure-" : "";
 
-function extractAuthErrorMessage(messages: unknown[]): string {
-  return messages
-    .map((entry) => {
-      if (entry instanceof Error) {
-        return entry.message;
-      }
-      if (typeof entry === "string") {
-        return entry;
-      }
-      if (entry && typeof entry === "object" && "message" in entry) {
-        const message = (entry as { message?: unknown }).message;
-        return typeof message === "string" ? message : JSON.stringify(entry);
-      }
-      return JSON.stringify(entry);
-    })
-    .filter(Boolean)
-    .join(" ");
-}
-
 function extractMissingTable(message: string): string | null {
   const prismaMatch = message.match(/The table `([^`]+)` does not exist/i);
   if (prismaMatch?.[1]) {
@@ -195,21 +176,85 @@ function extractMissingTable(message: string): string | null {
   return null;
 }
 
+function extractErrorCauseChain(err: unknown, maxDepth = 10): { message: string; rootError?: Error } {
+  const messages: string[] = [];
+  let current: unknown = err;
+  let rootError: Error | undefined;
+  let depth = 0;
+
+  while (current && depth < maxDepth) {
+    depth++;
+    if (current instanceof Error) {
+      messages.push(`[${current.name}] ${current.message}`);
+      rootError = current;
+      // NextAuth v5 sets cause as { err: Error, ...metadata }
+      const cause = (current as { cause?: unknown }).cause;
+      if (cause && typeof cause === "object" && cause !== null && "err" in cause) {
+        const causeObj = cause as Record<string, unknown>;
+        if (causeObj.err instanceof Error) {
+          current = causeObj.err;
+          continue;
+        }
+      }
+      current = cause;
+    } else if (typeof current === "object" && current !== null && "message" in current) {
+      messages.push(String((current as { message: unknown }).message));
+      current = (current as { cause?: unknown }).cause;
+    } else {
+      break;
+    }
+  }
+
+  return { message: messages.join(" → "), rootError };
+}
+
+function withRetryAdapter(adapter: ReturnType<typeof PrismaAdapter>) {
+  const isTransientError = (error: unknown): boolean => {
+    const msg = error instanceof Error ? error.message : String(error);
+    return /connection|timeout|ECONNREFUSED|ECONNRESET|socket|fetch failed|Can't reach database/i.test(msg);
+  };
+
+  const handler: ProxyHandler<typeof adapter> = {
+    get(target, prop: string) {
+      const original = target[prop as keyof typeof target];
+      if (typeof original !== "function") return original;
+
+      return async (...args: unknown[]) => {
+        try {
+          return await (original as (...a: unknown[]) => Promise<unknown>).apply(target, args);
+        } catch (error) {
+          if (!isTransientError(error)) throw error;
+
+          logger.warn("DATABASE", `Adapter method "${prop}" failed with transient error, retrying once...`, {
+            error: error instanceof Error ? error.message : String(error),
+          });
+          await new Promise((r) => setTimeout(r, 500));
+          return await (original as (...a: unknown[]) => Promise<unknown>).apply(target, args);
+        }
+      };
+    },
+  };
+  return new Proxy(adapter, handler);
+}
+
 export const { handlers, auth, signIn, signOut } = NextAuth({
-  adapter: PrismaAdapter(prisma),
+  adapter: withRetryAdapter(PrismaAdapter(prisma)),
   trustHost: true,
   secret: getAuthSecret(),
   debug: process.env.NODE_ENV === "development" || process.env.AUTH_DEBUG === "true",
   logger: {
     error(code, ...message) {
-      const combinedMessage = extractAuthErrorMessage(message);
-      logger.error("AUTH", `NextAuth internal error: ${code}`, undefined, {
-        code,
-        combinedMessage: combinedMessage.substring(0, 500),
+      // Extract the full cause chain from the error object (code is the AdapterError in NextAuth v5)
+      const causeChain = extractErrorCauseChain(code);
+
+      logger.error("AUTH", `NextAuth internal error: ${code}`, causeChain.rootError, {
+        causeChain: causeChain.message.substring(0, 1000),
       });
-      const missingTable = extractMissingTable(combinedMessage);
+
+      // Check for missing table in the cause chain
+      const missingTable = extractMissingTable(causeChain.message);
       if (missingTable) {
-        logger.critical("DATABASE", "Missing Prisma table detected during auth", undefined, {
+        logger.critical("DATABASE", "Missing Prisma table detected during auth", causeChain.rootError, {
           missingTable,
           isVercel: !!process.env.VERCEL,
           hasDatabaseUrl: !!process.env.DATABASE_URL,

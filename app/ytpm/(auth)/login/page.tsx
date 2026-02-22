@@ -1,16 +1,7 @@
 import { Button } from "@/components/ui/button";
-import { Youtube, ListVideo, Radio, Gauge, Check, Shield, BarChart3, ArrowRight, Zap, AlertCircle } from "lucide-react";
+import { Youtube, ListVideo, Radio, Gauge, Check, Shield, BarChart3, ArrowRight, Zap } from "lucide-react";
 import { UI_TEXT } from "@/lib/i18n";
 import { signInWithGoogle } from "./actions";
-
-const ERROR_MESSAGES: Record<string, string> = {
-  OAuthAccountNotLinked: "Já existe uma conta com este e-mail. Faça login com o método usado anteriormente.",
-  OAuthCallback: "Erro ao processar a resposta do Google. Tente novamente.",
-  OAuthSignin: "Erro ao iniciar o login com Google. Tente novamente.",
-  OAuthCreateAccount: "Erro ao criar sua conta. Tente novamente.",
-  Callback: "Erro durante a autenticação. Tente novamente.",
-  Default: "Ocorreu um erro ao fazer login. Tente novamente.",
-};
 
 // Ícone do Google com cores oficiais
 function GoogleIcon({ className }: { className?: string }) {
@@ -41,15 +32,7 @@ function GoogleIcon({ className }: { className?: string }) {
   );
 }
 
-interface LoginPageProps {
-  searchParams: Promise<{ [key: string]: string | string[] | undefined }>;
-}
-
-export default async function LoginPage({ searchParams }: LoginPageProps) {
-  const params = await searchParams;
-  const error = typeof params.error === "string" ? params.error : undefined;
-  const errorMessage = error ? (ERROR_MESSAGES[error] || ERROR_MESSAGES.Default) : undefined;
-
+export default function LoginPage() {
   const features = [
     {
       icon: ListVideo,
@@ -125,14 +108,6 @@ export default async function LoginPage({ searchParams }: LoginPageProps) {
             <div className="w-2 h-2 rounded-full bg-ytpm-accent/50" />
           </div>
         </div>
-
-        {/* Mensagem de erro */}
-        {errorMessage && (
-          <div className="mb-6 flex items-start gap-3 rounded-lg bg-red-500/10 border border-red-500/30 p-4" role="alert">
-            <AlertCircle className="h-5 w-5 text-red-400 shrink-0 mt-0.5" aria-hidden="true" />
-            <p className="text-ui-sm text-red-300">{errorMessage}</p>
-          </div>
-        )}
 
         {/* Botão de Login - Destaque principal */}
         <form action={signInWithGoogle} className="mb-8">

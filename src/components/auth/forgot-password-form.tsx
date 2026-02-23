@@ -73,8 +73,8 @@ export function ForgotPasswordForm({ className }: ForgotPasswordFormProps) {
   if (success) {
     return (
       <div className="space-y-4 text-center animate-in fade-in-0 zoom-in-95 duration-300">
-        <div className="mx-auto flex h-12 w-12 items-center justify-center rounded-full bg-green-100">
-          <Mail className="h-6 w-6 text-green-600" />
+        <div className="mx-auto flex h-12 w-12 items-center justify-center rounded-full bg-success/20">
+          <Mail className="h-6 w-6 text-success" />
         </div>
         <div className="space-y-2">
           <h3 className="text-lg font-medium">{txt.verification.checkEmail}</h3>

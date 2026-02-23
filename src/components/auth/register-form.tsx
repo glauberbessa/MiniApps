@@ -94,8 +94,8 @@ export function RegisterForm({ className }: RegisterFormProps) {
 
   if (success) {
     return (
-      <div className="rounded-md bg-green-50 p-4 text-center animate-in fade-in-0 zoom-in-95 duration-300">
-        <p className="text-sm text-green-800">
+      <div className="rounded-md bg-success/10 p-4 text-center animate-in fade-in-0 zoom-in-95 duration-300">
+        <p className="text-sm text-success">
           {txt.success.registered}
         </p>
       </div>

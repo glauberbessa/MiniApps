@@ -19,9 +19,10 @@ import { usePlaylistItems } from "@/hooks/usePlaylistItems";
 import { useVideoFilters } from "@/hooks/useVideoFilters";
 import { useFilterStore } from "@/stores/filterStore";
 import { UI_TEXT } from "@/lib/i18n";
-import { ArrowRight, ListVideo, Trash2, Loader2 } from "lucide-react";
+import { ArrowRight, ListVideo, Trash2, Loader2, Download } from "lucide-react";
 import { useToast } from "@/components/ui/use-toast";
 import { useRemoveFromPlaylist } from "@/hooks/useTransfer";
+import { exportVideoLinks } from "@/lib/utils";
 import {
   Select,
   SelectContent,
@@ -174,6 +175,11 @@ export default function PlaylistsPage() {
     refetch();
   };
 
+  const handleExportLinks = () => {
+    const videoIds = videosToTransfer.map((v) => v.videoId);
+    exportVideoLinks(videoIds);
+  };
+
   return (
     <div className="space-y-6">
       {/* Header */}
@@ -323,6 +329,16 @@ export default function PlaylistsPage() {
               )}
             </div>
             <div className="flex w-full flex-col gap-3 md:w-auto md:flex-row md:items-center md:justify-end md:gap-2">
+              <Button
+                variant="outline"
+                size="lg"
+                onClick={handleExportLinks}
+                disabled={selectedVideos.size === 0}
+                className="w-full md:w-auto"
+              >
+                <Download className="mr-2 h-5 w-5" aria-hidden="true" />
+                {UI_TEXT.general.exportLinks}
+              </Button>
               <Button
                 variant="outline"
                 size="lg"

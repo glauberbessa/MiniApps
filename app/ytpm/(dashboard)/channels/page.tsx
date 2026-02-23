@@ -13,8 +13,9 @@ import { useChannelVideos } from "@/hooks/useChannelVideos";
 import { useVideoFilters } from "@/hooks/useVideoFilters";
 import { useFilterStore } from "@/stores/filterStore";
 import { UI_TEXT } from "@/lib/i18n";
-import { Plus, Radio } from "lucide-react";
+import { Plus, Radio, Download } from "lucide-react";
 import { useToast } from "@/components/ui/use-toast";
+import { exportVideoLinks } from "@/lib/utils";
 import {
   Select,
   SelectContent,
@@ -135,6 +136,10 @@ export default function ChannelsPage() {
     setSelectedVideos(new Set());
   };
 
+  const handleExportLinks = () => {
+    exportVideoLinks(videosToAssign);
+  };
+
   return (
     <div className="space-y-6">
       {/* Header */}
@@ -253,8 +258,17 @@ export default function ChannelsPage() {
                 </div>
               )}
 
-              {/* Assign Button */}
-              <div className="flex justify-end">
+              {/* Action Buttons */}
+              <div className="flex justify-end gap-2">
+                <Button
+                  variant="outline"
+                  size="lg"
+                  onClick={handleExportLinks}
+                  disabled={selectedVideos.size === 0}
+                >
+                  <Download className="mr-2 h-5 w-5" />
+                  {UI_TEXT.general.exportLinks}
+                </Button>
                 <Button
                   size="lg"
                   onClick={handleAssignClick}

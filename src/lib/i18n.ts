@@ -329,6 +329,7 @@ export const UI_TEXT = {
     back: "Voltar",
     next: "Próximo",
     refresh: "Atualizar",
+    exportLinks: "Exportar Links",
   },
 
   // Transferência

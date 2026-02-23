@@ -104,3 +104,20 @@ export function parseDuration(duration: string): number {
 export function formatNumber(num: number): string {
   return new Intl.NumberFormat("pt-BR").format(num);
 }
+
+// Exportar links de vídeos do YouTube como arquivo texto separados por ;
+export function exportVideoLinks(videoIds: string[]) {
+  const links = videoIds.map(
+    (id) => `https://www.youtube.com/watch?v=${id}`
+  );
+  const content = links.join(";");
+  const blob = new Blob([content], { type: "text/plain;charset=utf-8" });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement("a");
+  a.href = url;
+  a.download = `video-links-${new Date().toISOString().slice(0, 10)}.txt`;
+  document.body.appendChild(a);
+  a.click();
+  document.body.removeChild(a);
+  URL.revokeObjectURL(url);
+}

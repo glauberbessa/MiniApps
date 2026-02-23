@@ -22,7 +22,7 @@ export default async function EsqueciSenhaPage() {
   }
 
   return (
-    <div className="flex min-h-screen items-center justify-center bg-gradient-to-b from-gray-50 to-gray-100 px-4 py-12">
+    <div className="flex min-h-screen items-center justify-center bg-background px-4 py-12">
       <Card className="w-full max-w-md">
         <CardHeader className="space-y-1 text-center">
           <CardTitle className="text-2xl font-bold">Esqueceu sua senha?</CardTitle>
@@ -31,7 +31,7 @@ export default async function EsqueciSenhaPage() {
           </CardDescription>
         </CardHeader>
         <CardContent className="space-y-4">
-          <Suspense fallback={<div className="h-[120px] animate-pulse bg-gray-100 rounded-md" />}>
+          <Suspense fallback={<div className="h-[120px] animate-pulse bg-muted rounded-md" />}>
             <ForgotPasswordForm />
           </Suspense>
 

@@ -247,6 +247,65 @@ export async function processBatch(
       exportComplete: false,
     };
   } catch (error) {
+    // Verificar se é erro de playlist não encontrada (404 equivalente)
+    const errorMessage = error instanceof Error ? error.message : String(error);
+    const isPlaylistNotFound =
+      errorMessage.includes("cannot be found") ||
+      errorMessage.includes("not found") ||
+      errorMessage.includes("404");
+
+    if (isPlaylistNotFound) {
+      logger.warn("API", "processBatch - playlist not found, skipping source", {
+        userId,
+        sourceId: progress.sourceId,
+        sourceTitle: progress.sourceTitle,
+        sourceType: progress.sourceType,
+        error: errorMessage,
+      });
+
+      // Marcar como completed para pular para a próxima fonte
+      await prisma.exportProgress.update({
+        where: { id: progress.id },
+        data: {
+          status: "completed",
+          lastImportedAt: new Date(),
+        },
+      });
+
+      // Buscar próxima fonte para processar
+      const nextProgress = await prisma.exportProgress.findFirst({
+        where: {
+          userId,
+          status: { in: ["in_progress", "pending"] },
+        },
+        orderBy: [{ sourceType: "desc" }, { status: "asc" }, { createdAt: "asc" }],
+      });
+
+      // Se não há próxima fonte, exportação está completa
+      if (!nextProgress) {
+        const quotaStatus = await getQuotaStatus(userId);
+        logger.info("API", "processBatch - all sources completed after skipping", {
+          userId,
+          skippedSource: progress.sourceId,
+        });
+        return {
+          sourceId: "",
+          sourceTitle: null,
+          sourceType: "",
+          videosImported: 0,
+          hasMore: false,
+          quotaUsedToday: quotaStatus.consumedUnits,
+          quotaCeiling: QUOTA_CEILING,
+          shouldStop: false,
+          exportComplete: true,
+        };
+      }
+
+      // Recursivamente processar a próxima fonte
+      return processBatch(userId, youtubeService);
+    }
+
+    // Se não é erro de playlist não encontrada, lançar o erro
     logger.error(
       "API",
       "processBatch FAILED",

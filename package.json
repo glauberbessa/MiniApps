@@ -9,7 +9,7 @@
   "scripts": {
     "dev": "next dev -p 3000",
     "dev:all": "concurrently \"npm run dev\" \"cd YTPlaylistManagerProWeb && npm run dev -- -p 3001\" \"cd ScanQRCodeBar && npm run dev -- -p 3002\"",
-    "build": "node ./scripts/prisma-generate.mjs && node ./scripts/ensure-db.mjs && next build",
+    "build": "prisma generate && prisma migrate deploy && next build",
     "start": "next start -p 3000",
     "lint": "next lint",
     "postinstall": "node ./scripts/prisma-generate.mjs",

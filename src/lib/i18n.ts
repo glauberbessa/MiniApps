@@ -8,6 +8,7 @@ export const UI_TEXT = {
     quota: "Quota",
     logout: "Sair",
     autoCloseMenu: "Fechar menu automaticamente",
+    exportEnglish: "Filtrar Inglês",
   },
 
   // Playlists
@@ -356,6 +357,24 @@ export const UI_TEXT = {
     inProgress: "Atribuindo...",
     success: "Atribuição concluída!",
     error: "Erro na atribuição",
+  },
+
+  // Exportar Inglês
+  exportEnglish: {
+    title: "Filtrar Vídeos em Inglês",
+    description: "Varre todas as suas playlists e filtra apenas vídeos em inglês, gerando um arquivo com os links.",
+    startScan: "Iniciar Varredura",
+    scanning: "Varrendo...",
+    progress: "Processando playlist {current} de {total}",
+    currentPlaylist: "Playlist atual:",
+    results: "Resultados",
+    totalVideos: "Total de vídeos analisados",
+    englishVideos: "Vídeos em inglês encontrados",
+    duplicatesRemoved: "Duplicatas removidas",
+    downloadFile: "Baixar Arquivo de Links",
+    noEnglishVideos: "Nenhum vídeo em inglês encontrado.",
+    scanComplete: "Varredura concluída!",
+    scanError: "Erro durante a varredura.",
   },
 
   // Home (Launcher)

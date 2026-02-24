@@ -12,6 +12,7 @@ import {
   ChevronLeft,
   ChevronRight,
   Home,
+  Languages,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { UI_TEXT } from "@/lib/i18n";
@@ -50,6 +51,11 @@ const navigation = [
     name: UI_TEXT.nav.quota,
     href: "/ytpm/quota",
     icon: Gauge,
+  },
+  {
+    name: UI_TEXT.nav.exportEnglish,
+    href: "/ytpm/export-english",
+    icon: Languages,
   },
   {
     name: "Menu Principal",

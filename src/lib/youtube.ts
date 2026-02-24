@@ -944,4 +944,138 @@ export class YouTubeService {
       details,
     };
   }
+
+  // Buscar uma página de itens de playlist com detalhes dos vídeos (para exportação incremental)
+  // Custo: 2 unidades (1 playlistItems.list + 1 videos.list)
+  async getPlaylistItemsPage(
+    playlistId: string,
+    pageToken?: string
+  ): Promise<{
+    videos: Array<{
+      videoId: string;
+      title: string;
+      channelId: string;
+      channelTitle: string;
+      language: string;
+      publishedAt: string;
+      thumbnailUrl: string;
+    }>;
+    nextPageToken: string | null;
+    totalResults: number;
+  }> {
+    logger.info("YOUTUBE_API", "getPlaylistItemsPage START", {
+      instanceId: this.instanceId,
+      playlistId,
+      pageToken: pageToken || "initial",
+      userId: this.userId,
+    });
+
+    try {
+      const startTime = Date.now();
+
+      const response = await this.youtube.playlistItems.list({
+        part: ["snippet", "contentDetails"],
+        playlistId,
+        maxResults: 50,
+        pageToken,
+      });
+
+      const elapsed = Date.now() - startTime;
+      await trackQuotaUsage(this.userId, "playlistItems.list");
+
+      logger.youtubeApi("playlistItems.list (page)", true, {
+        instanceId: this.instanceId,
+        playlistId,
+        elapsed: `${elapsed}ms`,
+        itemsCount: response.data.items?.length || 0,
+        hasNextPage: !!response.data.nextPageToken,
+        totalResults: response.data.pageInfo?.totalResults,
+      });
+
+      const items = response.data.items || [];
+      const videoIds = items
+        .map((item) => item.contentDetails?.videoId || "")
+        .filter(Boolean);
+
+      if (videoIds.length === 0) {
+        return {
+          videos: [],
+          nextPageToken: response.data.nextPageToken || null,
+          totalResults: response.data.pageInfo?.totalResults || 0,
+        };
+      }
+
+      // Buscar detalhes dos vídeos (snippet + contentDetails)
+      const detailsStartTime = Date.now();
+      const detailsResponse = await this.youtube.videos.list({
+        part: ["snippet", "contentDetails"],
+        id: videoIds,
+      });
+
+      const detailsElapsed = Date.now() - detailsStartTime;
+      await trackQuotaUsage(this.userId, "videos.list");
+
+      logger.youtubeApi("videos.list (page details)", true, {
+        instanceId: this.instanceId,
+        elapsed: `${detailsElapsed}ms`,
+        videoIdsCount: videoIds.length,
+        returnedCount: detailsResponse.data.items?.length || 0,
+      });
+
+      const detailsMap = new Map<string, youtube_v3.Schema$Video>();
+      for (const video of detailsResponse.data.items || []) {
+        if (video.id) detailsMap.set(video.id, video);
+      }
+
+      const videos = items
+        .map((item) => {
+          const videoId = item.contentDetails?.videoId || "";
+          const detail = detailsMap.get(videoId);
+          return {
+            videoId,
+            title: detail?.snippet?.title || item.snippet?.title || "",
+            channelId:
+              detail?.snippet?.channelId ||
+              item.snippet?.videoOwnerChannelId ||
+              "",
+            channelTitle:
+              detail?.snippet?.channelTitle ||
+              item.snippet?.videoOwnerChannelTitle ||
+              "",
+            language: detail?.snippet?.defaultAudioLanguage || "",
+            publishedAt: detail?.snippet?.publishedAt || "",
+            thumbnailUrl:
+              detail?.snippet?.thumbnails?.medium?.url || "",
+          };
+        })
+        .filter((v) => v.videoId);
+
+      logger.youtubeApi("getPlaylistItemsPage END", true, {
+        instanceId: this.instanceId,
+        playlistId,
+        videosReturned: videos.length,
+        hasNextPage: !!response.data.nextPageToken,
+      });
+
+      return {
+        videos,
+        nextPageToken: response.data.nextPageToken || null,
+        totalResults: response.data.pageInfo?.totalResults || 0,
+      };
+    } catch (error) {
+      const gaxiosError = error as {
+        code?: number;
+        response?: { status?: number; statusText?: string; data?: unknown };
+      };
+      logger.youtubeApi("getPlaylistItemsPage FAILED", false, {
+        instanceId: this.instanceId,
+        playlistId,
+        pageToken: pageToken || "initial",
+        errorCode: gaxiosError?.code,
+        errorMessage: error instanceof Error ? error.message : String(error),
+        httpStatus: gaxiosError?.response?.status,
+      }, error instanceof Error ? error : undefined);
+      throw error;
+    }
+  }
 }

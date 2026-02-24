@@ -60,6 +60,8 @@ model User {
   playlistConfigs PlaylistConfig[]
   channelConfigs  ChannelConfig[]
   quotaHistories  QuotaHistory[]
+  exportedVideos  ExportedVideo[]
+  exportProgress  ExportProgress[]
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
@@ -127,4 +129,51 @@ model QuotaHistory {
 
   @@unique([userId, date])
   @@index([userId])
+}
+
+model ExportedVideo {
+  id           String  @id @default(cuid())
+  userId       String
+  videoId      String
+  title        String
+  channelId    String?
+  channelTitle String?
+  language     String?
+  sourceType   String
+  sourceId     String
+  sourceTitle  String?
+  publishedAt  String?
+  thumbnailUrl String?
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@unique([userId, videoId, sourceType, sourceId])
+  @@index([userId])
+  @@index([userId, language])
+}
+
+model ExportProgress {
+  id             String    @id @default(cuid())
+  userId         String
+  sourceType     String
+  sourceId       String
+  originalId     String?
+  sourceTitle    String?
+  status         String    @default("pending")
+  lastPageToken  String?
+  totalItems     Int       @default(0)
+  importedItems  Int       @default(0)
+  lastImportedAt DateTime?
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@unique([userId, sourceType, sourceId])
+  @@index([userId])
+  @@index([userId, status])
 }

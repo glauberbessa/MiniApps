@@ -12,7 +12,7 @@ import {
   ChevronLeft,
   ChevronRight,
   Home,
-  Languages,
+  Database,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { UI_TEXT } from "@/lib/i18n";
@@ -55,7 +55,7 @@ const navigation = [
   {
     name: UI_TEXT.nav.exportEnglish,
     href: "/ytpm/export-english",
-    icon: Languages,
+    icon: Database,
   },
   {
     name: "Menu Principal",

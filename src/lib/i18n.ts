@@ -8,7 +8,7 @@ export const UI_TEXT = {
     quota: "Quota",
     logout: "Sair",
     autoCloseMenu: "Fechar menu automaticamente",
-    exportEnglish: "Filtrar Inglês",
+    exportEnglish: "Exportação em massa",
   },
 
   // Playlists
@@ -359,22 +359,30 @@ export const UI_TEXT = {
     error: "Erro na atribuição",
   },
 
-  // Exportar Inglês
+  // Exportação em Massa
   exportEnglish: {
-    title: "Filtrar Vídeos em Inglês",
-    description: "Varre todas as suas playlists e filtra apenas vídeos em inglês, gerando um arquivo com os links.",
-    startScan: "Iniciar Varredura",
-    scanning: "Varrendo...",
-    progress: "Processando playlist {current} de {total}",
-    currentPlaylist: "Playlist atual:",
+    title: "Exportação em Massa",
+    description: "Importa todos os vídeos das suas playlists e canais inscritos para o banco de dados. Ao longo de vários dias, constrói uma biblioteca completa, permitindo filtrar por idioma.",
+    startExport: "Iniciar Exportação",
+    continueExport: "Continuar Exportação",
+    exporting: "Exportando...",
+    initializing: "Inicializando...",
+    progress: "Processando fonte {current} de {total}",
+    currentSource: "Fonte atual:",
     results: "Resultados",
-    totalVideos: "Total de vídeos analisados",
-    englishVideos: "Vídeos em inglês encontrados",
-    duplicatesRemoved: "Duplicatas removidas",
-    downloadFile: "Baixar Arquivo de Links",
+    totalVideos: "Total de vídeos importados",
+    englishVideos: "Vídeos em inglês",
+    sourcesCompleted: "Fontes concluídas",
+    sourcesRemaining: "Fontes restantes",
+    downloadFile: "Baixar Links em Inglês",
     noEnglishVideos: "Nenhum vídeo em inglês encontrado.",
-    scanComplete: "Varredura concluída!",
-    scanError: "Erro durante a varredura.",
+    exportComplete: "Exportação concluída! Todos os vídeos foram importados.",
+    exportPaused: "Exportação pausada — limite de 80% da quota diária atingido. Continue amanhã para importar mais vídeos.",
+    scanComplete: "Exportação concluída!",
+    scanError: "Erro durante a exportação.",
+    lastImport: "Última importação:",
+    neverImported: "Nenhuma importação realizada ainda. Clique em Iniciar Exportação.",
+    quotaInfo: "Quota utilizada: {used} de {ceiling} unidades ({percent}%)",
   },
 
   // Home (Launcher)

@@ -50,7 +50,7 @@ export function QuotaIndicator() {
     <Tooltip>
       <TooltipTrigger asChild>
         <Link
-          href="/quota"
+          href="/ytpm/quota"
           className="flex items-center gap-2 rounded-lg border px-3 py-1.5 text-sm transition-colors hover:bg-muted"
         >
           <Gauge className="h-4 w-4 text-muted-foreground" />

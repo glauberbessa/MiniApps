@@ -27,25 +27,25 @@
   }
 
   .dark {
-    --background: 222.2 84% 4.9%;
-    --foreground: 210 40% 98%;
-    --card: 222.2 84% 4.9%;
-    --card-foreground: 210 40% 98%;
-    --popover: 222.2 84% 4.9%;
-    --popover-foreground: 210 40% 98%;
-    --primary: 0 72% 51%;
-    --primary-foreground: 210 40% 98%;
-    --secondary: 217.2 32.6% 17.5%;
-    --secondary-foreground: 210 40% 98%;
-    --muted: 217.2 32.6% 17.5%;
-    --muted-foreground: 215 20.2% 65.1%;
-    --accent: 217.2 32.6% 17.5%;
-    --accent-foreground: 210 40% 98%;
-    --destructive: 0 62.8% 30.6%;
-    --destructive-foreground: 210 40% 98%;
-    --border: 217.2 32.6% 17.5%;
-    --input: 217.2 32.6% 17.5%;
-    --ring: 0 72% 51%;
+    --background: 240 10% 4%;            /* #09090b - ytpm-bg */
+    --foreground: 0 0% 98%;              /* #fafafa - ytpm-text */
+    --card: 240 5% 13%;                  /* #1f1f23 - ytpm-card */
+    --card-foreground: 0 0% 98%;         /* #fafafa */
+    --popover: 240 5% 13%;              /* #1f1f23 */
+    --popover-foreground: 0 0% 98%;     /* #fafafa */
+    --primary: 348 100% 50%;            /* #ff0033 - YouTube Red */
+    --primary-foreground: 0 0% 100%;    /* white */
+    --secondary: 240 6% 10%;            /* #18181b - ytpm-surface */
+    --secondary-foreground: 0 0% 98%;   /* #fafafa */
+    --muted: 240 6% 10%;               /* #18181b - ytpm-surface */
+    --muted-foreground: 240 5% 65%;    /* #a1a1aa - ytpm-muted */
+    --accent: 240 6% 10%;              /* #18181b - ytpm-surface */
+    --accent-foreground: 0 0% 98%;     /* #fafafa */
+    --destructive: 0 84% 60%;          /* #ef4444 - ytpm-error */
+    --destructive-foreground: 0 0% 98%;
+    --border: 240 4% 16%;              /* #27272a - ytpm-border */
+    --input: 240 4% 16%;               /* #27272a */
+    --ring: 348 100% 50%;              /* YouTube Red focus rings */
   }
 }
 

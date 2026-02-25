@@ -10,10 +10,10 @@ import type {
   ExportedVideoRow,
 } from "@/types/export";
 
-const QUOTA_CEILING_PERCENT = 80;
+const QUOTA_CEILING_PERCENT = 70;
 export const QUOTA_CEILING = Math.floor(
   (DAILY_QUOTA_LIMIT * QUOTA_CEILING_PERCENT) / 100
-); // 8000
+); // 7000
 
 export function channelIdToUploadsPlaylistId(channelId: string): string {
   if (channelId.startsWith("UC")) {
@@ -122,10 +122,17 @@ export async function processBatch(
 
   // Verificar quota
   const quotaStatus = await getQuotaStatus(userId);
-  if (quotaStatus.consumedUnits >= QUOTA_CEILING) {
-    logger.info("API", "processBatch - quota ceiling reached", {
+
+  // Require 2 quota units per batch (playlistItems.list: 1, videos.list: 1)
+  const requiredQuota = 2;
+  const remainingQuota = quotaStatus.dailyLimit - quotaStatus.consumedUnits;
+
+  if (quotaStatus.consumedUnits >= QUOTA_CEILING || remainingQuota < requiredQuota) {
+    logger.info("API", "processBatch - quota insufficient", {
       userId,
       consumed: quotaStatus.consumedUnits,
+      remaining: remainingQuota,
+      required: requiredQuota,
       ceiling: QUOTA_CEILING,
     });
     return {
@@ -247,12 +254,39 @@ export async function processBatch(
       exportComplete: false,
     };
   } catch (error) {
-    // Verificar se é erro de playlist não encontrada (404 equivalente)
+    // Verificar se é erro de quota
     const errorMessage = error instanceof Error ? error.message : String(error);
+    const isQuotaExceeded =
+      errorMessage.includes("quota") ||
+      errorMessage.includes("quotaExceeded") ||
+      errorMessage.includes("ERR_403");
+
+    // Verificar se é erro de playlist não encontrada (404 equivalente)
     const isPlaylistNotFound =
       errorMessage.includes("cannot be found") ||
       errorMessage.includes("not found") ||
       errorMessage.includes("404");
+
+    if (isQuotaExceeded) {
+      logger.warn("API", "processBatch - YouTube quota exceeded, stopping export", {
+        userId,
+        sourceId: progress.sourceId,
+        error: errorMessage,
+      });
+
+      const currentQuota = await getQuotaStatus(userId);
+      return {
+        sourceId: "",
+        sourceTitle: null,
+        sourceType: "",
+        videosImported: 0,
+        hasMore: false,
+        quotaUsedToday: currentQuota.consumedUnits,
+        quotaCeiling: QUOTA_CEILING,
+        shouldStop: true,
+        exportComplete: false,
+      };
+    }
 
     if (isPlaylistNotFound) {
       logger.warn("API", "processBatch - playlist not found, skipping source", {
@@ -305,7 +339,7 @@ export async function processBatch(
       return processBatch(userId, youtubeService);
     }
 
-    // Se não é erro de playlist não encontrada, lançar o erro
+    // Se não é erro de quota ou playlist não encontrada, lançar o erro
     logger.error(
       "API",
       "processBatch FAILED",

@@ -712,7 +712,7 @@ export default function Scanner() {
                   value={scannedResult}
                   onClick={(e) => e.target.select()}
                   className="w-full p-4 bg-slate-900/50 border border-slate-600 rounded-xl text-white font-mono text-sm resize-none focus:ring-2 focus:ring-emerald-500/50 cursor-text selection:bg-emerald-500/30"
-                  rows={6}
+                  rows={5}
                 />
                 
                 {copyFeedback && (

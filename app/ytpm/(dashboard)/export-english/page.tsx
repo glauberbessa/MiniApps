@@ -5,6 +5,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { PageHeader } from "@/components/ui/page-header";
 import { Progress } from "@/components/ui/progress";
+import { Switch } from "@/components/ui/switch";
 import { UI_TEXT } from "@/lib/i18n";
 import { t } from "@/lib/i18n";
 import { exportVideoLinks } from "@/lib/utils";
@@ -21,6 +22,7 @@ import {
   Database,
   PauseCircle,
   RefreshCw,
+  Clock,
 } from "lucide-react";
 
 type ExportPhase =
@@ -31,6 +33,15 @@ type ExportPhase =
   | "done"
   | "error";
 
+interface AutoResumeStatus {
+  id: string;
+  status: "active" | "paused";
+  pausedReason?: string | null;
+  pausedUntil?: string | null;
+  lastAttempt?: string | null;
+  nextAttempt?: string | null;
+}
+
 export default function ExportEnglishPage() {
   const { toast } = useToast();
   const [phase, setPhase] = useState<ExportPhase>("idle");
@@ -40,6 +51,9 @@ export default function ExportEnglishPage() {
   const [batchCount, setBatchCount] = useState(0);
   const abortRef = useRef(false);
   const [loadingStatus, setLoadingStatus] = useState(true);
+  const [autoResume, setAutoResume] = useState<AutoResumeStatus | null>(null);
+  const [autoResumeEnabled, setAutoResumeEnabled] = useState(false);
+  const [savingAutoResume, setSavingAutoResume] = useState(false);
 
   // Buscar status ao montar
   const fetchStatus = useCallback(async () => {
@@ -56,9 +70,26 @@ export default function ExportEnglishPage() {
     }
   }, []);
 
+  // Buscar auto-resume status ao montar
+  const fetchAutoResumeStatus = useCallback(async () => {
+    try {
+      const res = await fetch("/api/export/auto-resume/status", { credentials: "include" });
+      if (res.ok) {
+        const data = await res.json();
+        if (data.autoResume) {
+          setAutoResume(data.autoResume);
+          setAutoResumeEnabled(data.autoResume.status === "active");
+        }
+      }
+    } catch {
+      // Silently fail
+    }
+  }, []);
+
   useEffect(() => {
     fetchStatus();
-  }, [fetchStatus]);
+    fetchAutoResumeStatus();
+  }, [fetchStatus, fetchAutoResumeStatus]);
 
   const handleStartExport = useCallback(async () => {
     setError(null);
@@ -155,6 +186,51 @@ export default function ExportEnglishPage() {
   const handleCancel = useCallback(() => {
     abortRef.current = true;
   }, []);
+
+  const handleAutoResumeToggle = useCallback(async (enabled: boolean) => {
+    setSavingAutoResume(true);
+    try {
+      const endpoint = enabled
+        ? "/api/export/auto-resume/enable"
+        : "/api/export/auto-resume/disable";
+
+      const res = await fetch(endpoint, {
+        method: "POST",
+        credentials: "include",
+      });
+
+      if (!res.ok) {
+        const err = await res.json();
+        throw new Error(err.error || "Erro ao atualizar auto-resumo");
+      }
+
+      const data = await res.json();
+      setAutoResumeEnabled(enabled);
+
+      if (data.autoResume) {
+        setAutoResume(data.autoResume);
+      } else {
+        setAutoResume(null);
+      }
+
+      toast({
+        title: "Sucesso",
+        description: enabled
+          ? "Auto-resumo ativado. A exportação será retomada automaticamente."
+          : "Auto-resumo desativado.",
+        variant: "success",
+      });
+    } catch (err) {
+      setAutoResumeEnabled(!enabled); // Revert toggle
+      toast({
+        title: "Erro",
+        description: err instanceof Error ? err.message : "Erro ao atualizar auto-resumo",
+        variant: "destructive",
+      });
+    } finally {
+      setSavingAutoResume(false);
+    }
+  }, [toast]);
 
   const handleDownload = useCallback(async () => {
     try {
@@ -334,6 +410,45 @@ export default function ExportEnglishPage() {
               </Button>
             )}
           </div>
+
+          {/* Auto-Resume Section */}
+          {hasIncompleteWork && (
+            <div className="mt-6 pt-6 border-t space-y-4">
+              <div className="flex items-center justify-between">
+                <div className="space-y-1.5">
+                  <label className="text-sm font-medium">Auto-retomar exportação</label>
+                  <p className="text-xs text-muted-foreground">
+                    A exportação será retomada automaticamente a cada 30 minutos
+                  </p>
+                </div>
+                <Switch
+                  checked={autoResumeEnabled}
+                  onCheckedChange={handleAutoResumeToggle}
+                  disabled={savingAutoResume}
+                />
+              </div>
+
+              {/* Auto-Resume Status */}
+              {autoResume && (
+                <div className="rounded-lg bg-muted/50 p-3 text-sm space-y-2">
+                  {autoResume.status === "active" ? (
+                    <div className="flex items-center gap-2 text-primary">
+                      <Clock className="h-4 w-4" />
+                      <span>Ativo - Verificando a cada 30 minutos</span>
+                    </div>
+                  ) : autoResume.status === "paused" && autoResume.pausedUntil ? (
+                    <div className="flex items-center gap-2 text-amber-600 dark:text-amber-400">
+                      <Clock className="h-4 w-4" />
+                      <span>
+                        Pausado por falta de quota até{" "}
+                        {new Date(autoResume.pausedUntil).toLocaleTimeString("pt-BR")}
+                      </span>
+                    </div>
+                  ) : null}
+                </div>
+              )}
+            </div>
+          )}
         </CardContent>
       </Card>
 

@@ -10,12 +10,12 @@
 | Phase | Total | Done | In Progress | Pending |
 |-------|-------|------|-------------|---------|
 | Phase 1: Core Infrastructure | 4 | 4 | 0 | 0 |
-| Phase 2: Domain Specialists | 15 | 0 | 0 | 15 |
+| Phase 2: Domain Specialists | 15 | 4 | 0 | 11 |
 | Phase 3: Utilities | 8-10 | 0 | 0 | 8-10 |
 | Phase 4: Scaffolding | 14 | 0 | 0 | 14 |
-| **TOTAL** | **41-43** | **4** | **0** | **37-39** |
+| **TOTAL** | **41-43** | **8** | **0** | **33-35** |
 
-**Completion:** 9.5% (4 out of 42 skills)
+**Completion:** 19% (8 out of 42 skills)
 
 ---
 
@@ -73,16 +73,28 @@ Foundation skills that enable all others:
 
 ---
 
-## 📋 Phase 2: Domain Specialists (15 skills) - TODO
+## 📋 Phase 2: Domain Specialists (15 skills) - IN PROGRESS
 
 **Priority Order for Implementation:**
 
 ### High Priority (Week 2-3)
-- [ ] `/api-architect` - API design patterns
-- [ ] `/backend-expert` - Server-side patterns
+- [x] ✅ `/api-architect` - API design patterns (COMPLETE)
+  - **File:** `domain-specialists/api-architect/README.md`
+  - **Content:** Decision trees, REST/GraphQL/tRPC comparison, versioning, auth, rate limiting
+  - **Size:** 500+ lines
+- [x] ✅ `/backend-expert` - Server-side patterns (COMPLETE)
+  - **File:** `domain-specialists/backend-expert/README.md`
+  - **Content:** Framework selection, architecture, error handling, validation, security
+  - **Size:** 600+ lines
+- [x] ✅ `/frontend-expert` - Frontend architecture (COMPLETE)
+  - **File:** `domain-specialists/frontend-expert/README.md`
+  - **Content:** Component strategy, state management, performance, responsive design, a11y
+  - **Size:** 550+ lines
+- [x] ✅ `/react-expert` - React patterns & hooks (COMPLETE)
+  - **File:** `domain-specialists/react-expert/README.md`
+  - **Content:** Hook rules, custom hooks, effects, performance, compounds, React 19
+  - **Size:** 700+ lines
 - [ ] `/database-designer` - Database design
-- [ ] `/frontend-expert` - Frontend architecture
-- [ ] `/react-expert` - React patterns & hooks
 - [ ] `/nextjs-builder` - Next.js specific
 
 ### Medium Priority (Week 4)
@@ -206,7 +218,18 @@ claude-skills/
 │   │   └── README.md .................... ✅
 │   └── code-reviewer/
 │       └── README.md .................... ✅
-├── domain-specialists/ ................. ⬜ TODO (15 skills)
+├── domain-specialists/ ................. 🔄 IN PROGRESS (4/15 complete)
+│   ├── api-architect/
+│   │   └── README.md .................... ✅
+│   ├── backend-expert/
+│   │   └── README.md .................... ✅
+│   ├── frontend-expert/
+│   │   └── README.md .................... ✅
+│   ├── react-expert/
+│   │   └── README.md .................... ✅
+│   ├── database-designer/ .............. ⬜ TODO
+│   ├── nextjs-builder/ ................. ⬜ TODO
+│   └── ... (9 more) .................... ⬜ TODO
 ├── utilities/ ........................... ⬜ TODO (8-10 skills)
 ├── scaffolding/ ......................... ⬜ TODO (14 skills)
 ├── scripts/ ............................ ⬜ TODO (copy from .agent/)

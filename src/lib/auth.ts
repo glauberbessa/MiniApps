@@ -704,10 +704,14 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
                   newExpiresAtDate: new Date((token.expiresAt as number) * 1000).toISOString(),
                 });
               } else {
-                logger.error("AUTH_JWT", "jwt - Token refresh returned null (failed)", undefined, {
+                logger.error("AUTH_JWT", "jwt - Token refresh returned null (failed), clearing accessToken", undefined, {
                   accountId: token.accountId,
                   dbAccountId: dbAccount.id,
                 });
+                // Clear the accessToken to prevent API calls with invalid credentials
+                delete token.accessToken;
+                // Mark token as invalid so frontend can prompt re-authentication
+                token.tokenRefreshFailed = true;
               }
             } else {
               logger.error("AUTH_JWT", "jwt - Account NOT FOUND in database for refresh", undefined, {
@@ -715,10 +719,13 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
               });
             }
           } catch (error) {
-            logger.error("AUTH_JWT", "jwt - Token refresh EXCEPTION", error instanceof Error ? error : undefined, {
+            logger.error("AUTH_JWT", "jwt - Token refresh EXCEPTION, clearing accessToken", error instanceof Error ? error : undefined, {
               errorMessage: error instanceof Error ? error.message : String(error),
               accountId: token.accountId,
             });
+            // Clear the accessToken to prevent API calls with invalid credentials
+            delete token.accessToken;
+            token.tokenRefreshFailed = true;
           }
         } else if (isExpired && !token.refreshToken) {
           logger.error("AUTH_JWT", "jwt - Token EXPIRED but NO refresh token available!", undefined, {

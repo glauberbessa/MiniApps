@@ -96,6 +96,36 @@ export default function ExportEnglishPage() {
           method: "POST",
           credentials: "include",
         });
+
+        // Handle authentication errors specifically
+        if (res.status === 401) {
+          setError(
+            "Sessão expirada. Por favor, faça login novamente com sua conta Google."
+          );
+          setPhase("error");
+          toast({
+            title: "Não autorizado",
+            description:
+              "Sua sessão expirou. Por favor, faça login novamente.",
+            variant: "destructive",
+          });
+          break;
+        }
+
+        if (res.status === 403) {
+          setError(
+            "Acesso negado. Você não tem permissão para exportar vídeos."
+          );
+          setPhase("error");
+          toast({
+            title: "Acesso negado",
+            description:
+              "Você não tem permissão para realizar esta operação.",
+            variant: "destructive",
+          });
+          break;
+        }
+
         if (!res.ok) {
           const err = await res.json();
           throw new Error(err.error || "Erro ao processar batch");

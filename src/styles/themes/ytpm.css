@@ -34,11 +34,17 @@
   --ytpm-text-secondary: #d4d4d8;   /* Zinc-300 */
   --ytpm-muted: #a1a1aa;            /* Zinc-400 */
   --ytpm-muted-dark: #71717a;       /* Zinc-500 */
+  --ytpm-btn-primary-text: #fff;    /* Button primary text */
 
   /* Borders */
   --ytpm-border: #27272a;           /* Zinc-800 */
   --ytpm-border-hover: #3f3f46;     /* Zinc-700 */
   --ytpm-border-accent: rgba(255, 0, 51, 0.3);
+
+  /* Overlays */
+  --ytpm-overlay-light: rgba(0, 0, 0, 0.3);
+  --ytpm-overlay-medium: rgba(0, 0, 0, 0.6);
+  --ytpm-overlay-strong: rgba(0, 0, 0, 0.8);
 
   /* Shadows */
   --ytpm-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.4),
@@ -278,7 +284,7 @@
 
 .ytpm-btn-primary {
   background: var(--ytpm-accent);
-  color: white;
+  color: var(--ytpm-btn-primary-text);
 }
 
 .ytpm-btn-primary:hover {
@@ -697,7 +703,7 @@
   inset: 0;
   background: linear-gradient(
     to top,
-    rgba(0, 0, 0, 0.6) 0%,
+    var(--ytpm-overlay-medium) 0%,
     transparent 50%
   );
   opacity: 0;

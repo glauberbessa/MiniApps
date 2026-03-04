@@ -358,10 +358,14 @@
  * ========================================== */
 
 @media (prefers-contrast: high) {
-  .theme-launcher,
-  .theme-ytpm,
-  .theme-scanner {
-    background: #000;
+  [data-theme="launcher"] {
+    background: var(--launcher-bg);
+  }
+  [data-theme="ytpm"] {
+    background: var(--ytpm-bg);
+  }
+  [data-theme="scanner"] {
+    background: var(--scanner-bg);
   }
 
   .card-gradient-border::before,

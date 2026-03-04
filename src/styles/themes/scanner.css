@@ -34,6 +34,7 @@
   --scanner-text: #e4e4e7;           /* Zinc-200 */
   --scanner-text-secondary: #a1a1aa; /* Zinc-400 */
   --scanner-muted: #52525b;          /* Zinc-600 */
+  --scanner-btn-text: #000;          /* Button text color */
 
   /* Borders */
   --scanner-border: rgba(255, 255, 255, 0.08);
@@ -236,7 +237,7 @@
 
 .scanner-btn-primary {
   background: var(--scanner-accent);
-  color: #000;
+  color: var(--scanner-btn-text);
 }
 
 .scanner-btn-primary:hover {
@@ -246,7 +247,7 @@
 
 .scanner-btn-success {
   background: var(--scanner-success);
-  color: #000;
+  color: var(--scanner-btn-text);
 }
 
 .scanner-btn-success:hover {

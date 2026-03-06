@@ -3,5 +3,7 @@ export { VideoFilters } from "./VideoFilters";
 export { VideoGrid } from "./VideoGrid";
 export { VideoList } from "./VideoList";
 export { VideoTable } from "./VideoTable";
+export { VideoCard } from "./VideoCard";
+export { VideoTableResponsive } from "./VideoTableResponsive";
 export { StatsBar } from "./StatsBar";
 export { TransferDialog } from "./TransferDialog";

@@ -156,3 +156,48 @@
 .stagger-animation > *:nth-child(3) { animation-delay: 200ms; }
 .stagger-animation > *:nth-child(4) { animation-delay: 300ms; }
 .stagger-animation > *:nth-child(5) { animation-delay: 400ms; }
+
+/* Mobile-First Responsive Utilities */
+@layer components {
+  /* Touch-friendly sizing for mobile */
+  .touch-target {
+    @apply min-h-[44px] min-w-[44px];
+  }
+
+  /* Responsive spacing for mobile */
+  .mobile-safe-padding {
+    @apply p-3 md:p-4 lg:p-6;
+  }
+
+  .mobile-safe-gap {
+    @apply gap-2 md:gap-3 lg:gap-4;
+  }
+
+  /* Responsive input height */
+  .input-mobile {
+    @apply h-11 md:h-10;
+  }
+
+  /* Responsive button padding */
+  .button-mobile {
+    @apply px-4 py-3 md:px-3 md:py-2;
+  }
+
+  /* Grid responsive for mobile */
+  .grid-mobile-1 {
+    @apply grid-cols-1 md:grid-cols-2 lg:grid-cols-3;
+  }
+
+  .grid-mobile-2 {
+    @apply grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4;
+  }
+
+  /* Reduce motion for accessibility */
+  @media (prefers-reduced-motion: reduce) {
+    * {
+      animation-duration: 0.01ms !important;
+      animation-iteration-count: 1 !important;
+      transition-duration: 0.01ms !important;
+    }
+  }
+}

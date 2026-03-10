@@ -1,537 +1,313 @@
 import { prisma } from "@/lib/prisma";
 import { YouTubeService } from "@/lib/youtube";
-import { getQuotaStatus } from "@/lib/quota";
-import { logger } from "@/lib/logger";
-import { DAILY_QUOTA_LIMIT } from "@/types/quota";
 import type {
-  ExportInitResult,
-  ExportBatchResult,
   ExportStatusResult,
-  ExportedVideoRow,
+  ExportBatchResult,
+  ExportInitResult,
 } from "@/types/export";
-
-const QUOTA_CEILING_PERCENT = 70;
-export const QUOTA_CEILING = Math.floor(
-  (DAILY_QUOTA_LIMIT * QUOTA_CEILING_PERCENT) / 100
-); // 7000
-
-export function channelIdToUploadsPlaylistId(channelId: string): string {
-  if (channelId.startsWith("UC")) {
-    return "UU" + channelId.slice(2);
-  }
-  return channelId;
-}
-
-export async function initExport(
-  userId: string,
-  youtubeService: YouTubeService
-): Promise<ExportInitResult> {
-  logger.info("API", "initExport START", { userId });
-
-  // Verificar se já existe progresso
-  const existingCount = await prisma.exportProgress.count({
-    where: { userId },
-  });
-
-  if (existingCount > 0) {
-    const completed = await prisma.exportProgress.count({
-      where: { userId, status: "completed" },
-    });
-    logger.info("API", "initExport - already initialized", {
-      userId,
-      existingCount,
-      completed,
-    });
-    return {
-      playlistSources: 0,
-      channelSources: 0,
-      totalSources: existingCount,
-      alreadyCompleted: completed,
-    };
-  }
-
-  // 1. Buscar playlists
-  const playlists = await youtubeService.getPlaylists();
-  logger.info("API", "initExport - playlists fetched", {
-    userId,
-    count: playlists.length,
-  });
-
-  // 2. Buscar canais inscritos
-  const channels = await youtubeService.getSubscribedChannels();
-  logger.info("API", "initExport - channels fetched", {
-    userId,
-    count: channels.length,
-  });
-
-  // 3. Criar entradas ExportProgress - playlists primeiro (prioridade)
-  const playlistData = playlists.map((p) => ({
-    userId,
-    sourceType: "playlist",
-    sourceId: p.id,
-    sourceTitle: p.title,
-    status: "pending",
-    totalItems: p.itemCount || 0,
-    importedItems: 0,
-  }));
-
-  const channelData = channels.map((c) => ({
-    userId,
-    sourceType: "channel",
-    sourceId: channelIdToUploadsPlaylistId(c.id),
-    originalId: c.id,
-    sourceTitle: c.title,
-    status: "pending",
-    totalItems: 0,
-    importedItems: 0,
-  }));
-
-  if (playlistData.length > 0) {
-    await prisma.exportProgress.createMany({
-      data: playlistData,
-      skipDuplicates: true,
-    });
-  }
-
-  if (channelData.length > 0) {
-    await prisma.exportProgress.createMany({
-      data: channelData,
-      skipDuplicates: true,
-    });
-  }
-
-  logger.info("API", "initExport END", {
-    userId,
-    playlists: playlistData.length,
-    channels: channelData.length,
-  });
-
-  return {
-    playlistSources: playlistData.length,
-    channelSources: channelData.length,
-    totalSources: playlistData.length + channelData.length,
-    alreadyCompleted: 0,
-  };
-}
-
-export async function processBatch(
-  userId: string,
-  youtubeService: YouTubeService
-): Promise<ExportBatchResult> {
-  logger.info("API", "processBatch START", { userId });
-
-  // Verificar quota
-  const quotaStatus = await getQuotaStatus(userId);
-
-  // Require 2 quota units per batch (playlistItems.list: 1, videos.list: 1)
-  const requiredQuota = 2;
-  const remainingQuota = quotaStatus.dailyLimit - quotaStatus.consumedUnits;
-
-  if (quotaStatus.consumedUnits >= QUOTA_CEILING || remainingQuota < requiredQuota) {
-    logger.info("API", "processBatch - quota insufficient", {
-      userId,
-      consumed: quotaStatus.consumedUnits,
-      remaining: remainingQuota,
-      required: requiredQuota,
-      ceiling: QUOTA_CEILING,
-    });
-    return {
-      sourceId: "",
-      sourceTitle: null,
-      sourceType: "",
-      videosImported: 0,
-      hasMore: false,
-      quotaUsedToday: quotaStatus.consumedUnits,
-      quotaCeiling: QUOTA_CEILING,
-      shouldStop: true,
-      exportComplete: false,
-    };
-  }
-
-  // Buscar próxima fonte incompleta - playlists primeiro (sourceType "playlist" < "channel" em ordem alfabética)
-  // Dentro do mesmo tipo, in_progress primeiro, depois pending
-  const progress = await prisma.exportProgress.findFirst({
-    where: {
-      userId,
-      status: { in: ["in_progress", "pending"] },
-    },
-    orderBy: [{ sourceType: "desc" }, { status: "asc" }, { createdAt: "asc" }],
-  });
-
-  if (!progress) {
-    logger.info("API", "processBatch - all sources completed", { userId });
-    return {
-      sourceId: "",
-      sourceTitle: null,
-      sourceType: "",
-      videosImported: 0,
-      hasMore: false,
-      quotaUsedToday: quotaStatus.consumedUnits,
-      quotaCeiling: QUOTA_CEILING,
-      shouldStop: false,
-      exportComplete: true,
-    };
-  }
-
-  // Marcar como in_progress se era pending
-  if (progress.status === "pending") {
-    await prisma.exportProgress.update({
-      where: { id: progress.id },
-      data: { status: "in_progress" },
-    });
-  }
-
-  logger.info("API", "processBatch - processing source", {
-    userId,
-    sourceType: progress.sourceType,
-    sourceId: progress.sourceId,
-    sourceTitle: progress.sourceTitle,
-    lastPageToken: progress.lastPageToken || "initial",
-  });
-
-  try {
-    // Buscar uma página de vídeos
-    const page = await youtubeService.getPlaylistItemsPage(
-      progress.sourceId,
-      progress.lastPageToken || undefined
-    );
-
-    // Salvar vídeos no banco
-    let videosImported = 0;
-    if (page.videos.length > 0) {
-      const result = await prisma.exportedVideo.createMany({
-        data: page.videos.map((v) => ({
-          userId,
-          videoId: v.videoId,
-          title: v.title,
-          channelId: v.channelId || null,
-          channelTitle: v.channelTitle || null,
-          language: v.language || null,
-          sourceType: progress.sourceType,
-          sourceId: progress.sourceId,
-          sourceTitle: progress.sourceTitle,
-          publishedAt: v.publishedAt || null,
-          thumbnailUrl: v.thumbnailUrl || null,
-        })),
-        skipDuplicates: true,
-      });
-      videosImported = result.count;
-    }
-
-    // Atualizar progresso
-    const isCompleted = !page.nextPageToken;
-    await prisma.exportProgress.update({
-      where: { id: progress.id },
-      data: {
-        lastPageToken: page.nextPageToken,
-        importedItems: { increment: page.videos.length },
-        totalItems: page.totalResults || progress.totalItems,
-        lastImportedAt: new Date(),
-        status: isCompleted ? "completed" : "in_progress",
-      },
-    });
-
-    // Re-verificar quota após as chamadas
-    const updatedQuota = await getQuotaStatus(userId);
-
-    logger.info("API", "processBatch END", {
-      userId,
-      sourceId: progress.sourceId,
-      videosImported,
-      hasMore: !isCompleted,
-      quotaUsed: updatedQuota.consumedUnits,
-    });
-
-    return {
-      sourceId: progress.sourceId,
-      sourceTitle: progress.sourceTitle,
-      sourceType: progress.sourceType,
-      videosImported,
-      hasMore: !isCompleted,
-      quotaUsedToday: updatedQuota.consumedUnits,
-      quotaCeiling: QUOTA_CEILING,
-      shouldStop: updatedQuota.consumedUnits >= QUOTA_CEILING,
-      exportComplete: false,
-    };
-  } catch (error) {
-    // Verificar se é erro de quota
-    const errorMessage = error instanceof Error ? error.message : String(error);
-    const isQuotaExceeded =
-      errorMessage.includes("quota") ||
-      errorMessage.includes("quotaExceeded") ||
-      errorMessage.includes("ERR_403");
-
-    // Verificar se é erro de playlist não encontrada (404 equivalente)
-    const isPlaylistNotFound =
-      errorMessage.includes("cannot be found") ||
-      errorMessage.includes("not found") ||
-      errorMessage.includes("404");
-
-    if (isQuotaExceeded) {
-      logger.warn("API", "processBatch - YouTube quota exceeded, stopping export", {
-        userId,
-        sourceId: progress.sourceId,
-        error: errorMessage,
-      });
-
-      const currentQuota = await getQuotaStatus(userId);
-      return {
-        sourceId: "",
-        sourceTitle: null,
-        sourceType: "",
-        videosImported: 0,
-        hasMore: false,
-        quotaUsedToday: currentQuota.consumedUnits,
-        quotaCeiling: QUOTA_CEILING,
-        shouldStop: true,
-        exportComplete: false,
-      };
-    }
-
-    if (isPlaylistNotFound) {
-      logger.warn("API", "processBatch - playlist not found, skipping source", {
-        userId,
-        sourceId: progress.sourceId,
-        sourceTitle: progress.sourceTitle,
-        sourceType: progress.sourceType,
-        error: errorMessage,
-      });
-
-      // Marcar como completed para pular para a próxima fonte
-      await prisma.exportProgress.update({
-        where: { id: progress.id },
-        data: {
-          status: "completed",
-          lastImportedAt: new Date(),
-        },
-      });
-
-      // Buscar próxima fonte para processar
-      const nextProgress = await prisma.exportProgress.findFirst({
-        where: {
-          userId,
-          status: { in: ["in_progress", "pending"] },
-        },
-        orderBy: [{ sourceType: "desc" }, { status: "asc" }, { createdAt: "asc" }],
-      });
-
-      // Se não há próxima fonte, exportação está completa
-      if (!nextProgress) {
-        const quotaStatus = await getQuotaStatus(userId);
-        logger.info("API", "processBatch - all sources completed after skipping", {
-          userId,
-          skippedSource: progress.sourceId,
-        });
-        return {
-          sourceId: "",
-          sourceTitle: null,
-          sourceType: "",
-          videosImported: 0,
-          hasMore: false,
-          quotaUsedToday: quotaStatus.consumedUnits,
-          quotaCeiling: QUOTA_CEILING,
-          shouldStop: false,
-          exportComplete: true,
-        };
-      }
-
-      // Processar a próxima fonte sem recursão
-      logger.info("API", "processBatch - processing next source after skip", {
-        userId,
-        nextSourceId: nextProgress.sourceId,
-      });
-
-      try {
-        const page = await youtubeService.getPlaylistItemsPage(
-          nextProgress.sourceId,
-          nextProgress.lastPageToken || undefined
-        );
-
-        let videosImported = 0;
-        if (page.videos.length > 0) {
-          const result = await prisma.exportedVideo.createMany({
-            data: page.videos.map((v) => ({
-              userId,
-              videoId: v.videoId,
-              title: v.title,
-              channelId: v.channelId || null,
-              channelTitle: v.channelTitle || null,
-              language: v.language || null,
-              sourceType: nextProgress.sourceType,
-              sourceId: nextProgress.sourceId,
-              sourceTitle: nextProgress.sourceTitle,
-              publishedAt: v.publishedAt || null,
-              thumbnailUrl: v.thumbnailUrl || null,
-            })),
-            skipDuplicates: true,
-          });
-          videosImported = result.count;
-        }
-
-        const isCompleted = !page.nextPageToken;
-        await prisma.exportProgress.update({
-          where: { id: nextProgress.id },
-          data: {
-            lastPageToken: page.nextPageToken,
-            importedItems: { increment: page.videos.length },
-            totalItems: page.totalResults || nextProgress.totalItems,
-            lastImportedAt: new Date(),
-            status: isCompleted ? "completed" : "in_progress",
-          },
-        });
-
-        const updatedQuota = await getQuotaStatus(userId);
-
-        return {
-          sourceId: nextProgress.sourceId,
-          sourceTitle: nextProgress.sourceTitle,
-          sourceType: nextProgress.sourceType,
-          videosImported,
-          hasMore: !isCompleted,
-          quotaUsedToday: updatedQuota.consumedUnits,
-          quotaCeiling: QUOTA_CEILING,
-          shouldStop: updatedQuota.consumedUnits >= QUOTA_CEILING,
-          exportComplete: false,
-        };
-      } catch (nextError) {
-        logger.error(
-          "API",
-          "processBatch - error processing next source after skip",
-          nextError instanceof Error ? nextError : undefined,
-          { userId, sourceId: nextProgress.sourceId }
-        );
-
-        // If the next source also fails, return empty result and let the client try again
-        const quotaStatus = await getQuotaStatus(userId);
-        return {
-          sourceId: "",
-          sourceTitle: null,
-          sourceType: "",
-          videosImported: 0,
-          hasMore: false,
-          quotaUsedToday: quotaStatus.consumedUnits,
-          quotaCeiling: QUOTA_CEILING,
-          shouldStop: false,
-          exportComplete: false,
-        };
-      }
-    }
-
-    // Se não é erro de quota ou playlist não encontrada, lançar o erro
-    logger.error(
-      "API",
-      "processBatch FAILED",
-      error instanceof Error ? error : undefined,
-      {
-        userId,
-        sourceId: progress.sourceId,
-        sourceType: progress.sourceType,
-      }
-    );
-    throw error;
-  }
-}
 
 export async function getExportStatus(
   userId: string
 ): Promise<ExportStatusResult> {
-  logger.debug("API", "getExportStatus", { userId });
-
-  const [
-    totalSources,
-    completedSources,
-    inProgressSources,
-    pendingSources,
-    totalVideosImported,
-    englishVideosCount,
-    lastImport,
-  ] = await Promise.all([
-    prisma.exportProgress.count({ where: { userId } }),
-    prisma.exportProgress.count({ where: { userId, status: "completed" } }),
-    prisma.exportProgress.count({ where: { userId, status: "in_progress" } }),
-    prisma.exportProgress.count({ where: { userId, status: "pending" } }),
-    prisma.exportedVideo.count({ where: { userId } }),
-    prisma.exportedVideo.count({
-      where: { userId, language: { startsWith: "en" } },
-    }),
-    prisma.exportProgress.findFirst({
-      where: { userId, lastImportedAt: { not: null } },
-      orderBy: { lastImportedAt: "desc" },
-      select: { lastImportedAt: true },
-    }),
+  const [progress, videos] = await Promise.all([
+    prisma.exportProgress.findMany({ where: { userId } }),
+    prisma.exportedVideo.findMany({ where: { userId } }),
   ]);
 
-  let quotaUsedToday = 0;
-  try {
-    const quotaStatus = await getQuotaStatus(userId);
-    quotaUsedToday = quotaStatus.consumedUnits;
-  } catch {
-    // Quota fetch pode falhar se não há registro para hoje
-  }
+  const completed = progress.filter((p) => p.status === "completed").length;
+  const inProgress = progress.filter((p) => p.status === "in_progress").length;
+  const pending = progress.filter((p) => p.status === "pending").length;
+
+  const englishVideos = videos.filter((v) => v.language === "en");
+  const lastImport = progress
+    .filter((p) => p.lastImportedAt)
+    .sort((a, b) => {
+      const dateA = a.lastImportedAt?.getTime() || 0;
+      const dateB = b.lastImportedAt?.getTime() || 0;
+      return dateB - dateA;
+    })[0]?.lastImportedAt;
 
   return {
-    totalSources,
-    completedSources,
-    inProgressSources,
-    pendingSources,
-    totalVideosImported,
-    englishVideosCount,
-    quotaUsedToday,
-    quotaCeiling: QUOTA_CEILING,
-    lastImportedAt: lastImport?.lastImportedAt?.toISOString() || null,
-    hasIncompleteWork: inProgressSources > 0 || pendingSources > 0,
+    totalSources: progress.length,
+    completedSources: completed,
+    inProgressSources: inProgress,
+    pendingSources: pending,
+    totalVideosImported: videos.length,
+    englishVideosCount: englishVideos.length,
+    quotaUsedToday: 0,
+    quotaCeiling: 10000,
+    lastImportedAt: lastImport?.toISOString() || null,
+    hasIncompleteWork: pending > 0 || inProgress > 0,
   };
+}
+
+export async function initializeExport(
+  userId: string,
+  accessToken: string
+): Promise<ExportInitResult> {
+  const youtubeService = new YouTubeService(accessToken, userId);
+
+  try {
+    const playlists = await youtubeService.getPlaylists(accessToken);
+    const playlistCount = playlists.length;
+
+    const channels = await youtubeService.getSubscribedChannels(accessToken);
+    const channelCount = channels.length;
+
+    const totalSources = playlistCount + channelCount;
+
+    await prisma.exportProgress.deleteMany({ where: { userId } });
+
+    for (const playlist of playlists) {
+      await prisma.exportProgress.create({
+        data: {
+          userId,
+          sourceType: "playlist",
+          sourceId: playlist.id,
+          sourceTitle: playlist.snippet.title,
+          status: "pending",
+        },
+      });
+    }
+
+    for (const channel of channels) {
+      await prisma.exportProgress.create({
+        data: {
+          userId,
+          sourceType: "channel",
+          sourceId: channel.id,
+          sourceTitle: channel.snippet.title,
+          status: "pending",
+        },
+      });
+    }
+
+    const completed = await prisma.exportProgress.count({
+      where: { userId, status: "completed" },
+    });
+
+    return {
+      playlistSources: playlistCount,
+      channelSources: channelCount,
+      totalSources,
+      alreadyCompleted: completed,
+    };
+  } catch (error) {
+    throw new Error(
+      error instanceof Error
+        ? error.message
+        : "Failed to initialize export"
+    );
+  }
+}
+
+export async function processBatch(
+  userId: string,
+  accessToken: string
+): Promise<ExportBatchResult> {
+  const source = await prisma.exportProgress.findFirst({
+    where: {
+      userId,
+      status: { in: ["pending", "in_progress"] },
+    },
+  });
+
+  if (!source) {
+    const anyPending = await prisma.exportProgress.findFirst({
+      where: { userId, status: { not: "completed" } },
+    });
+
+    return {
+      sourceId: "",
+      sourceTitle: null,
+      sourceType: "",
+      videosImported: 0,
+      hasMore: false,
+      quotaUsedToday: 0,
+      quotaCeiling: 10000,
+      shouldStop: false,
+      exportComplete: !anyPending,
+    };
+  }
+
+  await prisma.exportProgress.update({
+    where: { id: source.id },
+    data: { status: "in_progress" },
+  });
+
+  const youtubeService = new YouTubeService(accessToken, userId);
+  let videosImported = 0;
+
+  try {
+    if (source.sourceType === "playlist") {
+      const videos = await youtubeService.getPlaylistItems(
+        source.sourceId
+      );
+
+      for (const video of videos) {
+        const language = detectLanguage(video.title, video.description || "");
+
+        await prisma.exportedVideo.upsert({
+          where: {
+            userId_videoId_sourceType_sourceId: {
+              userId,
+              videoId: video.videoId,
+              sourceType: "playlist",
+              sourceId: source.sourceId,
+            },
+          },
+          create: {
+            userId,
+            videoId: video.videoId,
+            title: video.title,
+            channelId: video.channelId,
+            channelTitle: video.channelTitle,
+            language,
+            sourceType: "playlist",
+            sourceId: source.sourceId,
+            sourceTitle: source.sourceTitle,
+            publishedAt: video.publishedAt,
+            thumbnailUrl: video.thumbnailUrl,
+          },
+          update: {
+            language,
+            publishedAt: video.publishedAt,
+            thumbnailUrl: video.thumbnailUrl,
+          },
+        });
+
+        videosImported++;
+      }
+
+      await prisma.exportProgress.update({
+        where: { id: source.id },
+        data: { status: "completed", lastImportedAt: new Date() },
+      });
+    } else if (source.sourceType === "channel") {
+      const videos = await youtubeService.getChannelVideos(
+        source.sourceId
+      );
+
+      for (const video of videos) {
+        const language = detectLanguage(video.title, video.description || "");
+
+        await prisma.exportedVideo.upsert({
+          where: {
+            userId_videoId_sourceType_sourceId: {
+              userId,
+              videoId: video.videoId,
+              sourceType: "channel",
+              sourceId: source.sourceId,
+            },
+          },
+          create: {
+            userId,
+            videoId: video.videoId,
+            title: video.title,
+            channelId: source.sourceId,
+            channelTitle: source.sourceTitle,
+            language,
+            sourceType: "channel",
+            sourceId: source.sourceId,
+            sourceTitle: source.sourceTitle,
+            publishedAt: video.publishedAt,
+            thumbnailUrl: video.thumbnailUrl,
+          },
+          update: {
+            language,
+            publishedAt: video.publishedAt,
+            thumbnailUrl: video.thumbnailUrl,
+          },
+        });
+
+        videosImported++;
+      }
+
+      await prisma.exportProgress.update({
+        where: { id: source.id },
+        data: { status: "completed", lastImportedAt: new Date() },
+      });
+    }
+  } catch (error) {
+    await prisma.exportProgress.update({
+      where: { id: source.id },
+      data: { status: "error" },
+    });
+    throw error;
+  }
+
+  const status = await getExportStatus(userId);
+
+  return {
+    sourceId: source.sourceId,
+    sourceTitle: source.sourceTitle,
+    sourceType: source.sourceType,
+    videosImported,
+    hasMore: false,
+    quotaUsedToday: status.quotaUsedToday,
+    quotaCeiling: status.quotaCeiling,
+    shouldStop: status.quotaUsedToday >= status.quotaCeiling,
+    exportComplete: status.pendingSources === 0 && status.inProgressSources === 0,
+  };
+}
+
+function detectLanguage(title: string, description: string): string {
+  const text = (title + " " + description).toLowerCase();
+
+  const englishPatterns = [
+    /\b(the|a|an|and|or|is|are|was|were|be|been|being|have|has|had|do|does|did|will|would|should|could|may|might|must|can)\b/g,
+  ];
+
+  let englishScore = 0;
+  for (const pattern of englishPatterns) {
+    const matches = text.match(pattern) || [];
+    englishScore += matches.length;
+  }
+
+  const nonLatinChars = (text.match(/[^\x00-\x7F]/g) || []).length;
+  const totalChars = text.length;
+
+  if (nonLatinChars / totalChars > 0.3) {
+    return "other";
+  }
+
+  if (englishScore > 5) {
+    return "en";
+  }
+
+  return "other";
 }
 
 export async function getExportedVideos(
   userId: string,
-  options: { language?: string; page?: number; limit?: number }
-): Promise<{
-  videos: ExportedVideoRow[];
-  total: number;
-  page: number;
-  limit: number;
-  totalPages: number;
-}> {
-  const page = options.page || 1;
-  const limit = Math.min(options.limit || 100, 100000);
-
-  const where: {
-    userId: string;
-    language?: { startsWith: string };
-  } = { userId };
-
-  if (options.language) {
-    where.language = { startsWith: options.language };
-  }
+  language?: string,
+  limit: number = 100,
+  offset: number = 0
+) {
+  const where = language ? { userId, language } : { userId };
 
   const [videos, total] = await Promise.all([
     prisma.exportedVideo.findMany({
       where,
-      orderBy: { createdAt: "desc" },
-      skip: (page - 1) * limit,
+      skip: offset,
       take: limit,
-      select: {
-        id: true,
-        videoId: true,
-        title: true,
-        channelId: true,
-        channelTitle: true,
-        language: true,
-        sourceType: true,
-        sourceId: true,
-        sourceTitle: true,
-        publishedAt: true,
-        thumbnailUrl: true,
-      },
+      orderBy: { createdAt: "desc" },
     }),
     prisma.exportedVideo.count({ where }),
   ]);
 
   return {
-    videos,
+    videos: videos.map((v) => ({
+      ...v,
+      publishedAt: v.publishedAt || null,
+      channelId: v.channelId || null,
+      channelTitle: v.channelTitle || null,
+      language: v.language || null,
+      sourceTitle: v.sourceTitle || null,
+      thumbnailUrl: v.thumbnailUrl || null,
+    })),
     total,
-    page,
+    page: Math.floor(offset / limit) + 1,
     limit,
     totalPages: Math.ceil(total / limit),
   };

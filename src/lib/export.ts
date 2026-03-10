@@ -335,8 +335,86 @@ export async function processBatch(
         };
       }
 
-      // Recursivamente processar a próxima fonte
-      return processBatch(userId, youtubeService);
+      // Processar a próxima fonte sem recursão
+      logger.info("API", "processBatch - processing next source after skip", {
+        userId,
+        nextSourceId: nextProgress.sourceId,
+      });
+
+      try {
+        const page = await youtubeService.getPlaylistItemsPage(
+          nextProgress.sourceId,
+          nextProgress.lastPageToken || undefined
+        );
+
+        let videosImported = 0;
+        if (page.videos.length > 0) {
+          const result = await prisma.exportedVideo.createMany({
+            data: page.videos.map((v) => ({
+              userId,
+              videoId: v.videoId,
+              title: v.title,
+              channelId: v.channelId || null,
+              channelTitle: v.channelTitle || null,
+              language: v.language || null,
+              sourceType: nextProgress.sourceType,
+              sourceId: nextProgress.sourceId,
+              sourceTitle: nextProgress.sourceTitle,
+              publishedAt: v.publishedAt || null,
+              thumbnailUrl: v.thumbnailUrl || null,
+            })),
+            skipDuplicates: true,
+          });
+          videosImported = result.count;
+        }
+
+        const isCompleted = !page.nextPageToken;
+        await prisma.exportProgress.update({
+          where: { id: nextProgress.id },
+          data: {
+            lastPageToken: page.nextPageToken,
+            importedItems: { increment: page.videos.length },
+            totalItems: page.totalResults || nextProgress.totalItems,
+            lastImportedAt: new Date(),
+            status: isCompleted ? "completed" : "in_progress",
+          },
+        });
+
+        const updatedQuota = await getQuotaStatus(userId);
+
+        return {
+          sourceId: nextProgress.sourceId,
+          sourceTitle: nextProgress.sourceTitle,
+          sourceType: nextProgress.sourceType,
+          videosImported,
+          hasMore: !isCompleted,
+          quotaUsedToday: updatedQuota.consumedUnits,
+          quotaCeiling: QUOTA_CEILING,
+          shouldStop: updatedQuota.consumedUnits >= QUOTA_CEILING,
+          exportComplete: false,
+        };
+      } catch (nextError) {
+        logger.error(
+          "API",
+          "processBatch - error processing next source after skip",
+          nextError instanceof Error ? nextError : undefined,
+          { userId, sourceId: nextProgress.sourceId }
+        );
+
+        // If the next source also fails, return empty result and let the client try again
+        const quotaStatus = await getQuotaStatus(userId);
+        return {
+          sourceId: "",
+          sourceTitle: null,
+          sourceType: "",
+          videosImported: 0,
+          hasMore: false,
+          quotaUsedToday: quotaStatus.consumedUnits,
+          quotaCeiling: QUOTA_CEILING,
+          shouldStop: false,
+          exportComplete: false,
+        };
+      }
     }
 
     // Se não é erro de quota ou playlist não encontrada, lançar o erro

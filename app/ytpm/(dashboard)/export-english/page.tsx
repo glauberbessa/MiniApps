@@ -180,7 +180,7 @@ export default function ExportEnglishPage() {
       setPhase("idle");
       await fetchStatus();
     }
-  }, [status, toast, fetchStatus]);
+  }, [toast, fetchStatus]);
 
   const handleCancel = useCallback(() => {
     abortRef.current = true;

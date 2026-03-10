@@ -1,7 +1,7 @@
-import { prisma } from "./prisma";
-import { YouTubeService } from "./youtube";
-import { getQuotaStatus } from "./quota";
-import { logger } from "./logger";
+import { prisma } from "@/lib/prisma";
+import { YouTubeService } from "@/lib/youtube";
+import { getQuotaStatus } from "@/lib/quota";
+import { logger } from "@/lib/logger";
 import { DAILY_QUOTA_LIMIT } from "@/types/quota";
 import type {
   ExportInitResult,

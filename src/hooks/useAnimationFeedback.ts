@@ -201,14 +201,4 @@ export function useAnimationFeedback(
   }
 }
 
-/**
- * Hook para detectar preferência de movimento reduzido
- */
-export function usePrefersReducedMotion(): boolean {
-  if (typeof window === 'undefined') return false
-
-  const mediaQuery = window.matchMedia('(prefers-reduced-motion: reduce)')
-  return mediaQuery.matches
-}
-
 export default useAnimationFeedback

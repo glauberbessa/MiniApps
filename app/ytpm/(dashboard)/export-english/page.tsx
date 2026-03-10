@@ -60,6 +60,124 @@ export default function ExportEnglishPage() {
     fetchStatus();
   }, [fetchStatus]);
 
+  // Effect para processar batches continuamente
+  useEffect(() => {
+    if (phase !== "exporting") return;
+
+    let isMounted = true;
+
+    const processBatch = async () => {
+      try {
+        const res = await fetch("/api/export/batch", {
+          method: "POST",
+          credentials: "include",
+        });
+
+        if (!isMounted) return;
+
+        // Handle authentication errors specifically
+        if (res.status === 401) {
+          setError(
+            "Sessão expirada. Por favor, faça login novamente com sua conta Google."
+          );
+          setPhase("error");
+          toast({
+            title: "Não autorizado",
+            description:
+              "Sua sessão expirou. Por favor, faça login novamente.",
+            variant: "destructive",
+          });
+          return;
+        }
+
+        if (res.status === 403) {
+          setError(
+            "Acesso negado. Você não tem permissão para exportar vídeos."
+          );
+          setPhase("error");
+          toast({
+            title: "Acesso negado",
+            description:
+              "Você não tem permissão para realizar esta operação.",
+            variant: "destructive",
+          });
+          return;
+        }
+
+        if (!res.ok) {
+          const err = await res.json();
+          throw new Error(err.error || "Erro ao processar batch");
+        }
+
+        const batch: ExportBatchResult = await res.json();
+
+        if (!isMounted) return;
+
+        setBatchCount((c) => c + 1);
+        if (batch.sourceTitle) {
+          setCurrentSource(batch.sourceTitle);
+        }
+
+        // Atualizar status
+        const statusRes = await fetch("/api/export/status", {
+          credentials: "include",
+        });
+        if (statusRes.ok && isMounted) {
+          const statusData: ExportStatusResult = await statusRes.json();
+          setStatus(statusData);
+        }
+
+        if (!isMounted) return;
+
+        if (batch.exportComplete) {
+          setPhase("done");
+          toast({
+            title: UI_TEXT.general.success,
+            description: UI_TEXT.exportEnglish.exportComplete,
+            variant: "success",
+          });
+          return;
+        }
+
+        if (batch.shouldStop) {
+          setPhase("paused");
+          toast({
+            title: "Quota",
+            description: UI_TEXT.exportEnglish.exportPaused,
+          });
+          return;
+        }
+
+        // Schedule next batch with delay
+        if (!abortRef.current) {
+          setTimeout(() => {
+            if (isMounted) {
+              processBatch();
+            }
+          }, 200);
+        }
+      } catch (err) {
+        if (!isMounted) return;
+
+        setError(
+          err instanceof Error ? err.message : UI_TEXT.exportEnglish.scanError
+        );
+        setPhase("error");
+        toast({
+          title: UI_TEXT.general.error,
+          description: UI_TEXT.exportEnglish.scanError,
+          variant: "destructive",
+        });
+      }
+    };
+
+    processBatch();
+
+    return () => {
+      isMounted = false;
+    };
+  }, [phase, toast]);
+
   const handleStartExport = useCallback(async () => {
     setError(null);
     abortRef.current = false;
@@ -77,114 +195,26 @@ export default function ExportEnglishPage() {
           throw new Error(err.error || "Erro ao inicializar");
         }
         await fetchStatus();
+        setBatchCount(0);
+        setPhase("exporting");
       } catch (err) {
         setError(
           err instanceof Error ? err.message : "Erro ao inicializar exportação"
         );
         setPhase("error");
-        return;
       }
+      return;
     }
 
-    // Processar batches
-    setPhase("exporting");
     setBatchCount(0);
+    setPhase("exporting");
+  }, [status, fetchStatus]);
 
-    while (!abortRef.current) {
-      try {
-        const res = await fetch("/api/export/batch", {
-          method: "POST",
-          credentials: "include",
-        });
-
-        // Handle authentication errors specifically
-        if (res.status === 401) {
-          setError(
-            "Sessão expirada. Por favor, faça login novamente com sua conta Google."
-          );
-          setPhase("error");
-          toast({
-            title: "Não autorizado",
-            description:
-              "Sua sessão expirou. Por favor, faça login novamente.",
-            variant: "destructive",
-          });
-          break;
-        }
-
-        if (res.status === 403) {
-          setError(
-            "Acesso negado. Você não tem permissão para exportar vídeos."
-          );
-          setPhase("error");
-          toast({
-            title: "Acesso negado",
-            description:
-              "Você não tem permissão para realizar esta operação.",
-            variant: "destructive",
-          });
-          break;
-        }
-
-        if (!res.ok) {
-          const err = await res.json();
-          throw new Error(err.error || "Erro ao processar batch");
-        }
-
-        const batch: ExportBatchResult = await res.json();
-
-        setBatchCount((c) => c + 1);
-        if (batch.sourceTitle) {
-          setCurrentSource(batch.sourceTitle);
-        }
-
-        // Atualizar status periodicamente
-        await fetchStatus();
-
-        if (batch.exportComplete) {
-          setPhase("done");
-          toast({
-            title: UI_TEXT.general.success,
-            description: UI_TEXT.exportEnglish.exportComplete,
-            variant: "success",
-          });
-          break;
-        }
-
-        if (batch.shouldStop) {
-          setPhase("paused");
-          toast({
-            title: "Quota",
-            description: UI_TEXT.exportEnglish.exportPaused,
-          });
-          break;
-        }
-
-        // Pequeno delay para não travar a UI
-        await new Promise((r) => setTimeout(r, 200));
-      } catch (err) {
-        setError(
-          err instanceof Error ? err.message : UI_TEXT.exportEnglish.scanError
-        );
-        setPhase("error");
-        toast({
-          title: UI_TEXT.general.error,
-          description: UI_TEXT.exportEnglish.scanError,
-          variant: "destructive",
-        });
-        break;
-      }
-    }
-
-    if (abortRef.current) {
-      setPhase("idle");
-      await fetchStatus();
-    }
-  }, [toast, fetchStatus]);
-
-  const handleCancel = useCallback(() => {
+  const handleCancel = useCallback(async () => {
     abortRef.current = true;
-  }, []);
+    setPhase("paused");
+    await fetchStatus();
+  }, [fetchStatus]);
 
   const handleDownload = useCallback(async () => {
     try {

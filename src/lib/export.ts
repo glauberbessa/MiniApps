@@ -443,6 +443,13 @@ export async function processBatch(
       errorMessage.includes("quotaExceeded") ||
       errorMessage.includes("ERR_403");
 
+    // Verificar se é erro de limite de armazenamento do banco (Neon 512 MB limit)
+    const isStorageLimitExceeded =
+      errorMessage.includes("53100") ||
+      errorMessage.includes("max_cluster_size") ||
+      errorMessage.includes("could not extend file") ||
+      errorMessage.includes("project size limit");
+
     // Verificar se é erro de playlist não encontrada (404 equivalente)
     const isPlaylistNotFound =
       errorMessage.includes("cannot be found") ||
@@ -458,9 +465,32 @@ export async function processBatch(
       errorStack,
       errorType: error?.constructor?.name,
       isQuotaExceeded,
+      isStorageLimitExceeded,
       isPlaylistNotFound,
-      isUnknownError: !isQuotaExceeded && !isPlaylistNotFound,
+      isUnknownError: !isQuotaExceeded && !isStorageLimitExceeded && !isPlaylistNotFound,
     });
+
+    if (isStorageLimitExceeded) {
+      logger.error("API", "processBatch - Database storage limit exceeded (Neon 512MB), stopping export", undefined, {
+        userId,
+        sourceId: progress.sourceId,
+        error: errorMessage,
+      });
+
+      const currentQuota = await getQuotaStatus(userId);
+      return {
+        sourceId: "",
+        sourceTitle: null,
+        sourceType: "",
+        videosImported: 0,
+        hasMore: false,
+        quotaUsedToday: currentQuota.consumedUnits,
+        quotaCeiling: QUOTA_CEILING,
+        shouldStop: true,
+        exportComplete: false,
+        storageLimitExceeded: true,
+      };
+    }
 
     if (isQuotaExceeded) {
       logger.warn("API", "processBatch - YouTube quota exceeded, stopping export", {
@@ -627,6 +657,39 @@ export async function processBatch(
           exportComplete: false,
         };
       } catch (nextError) {
+        const nextErrorMessage = nextError instanceof Error ? nextError.message : String(nextError);
+        const isNextStorageLimitExceeded =
+          nextErrorMessage.includes("53100") ||
+          nextErrorMessage.includes("max_cluster_size") ||
+          nextErrorMessage.includes("could not extend file") ||
+          nextErrorMessage.includes("project size limit");
+
+        if (isNextStorageLimitExceeded) {
+          logger.error(
+            "API",
+            "processBatch - Database storage limit exceeded while processing next source",
+            nextError instanceof Error ? nextError : undefined,
+            {
+              userId,
+              sourceId: nextProgress.sourceId,
+            }
+          );
+
+          const quotaStatus3 = await getQuotaStatus(userId);
+          return {
+            sourceId: "",
+            sourceTitle: null,
+            sourceType: "",
+            videosImported: 0,
+            hasMore: false,
+            quotaUsedToday: quotaStatus3.consumedUnits,
+            quotaCeiling: QUOTA_CEILING,
+            shouldStop: true,
+            exportComplete: false,
+            storageLimitExceeded: true,
+          };
+        }
+
         logger.error(
           "API",
           "processBatch - error processing next source after skip",

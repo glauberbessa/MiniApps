@@ -29,6 +29,7 @@ export interface ExportBatchResult {
   quotaCeiling: number;
   shouldStop: boolean;
   exportComplete: boolean;
+  storageLimitExceeded?: boolean;
 }
 
 export interface ExportStatusResult {

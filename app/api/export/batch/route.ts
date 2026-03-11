@@ -137,12 +137,57 @@ export async function POST() {
       resultKeys: Object.keys(result),
     });
 
+    // Step 4: Check for storage limit error
+    if (result.storageLimitExceeded) {
+      logger.warn("API", "POST /api/export/batch - Storage limit exceeded, returning 507 error", { traceId });
+      clearTraceId();
+      return NextResponse.json(
+        {
+          error: "Armazenamento do banco de dados cheio",
+          details: "O limite de armazenamento do banco de dados foi atingido. Por favor, contate o suporte.",
+          traceId,
+        },
+        { status: 507 }
+      );
+    }
+
     // Step 4: Return response
     logger.info("API", "POST /api/export/batch - Step 4: Returning JSON response", { traceId });
     clearTraceId();
     return NextResponse.json(result);
   } catch (error) {
     const totalElapsed = Date.now() - startTime;
+    const errorMessage = error instanceof Error ? error.message : String(error);
+
+    // Check if this is a storage limit error
+    const isStorageLimitExceeded =
+      errorMessage.includes("53100") ||
+      errorMessage.includes("max_cluster_size") ||
+      errorMessage.includes("could not extend file") ||
+      errorMessage.includes("project size limit");
+
+    if (isStorageLimitExceeded) {
+      logger.error(
+        "API",
+        "POST /api/export/batch - Database storage limit exceeded",
+        error instanceof Error ? error : undefined,
+        {
+          traceId,
+          elapsed: `${totalElapsed}ms`,
+          errorType: error?.constructor?.name,
+        }
+      );
+      clearTraceId();
+      return NextResponse.json(
+        {
+          error: "Armazenamento do banco de dados cheio",
+          details: "O limite de armazenamento do banco de dados foi atingido. Por favor, contate o suporte.",
+          traceId,
+        },
+        { status: 507 }
+      );
+    }
+
     logger.error(
       "API",
       "POST /api/export/batch - UNHANDLED ERROR - Request failed",

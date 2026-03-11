@@ -120,20 +120,47 @@ export async function processBatch(
 ): Promise<ExportBatchResult> {
   logger.info("API", "processBatch START", { userId });
 
-  // Verificar quota
-  const quotaStatus = await getQuotaStatus(userId);
+  // Step 1: Verificar quota
+  logger.info("API", "processBatch - Step 1: Checking quota status", { userId });
+  let quotaStatus;
+  try {
+    quotaStatus = await getQuotaStatus(userId);
+    logger.info("API", "processBatch - Step 1 complete: Quota status retrieved", {
+      userId,
+      consumedUnits: quotaStatus.consumedUnits,
+      dailyLimit: quotaStatus.dailyLimit,
+      remaining: quotaStatus.dailyLimit - quotaStatus.consumedUnits,
+      ceiling: QUOTA_CEILING,
+      ceilingPercent: QUOTA_CEILING_PERCENT,
+    });
+  } catch (quotaError) {
+    logger.error(
+      "API",
+      "processBatch - Step 1 FAILED: getQuotaStatus threw an exception",
+      quotaError instanceof Error ? quotaError : undefined,
+      {
+        userId,
+        errorType: quotaError?.constructor?.name,
+        errorString: String(quotaError),
+        errorStack: quotaError instanceof Error ? quotaError.stack : undefined,
+      }
+    );
+    throw quotaError;
+  }
 
   // Require 2 quota units per batch (playlistItems.list: 1, videos.list: 1)
   const requiredQuota = 2;
   const remainingQuota = quotaStatus.dailyLimit - quotaStatus.consumedUnits;
 
   if (quotaStatus.consumedUnits >= QUOTA_CEILING || remainingQuota < requiredQuota) {
-    logger.info("API", "processBatch - quota insufficient", {
+    logger.info("API", "processBatch - quota insufficient, returning shouldStop=true", {
       userId,
       consumed: quotaStatus.consumedUnits,
       remaining: remainingQuota,
       required: requiredQuota,
       ceiling: QUOTA_CEILING,
+      exceedsCeiling: quotaStatus.consumedUnits >= QUOTA_CEILING,
+      insufficientRemaining: remainingQuota < requiredQuota,
     });
     return {
       sourceId: "",
@@ -148,18 +175,46 @@ export async function processBatch(
     };
   }
 
-  // Buscar próxima fonte incompleta - playlists primeiro (sourceType "playlist" < "channel" em ordem alfabética)
-  // Dentro do mesmo tipo, in_progress primeiro, depois pending
-  const progress = await prisma.exportProgress.findFirst({
-    where: {
+  // Step 2: Buscar próxima fonte incompleta
+  logger.info("API", "processBatch - Step 2: Finding next incomplete source", { userId });
+  let progress;
+  try {
+    progress = await prisma.exportProgress.findFirst({
+      where: {
+        userId,
+        status: { in: ["in_progress", "pending"] },
+      },
+      orderBy: [{ sourceType: "desc" }, { status: "asc" }, { createdAt: "asc" }],
+    });
+    logger.info("API", "processBatch - Step 2 complete: findFirst returned", {
       userId,
-      status: { in: ["in_progress", "pending"] },
-    },
-    orderBy: [{ sourceType: "desc" }, { status: "asc" }, { createdAt: "asc" }],
-  });
+      found: !!progress,
+      progressId: progress?.id || "none",
+      sourceType: progress?.sourceType || "none",
+      sourceId: progress?.sourceId || "none",
+      sourceTitle: progress?.sourceTitle || "none",
+      status: progress?.status || "none",
+      lastPageToken: progress?.lastPageToken || "null",
+      importedItems: progress?.importedItems ?? 0,
+      totalItems: progress?.totalItems ?? 0,
+    });
+  } catch (dbError) {
+    logger.error(
+      "API",
+      "processBatch - Step 2 FAILED: DB findFirst threw an exception",
+      dbError instanceof Error ? dbError : undefined,
+      {
+        userId,
+        errorType: dbError?.constructor?.name,
+        errorString: String(dbError),
+        errorStack: dbError instanceof Error ? dbError.stack : undefined,
+      }
+    );
+    throw dbError;
+  }
 
   if (!progress) {
-    logger.info("API", "processBatch - all sources completed", { userId });
+    logger.info("API", "processBatch - all sources completed, returning exportComplete=true", { userId });
     return {
       sourceId: "",
       sourceTitle: null,
@@ -173,12 +228,36 @@ export async function processBatch(
     };
   }
 
-  // Marcar como in_progress se era pending
+  // Step 3: Marcar como in_progress se era pending
   if (progress.status === "pending") {
-    await prisma.exportProgress.update({
-      where: { id: progress.id },
-      data: { status: "in_progress" },
+    logger.info("API", "processBatch - Step 3: Updating status from pending to in_progress", {
+      userId,
+      progressId: progress.id,
+      sourceId: progress.sourceId,
     });
+    try {
+      await prisma.exportProgress.update({
+        where: { id: progress.id },
+        data: { status: "in_progress" },
+      });
+      logger.info("API", "processBatch - Step 3 complete: Status updated to in_progress", {
+        userId,
+        progressId: progress.id,
+      });
+    } catch (updateError) {
+      logger.error(
+        "API",
+        "processBatch - Step 3 FAILED: DB update status threw an exception",
+        updateError instanceof Error ? updateError : undefined,
+        {
+          userId,
+          progressId: progress.id,
+          errorType: updateError?.constructor?.name,
+          errorString: String(updateError),
+        }
+      );
+      throw updateError;
+    }
   }
 
   logger.info("API", "processBatch - processing source", {
@@ -190,56 +269,158 @@ export async function processBatch(
   });
 
   try {
-    // Buscar uma página de vídeos
+    // Step 4: Buscar uma página de vídeos
+    logger.info("API", "processBatch - Step 4: Calling getPlaylistItemsPage", {
+      userId,
+      sourceId: progress.sourceId,
+      pageToken: progress.lastPageToken || "initial (first page)",
+    });
+    const pageStartTime = Date.now();
     const page = await youtubeService.getPlaylistItemsPage(
       progress.sourceId,
       progress.lastPageToken || undefined
     );
-
-    // Salvar vídeos no banco
-    let videosImported = 0;
-    if (page.videos.length > 0) {
-      const result = await prisma.exportedVideo.createMany({
-        data: page.videos.map((v) => ({
-          userId,
-          videoId: v.videoId,
-          title: v.title,
-          channelId: v.channelId || null,
-          channelTitle: v.channelTitle || null,
-          language: v.language || null,
-          sourceType: progress.sourceType,
-          sourceId: progress.sourceId,
-          sourceTitle: progress.sourceTitle,
-          publishedAt: v.publishedAt || null,
-          thumbnailUrl: v.thumbnailUrl || null,
-        })),
-        skipDuplicates: true,
-      });
-      videosImported = result.count;
-    }
-
-    // Atualizar progresso
-    const isCompleted = !page.nextPageToken;
-    await prisma.exportProgress.update({
-      where: { id: progress.id },
-      data: {
-        lastPageToken: page.nextPageToken,
-        importedItems: { increment: page.videos.length },
-        totalItems: page.totalResults || progress.totalItems,
-        lastImportedAt: new Date(),
-        status: isCompleted ? "completed" : "in_progress",
-      },
-    });
-
-    // Re-verificar quota após as chamadas
-    const updatedQuota = await getQuotaStatus(userId);
-
-    logger.info("API", "processBatch END", {
+    const pageElapsed = Date.now() - pageStartTime;
+    logger.info("API", "processBatch - Step 4 complete: getPlaylistItemsPage returned", {
       userId,
       sourceId: progress.sourceId,
+      pageElapsed: `${pageElapsed}ms`,
+      videosCount: page.videos.length,
+      hasNextPage: !!page.nextPageToken,
+      nextPageToken: page.nextPageToken ? page.nextPageToken.substring(0, 20) + "..." : "null",
+      totalResults: page.totalResults,
+      firstVideoId: page.videos.length > 0 ? page.videos[0].videoId : "none",
+      firstVideoTitle: page.videos.length > 0 ? page.videos[0].title.substring(0, 50) : "none",
+    });
+
+    // Step 5: Salvar vídeos no banco
+    let videosImported = 0;
+    if (page.videos.length > 0) {
+      logger.info("API", "processBatch - Step 5: Saving videos to database", {
+        userId,
+        videosToSave: page.videos.length,
+        sourceId: progress.sourceId,
+      });
+      const saveStartTime = Date.now();
+      try {
+        const result = await prisma.exportedVideo.createMany({
+          data: page.videos.map((v) => ({
+            userId,
+            videoId: v.videoId,
+            title: v.title,
+            channelId: v.channelId || null,
+            channelTitle: v.channelTitle || null,
+            language: v.language || null,
+            sourceType: progress.sourceType,
+            sourceId: progress.sourceId,
+            sourceTitle: progress.sourceTitle,
+            publishedAt: v.publishedAt || null,
+            thumbnailUrl: v.thumbnailUrl || null,
+          })),
+          skipDuplicates: true,
+        });
+        videosImported = result.count;
+        const saveElapsed = Date.now() - saveStartTime;
+        logger.info("API", "processBatch - Step 5 complete: Videos saved to database", {
+          userId,
+          videosImported,
+          videosSkipped: page.videos.length - videosImported,
+          saveElapsed: `${saveElapsed}ms`,
+        });
+      } catch (saveError) {
+        const saveElapsed = Date.now() - saveStartTime;
+        logger.error(
+          "API",
+          "processBatch - Step 5 FAILED: createMany threw an exception",
+          saveError instanceof Error ? saveError : undefined,
+          {
+            userId,
+            sourceId: progress.sourceId,
+            videosToSave: page.videos.length,
+            saveElapsed: `${saveElapsed}ms`,
+            errorType: saveError?.constructor?.name,
+            errorString: String(saveError),
+            errorStack: saveError instanceof Error ? saveError.stack : undefined,
+          }
+        );
+        throw saveError;
+      }
+    } else {
+      logger.info("API", "processBatch - Step 5: No videos to save (empty page)", {
+        userId,
+        sourceId: progress.sourceId,
+      });
+    }
+
+    // Step 6: Atualizar progresso
+    const isCompleted = !page.nextPageToken;
+    logger.info("API", "processBatch - Step 6: Updating progress record", {
+      userId,
+      progressId: progress.id,
+      isCompleted,
+      nextPageToken: page.nextPageToken || "null",
+      incrementBy: page.videos.length,
+      newTotalItems: page.totalResults || progress.totalItems,
+    });
+    try {
+      await prisma.exportProgress.update({
+        where: { id: progress.id },
+        data: {
+          lastPageToken: page.nextPageToken,
+          importedItems: { increment: page.videos.length },
+          totalItems: page.totalResults || progress.totalItems,
+          lastImportedAt: new Date(),
+          status: isCompleted ? "completed" : "in_progress",
+        },
+      });
+      logger.info("API", "processBatch - Step 6 complete: Progress updated", {
+        userId,
+        progressId: progress.id,
+        newStatus: isCompleted ? "completed" : "in_progress",
+      });
+    } catch (updateError) {
+      logger.error(
+        "API",
+        "processBatch - Step 6 FAILED: DB update progress threw an exception",
+        updateError instanceof Error ? updateError : undefined,
+        {
+          userId,
+          progressId: progress.id,
+          errorType: updateError?.constructor?.name,
+          errorString: String(updateError),
+        }
+      );
+      throw updateError;
+    }
+
+    // Step 7: Re-verificar quota após as chamadas
+    logger.info("API", "processBatch - Step 7: Re-checking quota after API calls", { userId });
+    let updatedQuota;
+    try {
+      updatedQuota = await getQuotaStatus(userId);
+      logger.info("API", "processBatch - Step 7 complete: Updated quota retrieved", {
+        userId,
+        consumedUnits: updatedQuota.consumedUnits,
+        shouldStop: updatedQuota.consumedUnits >= QUOTA_CEILING,
+      });
+    } catch (quotaError) {
+      logger.error(
+        "API",
+        "processBatch - Step 7 FAILED: getQuotaStatus (post-batch) threw an exception",
+        quotaError instanceof Error ? quotaError : undefined,
+        { userId, errorString: String(quotaError) }
+      );
+      throw quotaError;
+    }
+
+    logger.info("API", "processBatch END - SUCCESS", {
+      userId,
+      sourceId: progress.sourceId,
+      sourceTitle: progress.sourceTitle,
       videosImported,
       hasMore: !isCompleted,
       quotaUsed: updatedQuota.consumedUnits,
+      shouldStop: updatedQuota.consumedUnits >= QUOTA_CEILING,
     });
 
     return {
@@ -256,6 +437,7 @@ export async function processBatch(
   } catch (error) {
     // Verificar se é erro de quota
     const errorMessage = error instanceof Error ? error.message : String(error);
+    const errorStack = error instanceof Error ? error.stack : undefined;
     const isQuotaExceeded =
       errorMessage.includes("quota") ||
       errorMessage.includes("quotaExceeded") ||
@@ -266,6 +448,19 @@ export async function processBatch(
       errorMessage.includes("cannot be found") ||
       errorMessage.includes("not found") ||
       errorMessage.includes("404");
+
+    logger.warn("API", "processBatch - CAUGHT ERROR in source processing", {
+      userId,
+      sourceId: progress.sourceId,
+      sourceType: progress.sourceType,
+      sourceTitle: progress.sourceTitle,
+      errorMessage,
+      errorStack,
+      errorType: error?.constructor?.name,
+      isQuotaExceeded,
+      isPlaylistNotFound,
+      isUnknownError: !isQuotaExceeded && !isPlaylistNotFound,
+    });
 
     if (isQuotaExceeded) {
       logger.warn("API", "processBatch - YouTube quota exceeded, stopping export", {
@@ -298,15 +493,30 @@ export async function processBatch(
       });
 
       // Marcar como completed para pular para a próxima fonte
-      await prisma.exportProgress.update({
-        where: { id: progress.id },
-        data: {
-          status: "completed",
-          lastImportedAt: new Date(),
-        },
-      });
+      try {
+        await prisma.exportProgress.update({
+          where: { id: progress.id },
+          data: {
+            status: "completed",
+            lastImportedAt: new Date(),
+          },
+        });
+        logger.info("API", "processBatch - Marked skipped source as completed", {
+          userId,
+          sourceId: progress.sourceId,
+        });
+      } catch (skipUpdateError) {
+        logger.error(
+          "API",
+          "processBatch - FAILED to mark skipped source as completed",
+          skipUpdateError instanceof Error ? skipUpdateError : undefined,
+          { userId, sourceId: progress.sourceId }
+        );
+        throw skipUpdateError;
+      }
 
       // Buscar próxima fonte para processar
+      logger.info("API", "processBatch - Finding next source after skip", { userId });
       const nextProgress = await prisma.exportProgress.findFirst({
         where: {
           userId,
@@ -315,9 +525,16 @@ export async function processBatch(
         orderBy: [{ sourceType: "desc" }, { status: "asc" }, { createdAt: "asc" }],
       });
 
+      logger.info("API", "processBatch - Next source after skip", {
+        userId,
+        found: !!nextProgress,
+        nextSourceId: nextProgress?.sourceId || "none",
+        nextSourceType: nextProgress?.sourceType || "none",
+      });
+
       // Se não há próxima fonte, exportação está completa
       if (!nextProgress) {
-        const quotaStatus = await getQuotaStatus(userId);
+        const quotaStatus2 = await getQuotaStatus(userId);
         logger.info("API", "processBatch - all sources completed after skipping", {
           userId,
           skippedSource: progress.sourceId,
@@ -328,7 +545,7 @@ export async function processBatch(
           sourceType: "",
           videosImported: 0,
           hasMore: false,
-          quotaUsedToday: quotaStatus.consumedUnits,
+          quotaUsedToday: quotaStatus2.consumedUnits,
           quotaCeiling: QUOTA_CEILING,
           shouldStop: false,
           exportComplete: true,
@@ -339,6 +556,8 @@ export async function processBatch(
       logger.info("API", "processBatch - processing next source after skip", {
         userId,
         nextSourceId: nextProgress.sourceId,
+        nextSourceTitle: nextProgress.sourceTitle,
+        nextLastPageToken: nextProgress.lastPageToken || "initial",
       });
 
       try {
@@ -346,6 +565,13 @@ export async function processBatch(
           nextProgress.sourceId,
           nextProgress.lastPageToken || undefined
         );
+
+        logger.info("API", "processBatch - next source page fetched", {
+          userId,
+          nextSourceId: nextProgress.sourceId,
+          videosCount: page.videos.length,
+          hasNextPage: !!page.nextPageToken,
+        });
 
         let videosImported = 0;
         if (page.videos.length > 0) {
@@ -382,6 +608,13 @@ export async function processBatch(
 
         const updatedQuota = await getQuotaStatus(userId);
 
+        logger.info("API", "processBatch - next source processed successfully after skip", {
+          userId,
+          nextSourceId: nextProgress.sourceId,
+          videosImported,
+          hasMore: !isCompleted,
+        });
+
         return {
           sourceId: nextProgress.sourceId,
           sourceTitle: nextProgress.sourceTitle,
@@ -398,18 +631,24 @@ export async function processBatch(
           "API",
           "processBatch - error processing next source after skip",
           nextError instanceof Error ? nextError : undefined,
-          { userId, sourceId: nextProgress.sourceId }
+          {
+            userId,
+            sourceId: nextProgress.sourceId,
+            errorType: nextError?.constructor?.name,
+            errorString: String(nextError),
+            errorStack: nextError instanceof Error ? nextError.stack : undefined,
+          }
         );
 
         // If the next source also fails, return empty result and let the client try again
-        const quotaStatus = await getQuotaStatus(userId);
+        const quotaStatus3 = await getQuotaStatus(userId);
         return {
           sourceId: "",
           sourceTitle: null,
           sourceType: "",
           videosImported: 0,
           hasMore: false,
-          quotaUsedToday: quotaStatus.consumedUnits,
+          quotaUsedToday: quotaStatus3.consumedUnits,
           quotaCeiling: QUOTA_CEILING,
           shouldStop: false,
           exportComplete: false,
@@ -420,12 +659,17 @@ export async function processBatch(
     // Se não é erro de quota ou playlist não encontrada, lançar o erro
     logger.error(
       "API",
-      "processBatch FAILED",
+      "processBatch FAILED - UNKNOWN ERROR TYPE - rethrowing",
       error instanceof Error ? error : undefined,
       {
         userId,
         sourceId: progress.sourceId,
         sourceType: progress.sourceType,
+        sourceTitle: progress.sourceTitle,
+        errorMessage,
+        errorStack,
+        errorType: error?.constructor?.name,
+        errorKeys: error && typeof error === "object" ? Object.keys(error) : [],
       }
     );
     throw error;

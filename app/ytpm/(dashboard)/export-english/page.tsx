@@ -68,15 +68,30 @@ export default function ExportEnglishPage() {
 
     const processBatch = async () => {
       try {
+        console.log(`[ExportBatch] Starting batch request #${batchCount + 1}`);
+        const fetchStartTime = Date.now();
+
         const res = await fetch("/api/export/batch", {
           method: "POST",
           credentials: "include",
+        });
+
+        const fetchElapsed = Date.now() - fetchStartTime;
+        console.log(`[ExportBatch] Response received in ${fetchElapsed}ms`, {
+          status: res.status,
+          statusText: res.statusText,
+          ok: res.ok,
+          headers: {
+            contentType: res.headers.get("content-type"),
+            contentLength: res.headers.get("content-length"),
+          },
         });
 
         if (!isMounted) return;
 
         // Handle authentication errors specifically
         if (res.status === 401) {
+          console.error("[ExportBatch] 401 Unauthorized response");
           setError(
             "Sessão expirada. Por favor, faça login novamente com sua conta Google."
           );
@@ -91,6 +106,7 @@ export default function ExportEnglishPage() {
         }
 
         if (res.status === 403) {
+          console.error("[ExportBatch] 403 Forbidden response");
           setError(
             "Acesso negado. Você não tem permissão para exportar vídeos."
           );
@@ -105,11 +121,41 @@ export default function ExportEnglishPage() {
         }
 
         if (!res.ok) {
-          const err = await res.json();
-          throw new Error(err.error || "Erro ao processar batch");
+          let errBody: Record<string, unknown> = {};
+          let rawBody = "";
+          try {
+            rawBody = await res.text();
+            console.error(`[ExportBatch] Error response body (raw):`, rawBody);
+            errBody = JSON.parse(rawBody);
+          } catch (parseErr) {
+            console.error(`[ExportBatch] Failed to parse error response body:`, parseErr, "Raw body:", rawBody);
+          }
+          console.error(`[ExportBatch] Non-OK response:`, {
+            status: res.status,
+            statusText: res.statusText,
+            error: errBody.error,
+            details: errBody.details,
+            traceId: errBody.traceId,
+            errorType: errBody.errorType,
+            stack: errBody.stack,
+          });
+          throw new Error(
+            (errBody.error as string) || `Erro ao processar batch (HTTP ${res.status})`
+          );
         }
 
         const batch: ExportBatchResult = await res.json();
+        console.log(`[ExportBatch] Batch result:`, {
+          sourceId: batch.sourceId,
+          sourceTitle: batch.sourceTitle,
+          sourceType: batch.sourceType,
+          videosImported: batch.videosImported,
+          hasMore: batch.hasMore,
+          quotaUsedToday: batch.quotaUsedToday,
+          quotaCeiling: batch.quotaCeiling,
+          shouldStop: batch.shouldStop,
+          exportComplete: batch.exportComplete,
+        });
 
         if (!isMounted) return;
 
@@ -119,17 +165,29 @@ export default function ExportEnglishPage() {
         }
 
         // Atualizar status
+        console.log(`[ExportBatch] Fetching updated status...`);
         const statusRes = await fetch("/api/export/status", {
           credentials: "include",
         });
         if (statusRes.ok && isMounted) {
           const statusData: ExportStatusResult = await statusRes.json();
+          console.log(`[ExportBatch] Updated status:`, {
+            totalSources: statusData.totalSources,
+            completedSources: statusData.completedSources,
+            inProgressSources: statusData.inProgressSources,
+            pendingSources: statusData.pendingSources,
+            totalVideosImported: statusData.totalVideosImported,
+            englishVideosCount: statusData.englishVideosCount,
+            quotaUsedToday: statusData.quotaUsedToday,
+            hasIncompleteWork: statusData.hasIncompleteWork,
+          });
           setStatus(statusData);
         }
 
         if (!isMounted) return;
 
         if (batch.exportComplete) {
+          console.log(`[ExportBatch] Export complete!`);
           setPhase("done");
           toast({
             title: UI_TEXT.general.success,
@@ -140,6 +198,7 @@ export default function ExportEnglishPage() {
         }
 
         if (batch.shouldStop) {
+          console.log(`[ExportBatch] Should stop (quota ceiling reached)`);
           setPhase("paused");
           toast({
             title: "Quota",
@@ -150,14 +209,26 @@ export default function ExportEnglishPage() {
 
         // Schedule next batch with delay
         if (!abortRef.current) {
+          console.log(`[ExportBatch] Scheduling next batch in 200ms...`);
           setTimeout(() => {
             if (isMounted) {
               processBatch();
             }
           }, 200);
+        } else {
+          console.log(`[ExportBatch] Abort requested, not scheduling next batch`);
         }
       } catch (err) {
         if (!isMounted) return;
+
+        const errorMessage = err instanceof Error ? err.message : String(err);
+        const errorStack = err instanceof Error ? err.stack : undefined;
+        console.error(`[ExportBatch] CATCH BLOCK - Error during batch processing:`, {
+          message: errorMessage,
+          stack: errorStack,
+          errorType: err?.constructor?.name,
+          error: err,
+        });
 
         setError(
           err instanceof Error ? err.message : UI_TEXT.exportEnglish.scanError

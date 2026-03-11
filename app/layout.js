@@ -61,6 +61,7 @@ export default function RootLayout({ children }) {
     <html
       lang="pt-BR"
       className={`dark ${playfairDisplay.variable} ${dmSans.variable} ${spaceGrotesk.variable} ${inter.variable} ${jetbrainsMono.variable}`}
+      suppressHydrationWarning
     >
       <body className="text-foreground antialiased min-h-screen font-ui">
         <ThemeProvider>

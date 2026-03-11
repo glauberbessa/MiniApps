@@ -35,12 +35,10 @@ export const viewport = {
   userScalable: false,
 }
 
-export default function RootLayout({ children }) {
+export default function ScannerLayout({ children }) {
   return (
-    <html lang="pt-BR">
-      <body className="bg-slate-900 text-white antialiased">
-        {children}
-      </body>
-    </html>
+    <div className="bg-slate-900 text-white antialiased">
+      {children}
+    </div>
   )
 }

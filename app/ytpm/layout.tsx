@@ -1,6 +1,5 @@
 import type { Metadata } from "next";
 import "./globals.css";
-import { Toaster } from "@/components/ui/toaster";
 import { Providers } from "./providers";
 
 export const metadata: Metadata = {
@@ -8,17 +7,12 @@ export const metadata: Metadata = {
   description: "Gerenciador profissional de playlists do YouTube",
 };
 
-export default function RootLayout({
+export default function YtpmLayout({
   children,
 }: Readonly<{
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="pt-BR" className="dark">
-      <body>
-        <Providers>{children}</Providers>
-        <Toaster />
-      </body>
-    </html>
+    <Providers>{children}</Providers>
   );
 }

@@ -471,7 +471,7 @@ export async function processBatch(
     });
 
     if (isStorageLimitExceeded) {
-      logger.error("API", "processBatch - Database storage limit exceeded (Neon 512MB), stopping export", {
+      logger.error("API", "processBatch - Database storage limit exceeded (Neon 512MB), stopping export", undefined, {
         userId,
         sourceId: progress.sourceId,
         error: errorMessage,

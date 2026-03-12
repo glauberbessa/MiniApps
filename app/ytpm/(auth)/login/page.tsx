@@ -80,6 +80,25 @@ export default async function LoginPage({
     ? authErrorMessages[errorCode] || authErrorMessages.Default
     : null;
 
+  // Log when the login page renders with an error (server-side)
+  if (errorCode) {
+    console.log(`[LOGIN_PAGE] ===== LOGIN PAGE RENDERED WITH ERROR =====`);
+    console.log(`[LOGIN_PAGE] Error code: "${errorCode}"`);
+    console.log(`[LOGIN_PAGE] Error message: "${errorMessage}"`);
+    console.log(`[LOGIN_PAGE] GOOGLE_CLIENT_ID: ${process.env.GOOGLE_CLIENT_ID ? `SET (${process.env.GOOGLE_CLIENT_ID.length} chars)` : '❌ NOT SET'}`);
+    console.log(`[LOGIN_PAGE] GOOGLE_CLIENT_SECRET: ${process.env.GOOGLE_CLIENT_SECRET ? `SET (${process.env.GOOGLE_CLIENT_SECRET.length} chars)` : '❌ NOT SET'}`);
+    console.log(`[LOGIN_PAGE] AUTH_SECRET: ${process.env.AUTH_SECRET ? 'SET' : 'NOT SET'}`);
+    console.log(`[LOGIN_PAGE] NEXTAUTH_URL: ${process.env.NEXTAUTH_URL || 'NOT SET'}`);
+    console.log(`[LOGIN_PAGE] DATABASE_URL: ${process.env.DATABASE_URL ? 'SET' : '❌ NOT SET'}`);
+    if (errorCode === 'Configuration') {
+      console.error(`[LOGIN_PAGE] ❌ "Configuration" error typically means:`);
+      console.error(`[LOGIN_PAGE] ❌ 1. GOOGLE_CLIENT_ID or GOOGLE_CLIENT_SECRET is missing/empty`);
+      console.error(`[LOGIN_PAGE] ❌ 2. AUTH_SECRET/NEXTAUTH_SECRET is missing`);
+      console.error(`[LOGIN_PAGE] ❌ 3. The OAuth provider config is invalid`);
+      console.error(`[LOGIN_PAGE] ❌ Check server logs above for [ROOT_AUTH_INIT] or [AUTH_CONFIG_EDGE] messages.`);
+    }
+  }
+
   const features = [
     {
       icon: ListVideo,

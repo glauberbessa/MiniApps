@@ -2,6 +2,26 @@ import type { NextAuthConfig } from "next-auth";
 import GoogleProvider from "next-auth/providers/google";
 import CredentialsProvider from "next-auth/providers/credentials";
 
+// ============================================================
+// EDGE RUNTIME: Google OAuth credential validation
+// ============================================================
+const edgeGoogleClientId = process.env.GOOGLE_CLIENT_ID || '';
+const edgeGoogleClientSecret = process.env.GOOGLE_CLIENT_SECRET || '';
+
+console.log(`[AUTH_CONFIG_EDGE] ===== EDGE AUTH CONFIG INIT =====`);
+console.log(`[AUTH_CONFIG_EDGE] GOOGLE_CLIENT_ID: ${edgeGoogleClientId ? `SET (length=${edgeGoogleClientId.length}, prefix="${edgeGoogleClientId.substring(0, 12)}...")` : '❌ NOT SET - OAuth WILL FAIL'}`);
+console.log(`[AUTH_CONFIG_EDGE] GOOGLE_CLIENT_SECRET: ${edgeGoogleClientSecret ? `SET (length=${edgeGoogleClientSecret.length})` : '❌ NOT SET - OAuth WILL FAIL'}`);
+console.log(`[AUTH_CONFIG_EDGE] NODE_ENV: ${process.env.NODE_ENV}`);
+console.log(`[AUTH_CONFIG_EDGE] AUTH_SECRET: ${process.env.AUTH_SECRET ? 'SET' : 'NOT_SET'}`);
+console.log(`[AUTH_CONFIG_EDGE] NEXTAUTH_SECRET: ${process.env.NEXTAUTH_SECRET ? 'SET' : 'NOT_SET'}`);
+console.log(`[AUTH_CONFIG_EDGE] NEXTAUTH_URL: ${process.env.NEXTAUTH_URL || 'NOT_SET'}`);
+
+if (!edgeGoogleClientId || !edgeGoogleClientSecret) {
+  console.error(`[AUTH_CONFIG_EDGE] ❌ CRITICAL: Missing Google OAuth credentials in Edge Runtime!`);
+  console.error(`[AUTH_CONFIG_EDGE] ❌ This WILL cause "Configuration" error on login.`);
+  console.error(`[AUTH_CONFIG_EDGE] ❌ Available env keys containing "GOOGLE": ${Object.keys(process.env).filter(k => k.includes('GOOGLE')).join(', ') || 'NONE'}`);
+}
+
 /**
  * NextAuth configuration for Edge Runtime (middleware).
  *
@@ -24,8 +44,8 @@ export const authConfig: NextAuthConfig = {
     // Note: These are placeholder configs for Edge Runtime
     // The actual authorize logic runs in the full auth.ts
     GoogleProvider({
-      clientId: process.env.GOOGLE_CLIENT_ID!,
-      clientSecret: process.env.GOOGLE_CLIENT_SECRET!,
+      clientId: edgeGoogleClientId,
+      clientSecret: edgeGoogleClientSecret,
       authorization: {
         params: {
           scope:

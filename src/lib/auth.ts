@@ -14,6 +14,45 @@ import {
   getLockoutMessage,
 } from "./rate-limit";
 
+// ============================================================
+// GOOGLE OAUTH CREDENTIAL VALIDATION
+// ============================================================
+function validateGoogleCredentials(): { clientId: string; clientSecret: string } {
+  const clientId = process.env.GOOGLE_CLIENT_ID;
+  const clientSecret = process.env.GOOGLE_CLIENT_SECRET;
+
+  console.log(`[ROOT_AUTH_INIT] ===== GOOGLE OAUTH CREDENTIAL CHECK =====`);
+  console.log(`[ROOT_AUTH_INIT] GOOGLE_CLIENT_ID: ${clientId ? `SET (length=${clientId.length}, prefix="${clientId.substring(0, 12)}...")` : '❌ NOT SET'}`);
+  console.log(`[ROOT_AUTH_INIT] GOOGLE_CLIENT_SECRET: ${clientSecret ? `SET (length=${clientSecret.length}, prefix="${clientSecret.substring(0, 6)}...")` : '❌ NOT SET'}`);
+  console.log(`[ROOT_AUTH_INIT] NODE_ENV: ${process.env.NODE_ENV}`);
+  console.log(`[ROOT_AUTH_INIT] VERCEL: ${process.env.VERCEL || 'NOT_SET'}`);
+  console.log(`[ROOT_AUTH_INIT] NEXTAUTH_URL: ${process.env.NEXTAUTH_URL || 'NOT_SET'}`);
+  console.log(`[ROOT_AUTH_INIT] NEXT_PUBLIC_APP_URL: ${process.env.NEXT_PUBLIC_APP_URL || 'NOT_SET'}`);
+
+  if (!clientId) {
+    console.error(`[ROOT_AUTH_INIT] ❌ CRITICAL: GOOGLE_CLIENT_ID is missing! OAuth login WILL FAIL with "Configuration" error.`);
+    console.error(`[ROOT_AUTH_INIT] ❌ Set GOOGLE_CLIENT_ID in your .env or Vercel environment variables.`);
+    console.error(`[ROOT_AUTH_INIT] ❌ Available env keys containing "GOOGLE": ${Object.keys(process.env).filter(k => k.includes('GOOGLE')).join(', ') || 'NONE'}`);
+  }
+
+  if (!clientSecret) {
+    console.error(`[ROOT_AUTH_INIT] ❌ CRITICAL: GOOGLE_CLIENT_SECRET is missing! OAuth login WILL FAIL with "Configuration" error.`);
+    console.error(`[ROOT_AUTH_INIT] ❌ Set GOOGLE_CLIENT_SECRET in your .env or Vercel environment variables.`);
+  }
+
+  if (!clientId || !clientSecret) {
+    console.error(`[ROOT_AUTH_INIT] ❌ DUMP of all env keys (for debugging): ${Object.keys(process.env).sort().join(', ')}`);
+  }
+
+  // Return whatever we have (even if undefined cast to string) so NextAuth can show its own error too
+  return {
+    clientId: clientId || '',
+    clientSecret: clientSecret || '',
+  };
+}
+
+const googleCredentials = validateGoogleCredentials();
+
 // Get the auth secret with proper validation
 function getAuthSecret(): string {
   const secret = process.env.AUTH_SECRET || process.env.NEXTAUTH_SECRET;
@@ -244,6 +283,12 @@ function withRetryAdapter(adapter: ReturnType<typeof PrismaAdapter>) {
   return new Proxy(adapter, handler);
 }
 
+console.log(`[ROOT_AUTH_INIT] ===== STARTING NextAuth INITIALIZATION =====`);
+console.log(`[ROOT_AUTH_INIT] Auth secret source: ${process.env.AUTH_SECRET ? 'AUTH_SECRET' : process.env.NEXTAUTH_SECRET ? 'NEXTAUTH_SECRET' : 'FALLBACK'}`);
+console.log(`[ROOT_AUTH_INIT] Google clientId: ${googleCredentials.clientId ? `"${googleCredentials.clientId.substring(0, 12)}..." (length=${googleCredentials.clientId.length})` : '❌ EMPTY STRING'}`);
+console.log(`[ROOT_AUTH_INIT] Google clientSecret: ${googleCredentials.clientSecret ? `"${googleCredentials.clientSecret.substring(0, 6)}..." (length=${googleCredentials.clientSecret.length})` : '❌ EMPTY STRING'}`);
+console.log(`[ROOT_AUTH_INIT] Database URL: ${process.env.DATABASE_URL ? `SET (length=${process.env.DATABASE_URL.length})` : '❌ NOT SET'}`);
+
 export const { handlers, auth, signIn, signOut } = NextAuth({
   adapter: withRetryAdapter(PrismaAdapter(prisma)),
   trustHost: true,
@@ -344,8 +389,8 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
   },
   providers: [
     GoogleProvider({
-      clientId: process.env.GOOGLE_CLIENT_ID!,
-      clientSecret: process.env.GOOGLE_CLIENT_SECRET!,
+      clientId: googleCredentials.clientId,
+      clientSecret: googleCredentials.clientSecret,
       authorization: {
         params: {
           scope:

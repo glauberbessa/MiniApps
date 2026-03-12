@@ -14,17 +14,34 @@ if (!process.env.AUTH_SECRET && process.env.NEXTAUTH_SECRET) {
 if (!process.env.AUTH_URL && process.env.NEXTAUTH_URL) {
   process.env.AUTH_URL = process.env.NEXTAUTH_URL;
 }
+// Auto-detect AUTH_URL from VERCEL_URL when neither AUTH_URL nor NEXTAUTH_URL is set
+if (!process.env.AUTH_URL && process.env.VERCEL_URL) {
+  process.env.AUTH_URL = `https://${process.env.VERCEL_URL}`;
+}
 
-const edgeGoogleClientId = process.env.GOOGLE_CLIENT_ID || '';
-const edgeGoogleClientSecret = process.env.GOOGLE_CLIENT_SECRET || '';
+// NextAuth v5 supports both GOOGLE_CLIENT_ID and AUTH_GOOGLE_ID conventions.
+// Resolve whichever is available; pass undefined (not '') so NextAuth can
+// fall back to its own auto-detection when neither is set.
+const edgeGoogleClientId = process.env.GOOGLE_CLIENT_ID || process.env.AUTH_GOOGLE_ID || undefined;
+const edgeGoogleClientSecret = process.env.GOOGLE_CLIENT_SECRET || process.env.AUTH_GOOGLE_SECRET || undefined;
 const edgeAuthSecret = process.env.AUTH_SECRET || process.env.NEXTAUTH_SECRET || '';
 
 if (!edgeGoogleClientId || !edgeGoogleClientSecret) {
-  console.error(`[AUTH_CONFIG_EDGE] CRITICAL: Missing Google OAuth credentials. OAuth login will fail with "Configuration" error.`);
+  console.error(
+    `[AUTH_CONFIG_EDGE] CRITICAL: Missing Google OAuth credentials. ` +
+    `Checked GOOGLE_CLIENT_ID/AUTH_GOOGLE_ID and GOOGLE_CLIENT_SECRET/AUTH_GOOGLE_SECRET. ` +
+    `OAuth login will fail with "Configuration" error.`
+  );
 }
 if (!edgeAuthSecret) {
   console.error(`[AUTH_CONFIG_EDGE] CRITICAL: Missing AUTH_SECRET/NEXTAUTH_SECRET. Authentication will fail.`);
 }
+
+console.log(`[AUTH_CONFIG_EDGE] Google Client ID: ${edgeGoogleClientId ? `SET (${edgeGoogleClientId.length} chars)` : 'NOT SET'}`);
+console.log(`[AUTH_CONFIG_EDGE] Google Client Secret: ${edgeGoogleClientSecret ? `SET (${edgeGoogleClientSecret.length} chars)` : 'NOT SET'}`);
+console.log(`[AUTH_CONFIG_EDGE] AUTH_SECRET: ${edgeAuthSecret ? 'SET' : 'NOT SET'}`);
+console.log(`[AUTH_CONFIG_EDGE] AUTH_URL: ${process.env.AUTH_URL || 'NOT SET (auto-detect from request)'}`);
+console.log(`[AUTH_CONFIG_EDGE] VERCEL_URL: ${process.env.VERCEL_URL || 'NOT SET'}`);
 
 /**
  * NextAuth configuration for Edge Runtime (middleware).
@@ -49,8 +66,8 @@ export const authConfig: NextAuthConfig = {
     // Note: These are placeholder configs for Edge Runtime
     // The actual authorize logic runs in the full auth.ts
     GoogleProvider({
-      clientId: edgeGoogleClientId,
-      clientSecret: edgeGoogleClientSecret,
+      clientId: edgeGoogleClientId as string,
+      clientSecret: edgeGoogleClientSecret as string,
       authorization: {
         params: {
           scope:

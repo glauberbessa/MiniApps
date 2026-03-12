@@ -175,7 +175,7 @@ export default function ConfigChannelsPage() {
   };
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-4 sm:space-y-6">
       {/* Header */}
       <div className="flex items-center gap-3">
         <Settings2 className="h-8 w-8 text-primary" />
@@ -186,21 +186,21 @@ export default function ConfigChannelsPage() {
       </div>
 
       {/* Actions */}
-      <div className="flex flex-wrap items-center gap-4">
-        <div className="flex items-center gap-2">
+      <div className="flex flex-wrap items-center gap-2 sm:gap-4">
+        <div className="flex items-center gap-2 mr-2 sm:mr-4 border-r pr-2 sm:pr-4">
           <Switch
             checked={showOnlyActive}
             onCheckedChange={setShowOnlyActive}
             id="show-only-active"
           />
-          <label htmlFor="show-only-active" className="text-sm text-muted-foreground">
+          <label htmlFor="show-only-active" className="text-xs sm:text-sm text-muted-foreground">
             Apenas Ativas
           </label>
         </div>
-        <Button variant="outline" onClick={handleEnableAll}>
+        <Button variant="outline" size="sm" onClick={handleEnableAll} className="min-h-[44px]">
           {UI_TEXT.config.enableAll}
         </Button>
-        <Button variant="outline" onClick={handleDisableAll}>
+        <Button variant="outline" size="sm" onClick={handleDisableAll} className="min-h-[44px]">
           {UI_TEXT.config.disableAll}
         </Button>
       </div>
@@ -213,56 +213,82 @@ export default function ConfigChannelsPage() {
           <Skeleton className="h-12 w-full" />
         </div>
       ) : (
-        <div className="rounded-md border">
-          <Table>
-            <TableHeader>
-              <TableRow>
-                <TableHead
-                  className="cursor-pointer select-none hover:bg-muted/50"
-                  onDoubleClick={handleHeaderDoubleClick}
-                  title="Clique duplo para alternar a ordenação"
-                >
-                  Canal
-                  <SortIcon field={sortField} />
-                </TableHead>
-                <TableHead className="text-right">Status</TableHead>
-              </TableRow>
-            </TableHeader>
-            <TableBody>
-              {visibleChannels.map((channel) => (
-                <TableRow key={channel.id}>
-                  <TableCell className="font-medium">
-                    <span className="truncate block max-w-[520px]">
-                      {channel.title} -{" "}
-                      {(() => {
-                        const subscriptionDate =
-                          channel.subscribedAt ?? channel.config?.subscriptionDate;
-
-                        return subscriptionDate ? formatDate(subscriptionDate) : "-";
-                      })()}{" "}
-                      - {formatNumber(channel.videoCount)}
-                    </span>
-                  </TableCell>
-                  <TableCell className="text-right">
-                    <div className="flex items-center justify-end gap-3">
-                      <span className="text-sm text-muted-foreground">
-                        {enabledMap[channel.id]
-                          ? UI_TEXT.config.enabled
-                          : UI_TEXT.config.disabled}
-                      </span>
-                      <Switch
-                        checked={enabledMap[channel.id] ?? true}
-                        onCheckedChange={(checked) =>
-                          handleToggle(channel.id, checked)
-                        }
-                      />
-                    </div>
-                  </TableCell>
+        <>
+          {/* Desktop table */}
+          <div className="hidden sm:block rounded-md border">
+            <Table>
+              <TableHeader>
+                <TableRow>
+                  <TableHead
+                    className="cursor-pointer select-none hover:bg-muted/50"
+                    onDoubleClick={handleHeaderDoubleClick}
+                    title="Clique duplo para alternar a ordenação"
+                  >
+                    Canal
+                    <SortIcon field={sortField} />
+                  </TableHead>
+                  <TableHead className="text-right">Status</TableHead>
                 </TableRow>
-              ))}
-            </TableBody>
-          </Table>
-        </div>
+              </TableHeader>
+              <TableBody>
+                {visibleChannels.map((channel) => (
+                  <TableRow key={channel.id}>
+                    <TableCell className="font-medium">
+                      <span className="truncate block max-w-[520px]">
+                        {channel.title} -{" "}
+                        {(() => {
+                          const subscriptionDate =
+                            channel.subscribedAt ?? channel.config?.subscriptionDate;
+
+                          return subscriptionDate ? formatDate(subscriptionDate) : "-";
+                        })()}{" "}
+                        - {formatNumber(channel.videoCount)}
+                      </span>
+                    </TableCell>
+                    <TableCell className="text-right">
+                      <div className="flex items-center justify-end gap-3">
+                        <span className="text-sm text-muted-foreground">
+                          {enabledMap[channel.id]
+                            ? UI_TEXT.config.enabled
+                            : UI_TEXT.config.disabled}
+                        </span>
+                        <Switch
+                          checked={enabledMap[channel.id] ?? true}
+                          onCheckedChange={(checked) =>
+                            handleToggle(channel.id, checked)
+                          }
+                        />
+                      </div>
+                    </TableCell>
+                  </TableRow>
+                ))}
+              </TableBody>
+            </Table>
+          </div>
+          {/* Mobile cards */}
+          <div className="sm:hidden space-y-2">
+            {visibleChannels.map((channel) => {
+              const subscriptionDate =
+                channel.subscribedAt ?? channel.config?.subscriptionDate;
+              return (
+                <div key={channel.id} className="rounded-lg border p-3 flex items-center justify-between gap-3">
+                  <div className="min-w-0 flex-1">
+                    <p className="text-sm font-medium truncate">{channel.title}</p>
+                    <p className="text-xs text-muted-foreground">
+                      {subscriptionDate ? formatDate(subscriptionDate) : "-"} • {formatNumber(channel.videoCount)} vídeos
+                    </p>
+                  </div>
+                  <Switch
+                    checked={enabledMap[channel.id] ?? true}
+                    onCheckedChange={(checked) =>
+                      handleToggle(channel.id, checked)
+                    }
+                  />
+                </div>
+              );
+            })}
+          </div>
+        </>
       )}
     </div>
   );

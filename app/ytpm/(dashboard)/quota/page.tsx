@@ -28,7 +28,7 @@ export default function QuotaPage() {
   };
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-4 sm:space-y-6">
       {/* Header */}
       <div className="flex items-center gap-3">
         <Gauge className="h-8 w-8 text-primary" />
@@ -129,28 +129,59 @@ export default function QuotaPage() {
               <Skeleton className="h-10 w-full" />
             </div>
           ) : history && history.length > 0 ? (
-            <Table>
-              <TableHeader>
-                <TableRow>
-                  <TableHead>Data</TableHead>
-                  <TableHead>Consumido</TableHead>
-                  <TableHead>Limite</TableHead>
-                  <TableHead>Percentual</TableHead>
-                </TableRow>
-              </TableHeader>
-              <TableBody>
+            <>
+              {/* Desktop table */}
+              <div className="hidden sm:block">
+                <Table>
+                  <TableHeader>
+                    <TableRow>
+                      <TableHead>Data</TableHead>
+                      <TableHead>Consumido</TableHead>
+                      <TableHead>Limite</TableHead>
+                      <TableHead>Percentual</TableHead>
+                    </TableRow>
+                  </TableHeader>
+                  <TableBody>
+                    {history.map((item, index) => {
+                      const percent =
+                        (item.consumedUnits / item.dailyLimit) * 100;
+                      return (
+                        <TableRow key={index}>
+                          <TableCell>{formatDate(item.date)}</TableCell>
+                          <TableCell>{formatNumber(item.consumedUnits)}</TableCell>
+                          <TableCell>{formatNumber(item.dailyLimit)}</TableCell>
+                          <TableCell>
+                            <span
+                              className={cn(
+                                "font-medium",
+                                percent >= 80
+                                  ? "text-destructive"
+                                  : percent >= 50
+                                  ? "text-warning"
+                                  : "text-success"
+                              )}
+                            >
+                              {percent.toFixed(1)}%
+                            </span>
+                          </TableCell>
+                        </TableRow>
+                      );
+                    })}
+                  </TableBody>
+                </Table>
+              </div>
+              {/* Mobile cards */}
+              <div className="sm:hidden space-y-3">
                 {history.map((item, index) => {
                   const percent =
                     (item.consumedUnits / item.dailyLimit) * 100;
                   return (
-                    <TableRow key={index}>
-                      <TableCell>{formatDate(item.date)}</TableCell>
-                      <TableCell>{formatNumber(item.consumedUnits)}</TableCell>
-                      <TableCell>{formatNumber(item.dailyLimit)}</TableCell>
-                      <TableCell>
+                    <div key={index} className="rounded-lg border p-3 space-y-2">
+                      <div className="flex items-center justify-between">
+                        <span className="text-sm font-medium">{formatDate(item.date)}</span>
                         <span
                           className={cn(
-                            "font-medium",
+                            "text-sm font-semibold",
                             percent >= 80
                               ? "text-destructive"
                               : percent >= 50
@@ -160,12 +191,16 @@ export default function QuotaPage() {
                         >
                           {percent.toFixed(1)}%
                         </span>
-                      </TableCell>
-                    </TableRow>
+                      </div>
+                      <div className="flex items-center justify-between text-xs text-muted-foreground">
+                        <span>Consumido: {formatNumber(item.consumedUnits)}</span>
+                        <span>Limite: {formatNumber(item.dailyLimit)}</span>
+                      </div>
+                    </div>
                   );
                 })}
-              </TableBody>
-            </Table>
+              </div>
+            </>
           ) : (
             <p className="text-center text-muted-foreground py-6">
               Nenhum histórico disponível
@@ -184,24 +219,26 @@ export default function QuotaPage() {
           <CardDescription>{UI_TEXT.quota.costsSubtitle}</CardDescription>
         </CardHeader>
         <CardContent>
-          <Table>
-            <TableHeader>
-              <TableRow>
-                <TableHead>Operação</TableHead>
-                <TableHead className="text-right">Custo (unidades)</TableHead>
-              </TableRow>
-            </TableHeader>
-            <TableBody>
-              {QUOTA_OPERATIONS.map((op) => (
-                <TableRow key={op.endpoint}>
-                  <TableCell>{op.endpoint}</TableCell>
-                  <TableCell className="text-right font-mono">
-                    {op.cost}
-                  </TableCell>
+          <div className="overflow-x-auto -mx-6 px-6">
+            <Table>
+              <TableHeader>
+                <TableRow>
+                  <TableHead className="text-xs sm:text-sm">Operação</TableHead>
+                  <TableHead className="text-right text-xs sm:text-sm">Custo (unidades)</TableHead>
                 </TableRow>
-              ))}
-            </TableBody>
-          </Table>
+              </TableHeader>
+              <TableBody>
+                {QUOTA_OPERATIONS.map((op) => (
+                  <TableRow key={op.endpoint}>
+                    <TableCell className="text-xs sm:text-sm">{op.endpoint}</TableCell>
+                    <TableCell className="text-right font-mono text-xs sm:text-sm">
+                      {op.cost}
+                    </TableCell>
+                  </TableRow>
+                ))}
+              </TableBody>
+            </Table>
+          </div>
         </CardContent>
       </Card>
 

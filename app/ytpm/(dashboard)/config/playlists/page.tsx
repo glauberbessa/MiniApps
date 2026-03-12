@@ -127,7 +127,7 @@ export default function ConfigPlaylistsPage() {
   });
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-4 sm:space-y-6">
       {/* Header */}
       <div className="flex items-center gap-3">
         <Settings className="h-8 w-8 text-primary" />

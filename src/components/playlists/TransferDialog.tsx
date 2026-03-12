@@ -88,7 +88,7 @@ export function TransferDialog({
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent aria-describedby="transfer-description">
+      <DialogContent aria-describedby="transfer-description" className="max-h-[90vh] overflow-y-auto">
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2">
             <Video className="h-5 w-5 text-primary" aria-hidden="true" />
@@ -171,11 +171,12 @@ export function TransferDialog({
           )}
         </div>
 
-        <DialogFooter>
+        <DialogFooter className="flex-col sm:flex-row gap-2">
           <Button
             variant="outline"
             onClick={() => onOpenChange(false)}
             disabled={transferMutation.isPending}
+            className="w-full sm:w-auto min-h-[44px]"
           >
             {UI_TEXT.general.cancel}
           </Button>
@@ -183,6 +184,7 @@ export function TransferDialog({
             onClick={handleTransfer}
             disabled={!hasQuota || transferMutation.isPending}
             aria-busy={transferMutation.isPending}
+            className="w-full sm:w-auto min-h-[44px]"
           >
             {transferMutation.isPending ? (
               <>

@@ -141,7 +141,7 @@ export default function ChannelsPage() {
   };
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-4 sm:space-y-6">
       {/* Header */}
       <div className="flex items-center gap-3">
         <Radio className="h-8 w-8 text-primary" />
@@ -207,24 +207,29 @@ export default function ChannelsPage() {
                 selectedVideos={selectedVideos}
               />
 
-              <div className="flex flex-wrap items-center justify-between gap-3">
+              <div className="flex flex-wrap items-center justify-between gap-2 sm:gap-3">
                 <span className="text-sm text-muted-foreground">Layouts</span>
-                <Select
-                  value={layout}
-                  onValueChange={(value) =>
-                    setLayout(value as "grid" | "table" | "list")
-                  }
-                  disabled={isMobile}
-                >
-                  <SelectTrigger className="w-[180px]">
-                    <SelectValue placeholder="Selecione o layout" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="grid">{UI_TEXT.viewMode.grid}</SelectItem>
-                    <SelectItem value="list">{UI_TEXT.viewMode.list}</SelectItem>
-                    <SelectItem value="table">{UI_TEXT.viewMode.table}</SelectItem>
-                  </SelectContent>
-                </Select>
+                {isMobile ? (
+                  <span className="text-xs text-muted-foreground bg-muted px-2.5 py-1.5 rounded-md">
+                    {UI_TEXT.viewMode.list}
+                  </span>
+                ) : (
+                  <Select
+                    value={layout}
+                    onValueChange={(value) =>
+                      setLayout(value as "grid" | "table" | "list")
+                    }
+                  >
+                    <SelectTrigger className="w-full sm:w-[180px]">
+                      <SelectValue placeholder="Selecione o layout" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="grid">{UI_TEXT.viewMode.grid}</SelectItem>
+                      <SelectItem value="list">{UI_TEXT.viewMode.list}</SelectItem>
+                      <SelectItem value="table">{UI_TEXT.viewMode.table}</SelectItem>
+                    </SelectContent>
+                  </Select>
+                )}
               </div>
 
               {layout === "table" ? (
@@ -259,12 +264,13 @@ export default function ChannelsPage() {
               )}
 
               {/* Action Buttons */}
-              <div className="flex justify-end gap-2">
+              <div className="flex flex-col sm:flex-row sm:justify-end gap-2">
                 <Button
                   variant="outline"
                   size="lg"
                   onClick={handleExportLinks}
                   disabled={selectedVideos.size === 0}
+                  className="w-full sm:w-auto min-h-[44px]"
                 >
                   <Download className="mr-2 h-5 w-5" />
                   {UI_TEXT.general.exportLinks}
@@ -275,6 +281,7 @@ export default function ChannelsPage() {
                   disabled={
                     selectedVideos.size === 0 || !destinationPlaylistId
                   }
+                  className="w-full sm:w-auto min-h-[44px]"
                 >
                   <Plus className="mr-2 h-5 w-5" />
                   {UI_TEXT.channels.assignToPlaylist}

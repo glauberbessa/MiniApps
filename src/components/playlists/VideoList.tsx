@@ -31,20 +31,21 @@ export function VideoList({
 
   return (
     <div className="space-y-4">
-      <div className="flex flex-wrap items-center justify-between gap-4">
+      <div className="flex flex-wrap items-center justify-between gap-2 sm:gap-4">
         <Button
           variant="outline"
           size="sm"
           onClick={onToggleSelectAll}
           disabled={videos.length === 0}
+          className="min-h-[44px]"
         >
           {allSelected ? "Limpar seleção" : "Selecionar todos"}
         </Button>
-        <span className="text-sm text-muted-foreground">
+        <span className="text-xs sm:text-sm text-muted-foreground">
           {videos.length} vídeos
         </span>
       </div>
-      <div className="flex flex-col gap-3">
+      <div className="flex flex-col gap-2 sm:gap-3">
         {videos.map((video) => (
           <div
             key={video.id}
@@ -59,7 +60,7 @@ export function VideoList({
                 : "border-border hover:border-primary/40"
             )}
           >
-            <div className="relative h-20 w-36 shrink-0 overflow-hidden rounded-md bg-muted sm:h-24 sm:w-40">
+            <div className="relative h-16 w-28 shrink-0 overflow-hidden rounded-md bg-muted sm:h-24 sm:w-40">
               {video.thumbnailUrl ? (
                 <Image
                   src={video.thumbnailUrl}
@@ -83,7 +84,7 @@ export function VideoList({
                   target="_blank"
                   rel="noopener noreferrer"
                   onClick={(event) => event.stopPropagation()}
-                  className="line-clamp-2 font-medium hover:text-primary"
+                  className="line-clamp-2 text-sm sm:text-base font-medium hover:text-primary"
                 >
                   {video.title}
                 </a>

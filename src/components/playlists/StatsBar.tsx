@@ -50,12 +50,12 @@ export function StatsBar({
   return (
     <Card>
       <CardContent className="py-3">
-        <div className="flex flex-wrap items-center justify-between gap-4">
+        <div className="grid grid-cols-2 gap-2 sm:flex sm:flex-wrap sm:items-center sm:justify-between sm:gap-4">
           {stats.map((stat) => (
-            <div key={stat.label} className="flex items-center gap-2">
-              <stat.icon className="h-4 w-4 text-muted-foreground" />
-              <span className="text-sm text-muted-foreground">{stat.label}:</span>
-              <span className="font-medium">{stat.value}</span>
+            <div key={stat.label} className="flex items-center gap-1.5 sm:gap-2 min-w-0">
+              <stat.icon className="h-4 w-4 text-muted-foreground flex-shrink-0" />
+              <span className="text-xs sm:text-sm text-muted-foreground truncate">{stat.label}:</span>
+              <span className="text-sm font-medium">{stat.value}</span>
             </div>
           ))}
         </div>

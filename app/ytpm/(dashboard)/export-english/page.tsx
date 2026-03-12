@@ -325,7 +325,7 @@ export default function ExportEnglishPage() {
 
   if (loadingStatus) {
     return (
-      <div className="space-y-6">
+      <div className="space-y-4 sm:space-y-6">
         <PageHeader
           title={UI_TEXT.exportEnglish.title}
           description={UI_TEXT.exportEnglish.description}
@@ -344,7 +344,7 @@ export default function ExportEnglishPage() {
   }
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-4 sm:space-y-6">
       {/* Header */}
       <PageHeader
         title={UI_TEXT.exportEnglish.title}

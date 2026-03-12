@@ -181,7 +181,7 @@ export default function PlaylistsPage() {
   };
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-4 sm:space-y-6">
       {/* Header */}
       <PageHeader
         title={UI_TEXT.playlists.title}
@@ -255,26 +255,31 @@ export default function PlaylistsPage() {
                 selectedVideos={selectedVideos}
               />
 
-              <div className="flex flex-wrap items-center justify-between gap-3">
+              <div className="flex flex-wrap items-center justify-between gap-2 sm:gap-3">
                 <span className="text-sm text-muted-foreground">
                   Layouts
                 </span>
-                <Select
-                  value={layout}
-                  onValueChange={(value) =>
-                    setLayout(value as "grid" | "table" | "list")
-                  }
-                  disabled={isMobile}
-                >
-                  <SelectTrigger className="w-[180px]">
-                    <SelectValue placeholder="Selecione o layout" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="grid">{UI_TEXT.viewMode.grid}</SelectItem>
-                    <SelectItem value="list">{UI_TEXT.viewMode.list}</SelectItem>
-                    <SelectItem value="table">{UI_TEXT.viewMode.table}</SelectItem>
-                  </SelectContent>
-                </Select>
+                {isMobile ? (
+                  <span className="text-xs text-muted-foreground bg-muted px-2.5 py-1.5 rounded-md">
+                    {UI_TEXT.viewMode.list}
+                  </span>
+                ) : (
+                  <Select
+                    value={layout}
+                    onValueChange={(value) =>
+                      setLayout(value as "grid" | "table" | "list")
+                    }
+                  >
+                    <SelectTrigger className="w-full sm:w-[180px]">
+                      <SelectValue placeholder="Selecione o layout" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="grid">{UI_TEXT.viewMode.grid}</SelectItem>
+                      <SelectItem value="list">{UI_TEXT.viewMode.list}</SelectItem>
+                      <SelectItem value="table">{UI_TEXT.viewMode.table}</SelectItem>
+                    </SelectContent>
+                  </Select>
+                )}
               </div>
 
               {layout === "table" ? (
@@ -308,60 +313,60 @@ export default function PlaylistsPage() {
       {/* Sticky Transfer Bar */}
       {activeSourceId && (
         <div
-          className="fixed bottom-0 left-0 right-0 bg-background/95 backdrop-blur-sm border-t border-border p-4 z-50 shadow-lg md:pl-[250px]"
+          className="fixed bottom-16 md:bottom-0 left-0 right-0 bg-background/95 backdrop-blur-sm border-t border-border p-3 md:p-4 z-40 shadow-lg md:pl-[250px]"
           role="region"
           aria-label="Ações de vídeos selecionados"
         >
-          <div className="container flex justify-between items-center max-w-7xl mx-auto">
-            <div className="hidden md:flex items-center gap-2">
+          <div className="container flex flex-col md:flex-row justify-between items-stretch md:items-center max-w-7xl mx-auto gap-2">
+            <div className="flex items-center gap-2">
               <span
-                className={`text-sm font-medium ${
+                className={`text-xs md:text-sm font-medium ${
                   selectedVideos.size > 0 ? "text-primary" : "text-muted-foreground"
                 }`}
                 aria-live="polite"
               >
-                {selectedVideos.size} {selectedVideos.size === 1 ? "vídeo selecionado" : "vídeos selecionados"}
+                {selectedVideos.size} {selectedVideos.size === 1 ? "selecionado" : "selecionados"}
               </span>
               {selectedVideos.size > 0 && (
-                <span className="text-xs text-muted-foreground">
+                <span className="hidden sm:inline text-xs text-muted-foreground">
                   (de {filteredVideos.length} disponíveis)
                 </span>
               )}
             </div>
-            <div className="flex w-full flex-col gap-3 md:w-auto md:flex-row md:items-center md:justify-end md:gap-2">
+            <div className="flex w-full gap-2 md:w-auto md:items-center md:justify-end">
               <Button
                 variant="outline"
-                size="lg"
+                size="default"
                 onClick={handleExportLinks}
                 disabled={selectedVideos.size === 0}
-                className="w-full md:w-auto"
+                className="flex-1 md:flex-none min-h-[44px]"
               >
-                <Download className="mr-2 h-5 w-5" aria-hidden="true" />
-                {UI_TEXT.general.exportLinks}
+                <Download className="h-5 w-5 md:mr-2" aria-hidden="true" />
+                <span className="hidden md:inline">{UI_TEXT.general.exportLinks}</span>
               </Button>
               <Button
                 variant="outline"
-                size="lg"
+                size="default"
                 onClick={handleRemoveFromSource}
                 disabled={selectedVideos.size === 0 || removeMutation.isPending}
-                className="w-full md:w-auto"
+                className="flex-1 md:flex-none min-h-[44px]"
                 aria-busy={removeMutation.isPending}
               >
                 {removeMutation.isPending ? (
-                  <Loader2 className="mr-2 h-5 w-5 animate-spin" aria-hidden="true" />
+                  <Loader2 className="h-5 w-5 animate-spin md:mr-2" aria-hidden="true" />
                 ) : (
-                  <Trash2 className="mr-2 h-5 w-5" aria-hidden="true" />
+                  <Trash2 className="h-5 w-5 md:mr-2" aria-hidden="true" />
                 )}
-                {removeMutation.isPending ? "Removendo..." : UI_TEXT.playlists.removeFromSource}
+                <span className="hidden md:inline">{removeMutation.isPending ? "Removendo..." : UI_TEXT.playlists.removeFromSource}</span>
               </Button>
               <Button
-                size="lg"
+                size="default"
                 onClick={handleTransferClick}
                 disabled={selectedVideos.size === 0 || !destinationPlaylistId}
-                className="w-full md:w-auto"
+                className="flex-1 md:flex-none min-h-[44px]"
               >
-                {UI_TEXT.playlists.transferVideos}
-                <ArrowRight className="ml-2 h-5 w-5" aria-hidden="true" />
+                <span className="hidden md:inline">{UI_TEXT.playlists.transferVideos}</span>
+                <ArrowRight className="h-5 w-5 md:ml-2" aria-hidden="true" />
               </Button>
             </div>
           </div>
@@ -369,7 +374,7 @@ export default function PlaylistsPage() {
       )}
 
       {/* Spacer to prevent footer from covering content */}
-      {activeSourceId && <div className="h-24" />}
+      {activeSourceId && <div className="h-40 md:h-24" />}
 
       {/* Empty State */}
       {!activeSourceId && (

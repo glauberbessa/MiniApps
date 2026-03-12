@@ -79,7 +79,7 @@ export function AssignDialog({
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent>
+      <DialogContent className="max-h-[90vh] overflow-y-auto">
         <DialogHeader>
           <DialogTitle>{UI_TEXT.assign.title}</DialogTitle>
           <DialogDescription>
@@ -118,17 +118,19 @@ export function AssignDialog({
           )}
         </div>
 
-        <DialogFooter>
+        <DialogFooter className="flex-col sm:flex-row gap-2">
           <Button
             variant="outline"
             onClick={() => onOpenChange(false)}
             disabled={assignMutation.isPending}
+            className="w-full sm:w-auto min-h-[44px]"
           >
             {UI_TEXT.general.cancel}
           </Button>
           <Button
             onClick={handleAssign}
             disabled={!hasQuota || assignMutation.isPending}
+            className="w-full sm:w-auto min-h-[44px]"
           >
             {assignMutation.isPending ? (
               <>

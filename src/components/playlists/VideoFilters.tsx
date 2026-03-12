@@ -111,34 +111,34 @@ export function VideoFilters({ availableLanguages, videos }: VideoFiltersProps) 
                 className="pl-10"
               />
             </div>
-            <div className="flex flex-wrap gap-4">
-              <div className="flex items-center gap-2">
+            <div className="flex flex-wrap gap-x-4 gap-y-2">
+              <div className="flex items-center gap-2 min-h-[44px]">
                 <Checkbox
                   id="searchTitle"
                   checked={filter.searchInTitle}
                   onCheckedChange={(checked) => setSearchInTitle(!!checked)}
                 />
-                <Label htmlFor="searchTitle" className="text-sm">
+                <Label htmlFor="searchTitle" className="text-xs sm:text-sm">
                   {UI_TEXT.filters.searchInTitle}
                 </Label>
               </div>
-              <div className="flex items-center gap-2">
+              <div className="flex items-center gap-2 min-h-[44px]">
                 <Checkbox
                   id="searchDesc"
                   checked={filter.searchInDescription}
                   onCheckedChange={(checked) => setSearchInDescription(!!checked)}
                 />
-                <Label htmlFor="searchDesc" className="text-sm">
+                <Label htmlFor="searchDesc" className="text-xs sm:text-sm">
                   {UI_TEXT.filters.searchInDescription}
                 </Label>
               </div>
-              <div className="flex items-center gap-2">
+              <div className="flex items-center gap-2 min-h-[44px]">
                 <Checkbox
                   id="searchChannel"
                   checked={filter.searchInChannel}
                   onCheckedChange={(checked) => setSearchInChannel(!!checked)}
                 />
-                <Label htmlFor="searchChannel" className="text-sm">
+                <Label htmlFor="searchChannel" className="text-xs sm:text-sm">
                   {UI_TEXT.filters.searchInChannel}
                 </Label>
               </div>

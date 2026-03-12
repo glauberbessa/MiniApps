@@ -29,10 +29,10 @@ export function VideoCard({
       onClick={() => onToggleSelect(video.id)}
     >
       {/* Thumbnail + Checkbox */}
-      <div className="flex gap-3">
+      <div className="flex gap-2 sm:gap-3">
         {/* Checkbox */}
         <div
-          className="flex items-start pt-1"
+          className="flex items-start pt-1 min-w-[44px] min-h-[44px] justify-center"
           onClick={(e) => e.stopPropagation()}
         >
           <Checkbox
@@ -43,7 +43,7 @@ export function VideoCard({
         </div>
 
         {/* Thumbnail */}
-        <div className="relative h-20 w-32 overflow-hidden rounded flex-shrink-0">
+        <div className="relative h-20 w-28 sm:w-32 overflow-hidden rounded flex-shrink-0">
           {video.thumbnailUrl ? (
             <Image
               src={video.thumbnailUrl}
@@ -56,11 +56,10 @@ export function VideoCard({
               <span className="text-xs text-muted-foreground">N/A</span>
             </div>
           )}
-        </div>
-
-        {/* Duration Badge */}
-        <div className="absolute bottom-1 right-1 bg-black/75 px-1.5 py-0.5 rounded text-xs font-medium text-white">
-          {formatDuration(video.durationInSeconds)}
+          {/* Duration Badge */}
+          <div className="absolute bottom-1 right-1 bg-black/75 px-1.5 py-0.5 rounded text-xs font-medium text-white">
+            {formatDuration(video.durationInSeconds)}
+          </div>
         </div>
       </div>
 
@@ -73,7 +72,7 @@ export function VideoCard({
           variant="ghost"
           size="sm"
           asChild
-          className="flex-shrink-0 -mr-2"
+          className="flex-shrink-0 -mr-2 min-w-[44px] min-h-[44px]"
           onClick={(e) => e.stopPropagation()}
         >
           <a

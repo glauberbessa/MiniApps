@@ -26,6 +26,19 @@ function isProtectedRoute(pathname: string): boolean {
 }
 
 // Create auth middleware from Edge-compatible config
+console.log(`[MIDDLEWARE_INIT] ===== MIDDLEWARE INITIALIZATION =====`);
+console.log(`[MIDDLEWARE_INIT] GOOGLE_CLIENT_ID: ${process.env.GOOGLE_CLIENT_ID ? `SET (${process.env.GOOGLE_CLIENT_ID.length} chars)` : '❌ NOT SET'}`);
+console.log(`[MIDDLEWARE_INIT] GOOGLE_CLIENT_SECRET: ${process.env.GOOGLE_CLIENT_SECRET ? `SET (${process.env.GOOGLE_CLIENT_SECRET.length} chars)` : '❌ NOT SET'}`);
+console.log(`[MIDDLEWARE_INIT] AUTH_SECRET: ${process.env.AUTH_SECRET ? 'SET' : 'NOT SET'}`);
+console.log(`[MIDDLEWARE_INIT] NEXTAUTH_SECRET: ${process.env.NEXTAUTH_SECRET ? 'SET' : 'NOT SET'}`);
+console.log(`[MIDDLEWARE_INIT] NEXTAUTH_URL: ${process.env.NEXTAUTH_URL || 'NOT SET'}`);
+console.log(`[MIDDLEWARE_INIT] NODE_ENV: ${process.env.NODE_ENV}`);
+
+if (!process.env.GOOGLE_CLIENT_ID || !process.env.GOOGLE_CLIENT_SECRET) {
+  console.error(`[MIDDLEWARE_INIT] ❌ CRITICAL: Google OAuth credentials missing in middleware!`);
+  console.error(`[MIDDLEWARE_INIT] ❌ Login with Google WILL fail with "Configuration" error.`);
+}
+
 const { auth } = NextAuth(authConfig);
 
 /**
@@ -39,6 +52,19 @@ export default auth((request) => {
 
   // Always log middleware invocations for YouTube connection debugging
   console.log(`[MIDDLEWARE] ${request.method} ${url.pathname} | Auth: ${session ? 'yes' : 'no'} | HasUser: ${!!session?.user} | UserId: ${session?.user?.id || 'N/A'}`);
+
+  // Extra logging for OAuth callback routes (where "Configuration" errors happen)
+  if (url.pathname.includes('/api/auth/callback') || url.pathname.includes('/api/auth/signin')) {
+    console.log(`[MIDDLEWARE] ===== OAUTH FLOW DETECTED =====`);
+    console.log(`[MIDDLEWARE] OAuth path: ${url.pathname}`);
+    console.log(`[MIDDLEWARE] OAuth query: ${url.search}`);
+    console.log(`[MIDDLEWARE] OAuth error param: ${url.searchParams.get('error') || 'none'}`);
+    console.log(`[MIDDLEWARE] OAuth error_description: ${url.searchParams.get('error_description') || 'none'}`);
+    console.log(`[MIDDLEWARE] OAuth has code: ${!!url.searchParams.get('code')}`);
+    console.log(`[MIDDLEWARE] OAuth has state: ${!!url.searchParams.get('state')}`);
+    console.log(`[MIDDLEWARE] GOOGLE_CLIENT_ID at request time: ${process.env.GOOGLE_CLIENT_ID ? 'SET' : '❌ NOT SET'}`);
+    console.log(`[MIDDLEWARE] GOOGLE_CLIENT_SECRET at request time: ${process.env.GOOGLE_CLIENT_SECRET ? 'SET' : '❌ NOT SET'}`);
+  }
 
   // Log all cookies for auth-related and YouTube API routes
   if (url.pathname.includes('/api/auth') || url.pathname.includes('/api/playlists') || url.pathname.includes('/api/channels') || url.pathname.includes('/api/quota')) {

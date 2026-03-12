@@ -51,13 +51,14 @@ if (process.env.VERCEL_URL) {
 // ============================================================
 // GOOGLE OAUTH CREDENTIAL VALIDATION
 // NextAuth v5 supports both GOOGLE_CLIENT_ID and AUTH_GOOGLE_ID.
-// We resolve whichever is available. Use empty string fallback
-// so GoogleProvider doesn't receive undefined (which causes a
-// cryptic "Configuration" error instead of a clear message).
+// We resolve whichever is available. Use `undefined` (NOT empty
+// string '') when missing — Auth.js uses `??` (nullish coalescing)
+// to auto-resolve from AUTH_GOOGLE_ID / AUTH_GOOGLE_SECRET env vars.
+// An empty string '' is NOT nullish and blocks this resolution.
 // ============================================================
 const googleCredentials = {
-  clientId: process.env.GOOGLE_CLIENT_ID || process.env.AUTH_GOOGLE_ID || '',
-  clientSecret: process.env.GOOGLE_CLIENT_SECRET || process.env.AUTH_GOOGLE_SECRET || '',
+  clientId: process.env.GOOGLE_CLIENT_ID || process.env.AUTH_GOOGLE_ID || undefined,
+  clientSecret: process.env.GOOGLE_CLIENT_SECRET || process.env.AUTH_GOOGLE_SECRET || undefined,
 };
 
 if (!googleCredentials.clientId || !googleCredentials.clientSecret) {
@@ -71,8 +72,8 @@ if (!googleCredentials.clientId || !googleCredentials.clientSecret) {
   );
 }
 
-console.log(`[AUTH_INIT] Google Client ID: ${googleCredentials.clientId ? `SET (${googleCredentials.clientId.length} chars)` : 'NOT SET'}`);
-console.log(`[AUTH_INIT] Google Client Secret: ${googleCredentials.clientSecret ? `SET (${googleCredentials.clientSecret.length} chars)` : 'NOT SET'}`);
+console.log(`[AUTH_INIT] Google Client ID: ${googleCredentials.clientId ? `SET (${googleCredentials.clientId.length} chars)` : 'NOT SET (Auth.js will auto-resolve from AUTH_GOOGLE_ID)'}`);
+console.log(`[AUTH_INIT] Google Client Secret: ${googleCredentials.clientSecret ? `SET (${googleCredentials.clientSecret.length} chars)` : 'NOT SET (Auth.js will auto-resolve from AUTH_GOOGLE_SECRET)'}`);
 console.log(`[AUTH_INIT] AUTH_URL: ${process.env.AUTH_URL || 'NOT SET (auto-detect from request)'}`);
 console.log(`[AUTH_INIT] VERCEL_URL: ${process.env.VERCEL_URL || 'NOT SET'}`);
 

@@ -38,33 +38,45 @@ if (process.env.VERCEL_URL) {
   }
 }
 
-// NextAuth v5 supports both GOOGLE_CLIENT_ID and AUTH_GOOGLE_ID conventions.
-// Resolve whichever is available. Use empty string fallback so GoogleProvider
-// doesn't receive undefined (which causes a cryptic "Configuration" error).
-const edgeGoogleClientId = process.env.GOOGLE_CLIENT_ID || process.env.AUTH_GOOGLE_ID || '';
-const edgeGoogleClientSecret = process.env.GOOGLE_CLIENT_SECRET || process.env.AUTH_GOOGLE_SECRET || '';
-const edgeAuthSecret = process.env.AUTH_SECRET || process.env.NEXTAUTH_SECRET || '';
+// ============================================================
+// GOOGLE OAUTH CREDENTIALS
+// Resolve Google credentials from environment variables.
+// IMPORTANT: Use `undefined` (NOT empty string '') when credentials
+// are missing. Auth.js uses `??` (nullish coalescing) to auto-resolve
+// credentials from AUTH_GOOGLE_ID / AUTH_GOOGLE_SECRET env vars.
+// An empty string '' is NOT nullish, so it would prevent Auth.js's
+// built-in env var resolution from working.
+// ============================================================
+const edgeGoogleClientId = process.env.GOOGLE_CLIENT_ID || process.env.AUTH_GOOGLE_ID || undefined;
+const edgeGoogleClientSecret = process.env.GOOGLE_CLIENT_SECRET || process.env.AUTH_GOOGLE_SECRET || undefined;
 
 if (!edgeGoogleClientId || !edgeGoogleClientSecret) {
   console.error(
     `[AUTH_CONFIG_EDGE] CRITICAL: Missing Google OAuth credentials. ` +
     `Checked GOOGLE_CLIENT_ID/AUTH_GOOGLE_ID and GOOGLE_CLIENT_SECRET/AUTH_GOOGLE_SECRET. ` +
-    `OAuth login will fail with "Configuration" error. ` +
+    `OAuth login will fail. ` +
     `GOOGLE_CLIENT_ID=${process.env.GOOGLE_CLIENT_ID ? 'SET' : 'MISSING'}, ` +
     `AUTH_GOOGLE_ID=${process.env.AUTH_GOOGLE_ID ? 'SET' : 'MISSING'}, ` +
     `GOOGLE_CLIENT_SECRET=${process.env.GOOGLE_CLIENT_SECRET ? 'SET' : 'MISSING'}, ` +
     `AUTH_GOOGLE_SECRET=${process.env.AUTH_GOOGLE_SECRET ? 'SET' : 'MISSING'}`
   );
 }
-if (!edgeAuthSecret) {
-  console.error(`[AUTH_CONFIG_EDGE] CRITICAL: Missing AUTH_SECRET/NEXTAUTH_SECRET. Authentication will fail.`);
-}
 
 console.log(`[AUTH_CONFIG_EDGE] Google Client ID: ${edgeGoogleClientId ? `SET (${edgeGoogleClientId.length} chars)` : 'NOT SET'}`);
 console.log(`[AUTH_CONFIG_EDGE] Google Client Secret: ${edgeGoogleClientSecret ? `SET (${edgeGoogleClientSecret.length} chars)` : 'NOT SET'}`);
-console.log(`[AUTH_CONFIG_EDGE] AUTH_SECRET: ${edgeAuthSecret ? 'SET' : 'NOT SET'}`);
 console.log(`[AUTH_CONFIG_EDGE] AUTH_URL: ${process.env.AUTH_URL || 'NOT SET (auto-detect from request)'}`);
 console.log(`[AUTH_CONFIG_EDGE] VERCEL_URL: ${process.env.VERCEL_URL || 'NOT SET'}`);
+
+// ============================================================
+// COOKIE CONFIGURATION
+// Must match auth.ts cookie config exactly so middleware and
+// route handlers use the same cookie names. A mismatch causes
+// state/CSRF validation failures that surface as "Configuration"
+// errors because Auth.js maps all non-client-safe errors to that
+// generic error type.
+// ============================================================
+const useSecureCookies = process.env.NODE_ENV === "production";
+const cookiePrefix = useSecureCookies ? "__Secure-" : "";
 
 /**
  * NextAuth configuration for Edge Runtime (middleware).
@@ -73,21 +85,69 @@ console.log(`[AUTH_CONFIG_EDGE] VERCEL_URL: ${process.env.VERCEL_URL || 'NOT SET
  * It's used by the middleware for route protection.
  *
  * The full auth.ts config extends this and adds the Prisma adapter.
+ *
+ * IMPORTANT: Cookie names MUST match auth.ts to prevent state/CSRF
+ * validation failures during the OAuth callback.
  */
 export const authConfig: NextAuthConfig = {
   trustHost: true,
-  secret: edgeAuthSecret || undefined,
   session: {
     strategy: "jwt",
     maxAge: 30 * 24 * 60 * 60, // 30 days
+  },
+  cookies: {
+    sessionToken: {
+      name: `${cookiePrefix}next-auth.session-token`,
+      options: {
+        httpOnly: true,
+        sameSite: "lax",
+        path: "/",
+        secure: useSecureCookies,
+      },
+    },
+    callbackUrl: {
+      name: `${cookiePrefix}next-auth.callback-url`,
+      options: {
+        sameSite: "lax",
+        path: "/",
+        secure: useSecureCookies,
+      },
+    },
+    csrfToken: {
+      name: `${useSecureCookies ? "__Host-" : ""}next-auth.csrf-token`,
+      options: {
+        httpOnly: true,
+        sameSite: "lax",
+        path: "/",
+        secure: useSecureCookies,
+      },
+    },
+    pkceCodeVerifier: {
+      name: `${cookiePrefix}authjs.pkce.code_verifier`,
+      options: {
+        httpOnly: true,
+        sameSite: "lax",
+        path: "/",
+        secure: useSecureCookies,
+        maxAge: 0, // PKCE disabled — using state checks only
+      },
+    },
+    state: {
+      name: `${cookiePrefix}next-auth.state`,
+      options: {
+        httpOnly: true,
+        sameSite: "lax",
+        path: "/",
+        secure: useSecureCookies,
+        maxAge: 60 * 15, // 15 minutes
+      },
+    },
   },
   pages: {
     signIn: "/ytpm/login",
     error: "/ytpm/login",
   },
   providers: [
-    // Note: These are placeholder configs for Edge Runtime
-    // The actual authorize logic runs in the full auth.ts
     GoogleProvider({
       clientId: edgeGoogleClientId,
       clientSecret: edgeGoogleClientSecret,

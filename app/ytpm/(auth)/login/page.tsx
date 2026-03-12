@@ -24,7 +24,11 @@ const authErrorMessages: Record<string, string> = {
   AccessDenied: "Acesso negado. Verifique as permissões da sua conta Google.",
 
   // Configuration errors
-  Configuration: "Erro de configuração do servidor de autenticação. Verifique se GOOGLE_CLIENT_ID, GOOGLE_CLIENT_SECRET, AUTH_SECRET e NEXTAUTH_URL estão configurados corretamente no Vercel (NEXTAUTH_URL não pode ser localhost em produção).",
+  // Note: Auth.js v5 maps ALL non-client-safe errors to "Configuration",
+  // including database/adapter errors, state cookie validation failures,
+  // and provider misconfiguration. Check the Vercel Function Logs for the
+  // actual error (look for "[AUTH]" or "NextAuth internal error" entries).
+  Configuration: "Erro interno do servidor durante a autenticação. Isso pode ser causado por: (1) erro de conexão com o banco de dados, (2) variáveis de ambiente ausentes (GOOGLE_CLIENT_ID, GOOGLE_CLIENT_SECRET, AUTH_SECRET), ou (3) cookies de estado perdidos. Verifique os logs do servidor no Vercel para mais detalhes.",
   MissingSecret: "Erro de configuração: AUTH_SECRET não está definido no servidor. Configure esta variável no Vercel.",
   MissingAuthorize: "Erro de configuração do servidor. Contate o suporte.",
 
@@ -91,11 +95,15 @@ export default async function LoginPage({
     console.log(`[LOGIN_PAGE] NEXTAUTH_URL: ${process.env.NEXTAUTH_URL || 'NOT SET'}`);
     console.log(`[LOGIN_PAGE] DATABASE_URL: ${process.env.DATABASE_URL ? 'SET' : '❌ NOT SET'}`);
     if (errorCode === 'Configuration') {
-      console.error(`[LOGIN_PAGE] ❌ "Configuration" error typically means:`);
-      console.error(`[LOGIN_PAGE] ❌ 1. GOOGLE_CLIENT_ID or GOOGLE_CLIENT_SECRET is missing/empty`);
-      console.error(`[LOGIN_PAGE] ❌ 2. AUTH_SECRET/NEXTAUTH_SECRET is missing`);
-      console.error(`[LOGIN_PAGE] ❌ 3. The OAuth provider config is invalid`);
-      console.error(`[LOGIN_PAGE] ❌ Check server logs above for [ROOT_AUTH_INIT] or [AUTH_CONFIG_EDGE] messages.`);
+      console.error(`[LOGIN_PAGE] ❌ "Configuration" error in Auth.js v5 is a CATCH-ALL for any server-side error.`);
+      console.error(`[LOGIN_PAGE] ❌ Common causes:`);
+      console.error(`[LOGIN_PAGE] ❌ 1. Database/adapter error (Prisma can't connect, schema mismatch, missing tables)`);
+      console.error(`[LOGIN_PAGE] ❌ 2. State cookie validation failure (cookie lost during OAuth redirect)`);
+      console.error(`[LOGIN_PAGE] ❌ 3. GOOGLE_CLIENT_ID or GOOGLE_CLIENT_SECRET is missing/empty`);
+      console.error(`[LOGIN_PAGE] ❌ 4. AUTH_SECRET/NEXTAUTH_SECRET is missing`);
+      console.error(`[LOGIN_PAGE] ❌ 5. Token exchange with Google failed (wrong redirect_uri or credentials)`);
+      console.error(`[LOGIN_PAGE] ❌ Check server logs above for [AUTH] "NextAuth internal error" entries to find the ACTUAL error.`);
+      console.error(`[LOGIN_PAGE] ❌ Look for: AdapterError, InvalidCheck, CallbackRouteError, TypeError`);
     }
   }
 

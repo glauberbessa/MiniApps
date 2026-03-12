@@ -26,18 +26,33 @@ if (!process.env.AUTH_SECRET && process.env.NEXTAUTH_SECRET) {
 if (!process.env.AUTH_URL && process.env.NEXTAUTH_URL) {
   process.env.AUTH_URL = process.env.NEXTAUTH_URL;
 }
+// Auto-detect AUTH_URL from VERCEL_URL when neither AUTH_URL nor NEXTAUTH_URL is set
+if (!process.env.AUTH_URL && process.env.VERCEL_URL) {
+  process.env.AUTH_URL = `https://${process.env.VERCEL_URL}`;
+}
 
 // ============================================================
 // GOOGLE OAUTH CREDENTIAL VALIDATION
+// NextAuth v5 supports both GOOGLE_CLIENT_ID and AUTH_GOOGLE_ID.
+// We resolve whichever is available. Passing undefined (not '')
+// lets NextAuth fall back to its own auto-detection.
 // ============================================================
 const googleCredentials = {
-  clientId: process.env.GOOGLE_CLIENT_ID || '',
-  clientSecret: process.env.GOOGLE_CLIENT_SECRET || '',
+  clientId: process.env.GOOGLE_CLIENT_ID || process.env.AUTH_GOOGLE_ID || undefined,
+  clientSecret: process.env.GOOGLE_CLIENT_SECRET || process.env.AUTH_GOOGLE_SECRET || undefined,
 };
 
 if (!googleCredentials.clientId || !googleCredentials.clientSecret) {
-  console.error(`[AUTH_INIT] CRITICAL: Missing Google OAuth credentials (GOOGLE_CLIENT_ID and/or GOOGLE_CLIENT_SECRET). OAuth login will fail.`);
+  console.error(
+    `[AUTH_INIT] CRITICAL: Missing Google OAuth credentials. ` +
+    `Checked GOOGLE_CLIENT_ID/AUTH_GOOGLE_ID and GOOGLE_CLIENT_SECRET/AUTH_GOOGLE_SECRET. OAuth login will fail.`
+  );
 }
+
+console.log(`[AUTH_INIT] Google Client ID: ${googleCredentials.clientId ? `SET (${googleCredentials.clientId.length} chars)` : 'NOT SET'}`);
+console.log(`[AUTH_INIT] Google Client Secret: ${googleCredentials.clientSecret ? `SET (${googleCredentials.clientSecret.length} chars)` : 'NOT SET'}`);
+console.log(`[AUTH_INIT] AUTH_URL: ${process.env.AUTH_URL || 'NOT SET (auto-detect from request)'}`);
+console.log(`[AUTH_INIT] VERCEL_URL: ${process.env.VERCEL_URL || 'NOT SET'}`);
 
 // Get the auth secret with proper validation
 function getAuthSecret(): string {

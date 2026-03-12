@@ -1,5 +1,4 @@
 import { PrismaClient } from "@prisma/client";
-import { PrismaNeon } from "@prisma/adapter-neon";
 import "server-only";
 
 const globalForPrisma = globalThis as unknown as {
@@ -17,22 +16,8 @@ function createPrismaClient(): PrismaClient {
     throw new Error("DATABASE_URL environment variable is not set");
   }
 
-  // Se for localhost, usa conexão TCP padrão (sem driver serverless)
-  if (connectionString.includes("localhost")) {
-    console.log("[PRISMA] Using local TCP connection (localhost detected)");
-    return new PrismaClient({
-      log:
-        process.env.NODE_ENV === "development"
-          ? ["query", "error", "warn"]
-          : ["error"],
-    });
-  }
-
-  console.log("[PRISMA] Using Neon serverless adapter");
-  const adapter = new PrismaNeon({ connectionString });
-
+  console.log("[PRISMA] Using Supabase PostgreSQL connection");
   return new PrismaClient({
-    adapter,
     log:
       process.env.NODE_ENV === "development"
         ? ["query", "error", "warn"]

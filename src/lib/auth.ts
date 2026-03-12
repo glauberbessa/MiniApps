@@ -23,29 +23,51 @@ import {
 if (!process.env.AUTH_SECRET && process.env.NEXTAUTH_SECRET) {
   process.env.AUTH_SECRET = process.env.NEXTAUTH_SECRET;
 }
-if (!process.env.AUTH_URL && process.env.NEXTAUTH_URL) {
-  process.env.AUTH_URL = process.env.NEXTAUTH_URL;
-}
-// Auto-detect AUTH_URL from VERCEL_URL when neither AUTH_URL nor NEXTAUTH_URL is set
-if (!process.env.AUTH_URL && process.env.VERCEL_URL) {
-  process.env.AUTH_URL = `https://${process.env.VERCEL_URL}`;
+
+// URL resolution: On Vercel, prefer VERCEL_URL over localhost NEXTAUTH_URL
+// to prevent OAuth callback mismatches when dev env vars are copied to production.
+if (process.env.VERCEL_URL) {
+  const nextAuthUrl = process.env.NEXTAUTH_URL || process.env.AUTH_URL || '';
+  const isLocalhost = nextAuthUrl.includes('localhost') || nextAuthUrl.includes('127.0.0.1');
+  if (!nextAuthUrl || isLocalhost) {
+    process.env.AUTH_URL = `https://${process.env.VERCEL_URL}`;
+    if (isLocalhost) {
+      console.warn(
+        `[AUTH_INIT] WARNING: NEXTAUTH_URL contains localhost (${nextAuthUrl}) ` +
+        `but running on Vercel. Overriding AUTH_URL to https://${process.env.VERCEL_URL}`
+      );
+    }
+  } else {
+    if (!process.env.AUTH_URL) {
+      process.env.AUTH_URL = nextAuthUrl;
+    }
+  }
+} else {
+  if (!process.env.AUTH_URL && process.env.NEXTAUTH_URL) {
+    process.env.AUTH_URL = process.env.NEXTAUTH_URL;
+  }
 }
 
 // ============================================================
 // GOOGLE OAUTH CREDENTIAL VALIDATION
 // NextAuth v5 supports both GOOGLE_CLIENT_ID and AUTH_GOOGLE_ID.
-// We resolve whichever is available. Passing undefined (not '')
-// lets NextAuth fall back to its own auto-detection.
+// We resolve whichever is available. Use empty string fallback
+// so GoogleProvider doesn't receive undefined (which causes a
+// cryptic "Configuration" error instead of a clear message).
 // ============================================================
 const googleCredentials = {
-  clientId: process.env.GOOGLE_CLIENT_ID || process.env.AUTH_GOOGLE_ID || undefined,
-  clientSecret: process.env.GOOGLE_CLIENT_SECRET || process.env.AUTH_GOOGLE_SECRET || undefined,
+  clientId: process.env.GOOGLE_CLIENT_ID || process.env.AUTH_GOOGLE_ID || '',
+  clientSecret: process.env.GOOGLE_CLIENT_SECRET || process.env.AUTH_GOOGLE_SECRET || '',
 };
 
 if (!googleCredentials.clientId || !googleCredentials.clientSecret) {
   console.error(
     `[AUTH_INIT] CRITICAL: Missing Google OAuth credentials. ` +
-    `Checked GOOGLE_CLIENT_ID/AUTH_GOOGLE_ID and GOOGLE_CLIENT_SECRET/AUTH_GOOGLE_SECRET. OAuth login will fail.`
+    `Checked GOOGLE_CLIENT_ID/AUTH_GOOGLE_ID and GOOGLE_CLIENT_SECRET/AUTH_GOOGLE_SECRET. OAuth login will fail. ` +
+    `GOOGLE_CLIENT_ID=${process.env.GOOGLE_CLIENT_ID ? 'SET' : 'MISSING'}, ` +
+    `AUTH_GOOGLE_ID=${process.env.AUTH_GOOGLE_ID ? 'SET' : 'MISSING'}, ` +
+    `GOOGLE_CLIENT_SECRET=${process.env.GOOGLE_CLIENT_SECRET ? 'SET' : 'MISSING'}, ` +
+    `AUTH_GOOGLE_SECRET=${process.env.AUTH_GOOGLE_SECRET ? 'SET' : 'MISSING'}`
   );
 }
 

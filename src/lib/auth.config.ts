@@ -11,26 +11,49 @@ import CredentialsProvider from "next-auth/providers/credentials";
 if (!process.env.AUTH_SECRET && process.env.NEXTAUTH_SECRET) {
   process.env.AUTH_SECRET = process.env.NEXTAUTH_SECRET;
 }
-if (!process.env.AUTH_URL && process.env.NEXTAUTH_URL) {
-  process.env.AUTH_URL = process.env.NEXTAUTH_URL;
-}
-// Auto-detect AUTH_URL from VERCEL_URL when neither AUTH_URL nor NEXTAUTH_URL is set
-if (!process.env.AUTH_URL && process.env.VERCEL_URL) {
-  process.env.AUTH_URL = `https://${process.env.VERCEL_URL}`;
+
+// URL resolution: On Vercel, prefer VERCEL_URL over localhost NEXTAUTH_URL
+// to prevent OAuth callback mismatches when dev env vars are copied to production.
+if (process.env.VERCEL_URL) {
+  const nextAuthUrl = process.env.NEXTAUTH_URL || process.env.AUTH_URL || '';
+  const isLocalhost = nextAuthUrl.includes('localhost') || nextAuthUrl.includes('127.0.0.1');
+  if (!nextAuthUrl || isLocalhost) {
+    process.env.AUTH_URL = `https://${process.env.VERCEL_URL}`;
+    if (isLocalhost) {
+      console.warn(
+        `[AUTH_CONFIG_EDGE] WARNING: NEXTAUTH_URL contains localhost (${nextAuthUrl}) ` +
+        `but running on Vercel. Overriding AUTH_URL to https://${process.env.VERCEL_URL}`
+      );
+    }
+  } else {
+    // Use the explicitly configured URL (non-localhost)
+    if (!process.env.AUTH_URL) {
+      process.env.AUTH_URL = nextAuthUrl;
+    }
+  }
+} else {
+  // Not on Vercel - use NEXTAUTH_URL as fallback
+  if (!process.env.AUTH_URL && process.env.NEXTAUTH_URL) {
+    process.env.AUTH_URL = process.env.NEXTAUTH_URL;
+  }
 }
 
 // NextAuth v5 supports both GOOGLE_CLIENT_ID and AUTH_GOOGLE_ID conventions.
-// Resolve whichever is available; pass undefined (not '') so NextAuth can
-// fall back to its own auto-detection when neither is set.
-const edgeGoogleClientId = process.env.GOOGLE_CLIENT_ID || process.env.AUTH_GOOGLE_ID || undefined;
-const edgeGoogleClientSecret = process.env.GOOGLE_CLIENT_SECRET || process.env.AUTH_GOOGLE_SECRET || undefined;
+// Resolve whichever is available. Use empty string fallback so GoogleProvider
+// doesn't receive undefined (which causes a cryptic "Configuration" error).
+const edgeGoogleClientId = process.env.GOOGLE_CLIENT_ID || process.env.AUTH_GOOGLE_ID || '';
+const edgeGoogleClientSecret = process.env.GOOGLE_CLIENT_SECRET || process.env.AUTH_GOOGLE_SECRET || '';
 const edgeAuthSecret = process.env.AUTH_SECRET || process.env.NEXTAUTH_SECRET || '';
 
 if (!edgeGoogleClientId || !edgeGoogleClientSecret) {
   console.error(
     `[AUTH_CONFIG_EDGE] CRITICAL: Missing Google OAuth credentials. ` +
     `Checked GOOGLE_CLIENT_ID/AUTH_GOOGLE_ID and GOOGLE_CLIENT_SECRET/AUTH_GOOGLE_SECRET. ` +
-    `OAuth login will fail with "Configuration" error.`
+    `OAuth login will fail with "Configuration" error. ` +
+    `GOOGLE_CLIENT_ID=${process.env.GOOGLE_CLIENT_ID ? 'SET' : 'MISSING'}, ` +
+    `AUTH_GOOGLE_ID=${process.env.AUTH_GOOGLE_ID ? 'SET' : 'MISSING'}, ` +
+    `GOOGLE_CLIENT_SECRET=${process.env.GOOGLE_CLIENT_SECRET ? 'SET' : 'MISSING'}, ` +
+    `AUTH_GOOGLE_SECRET=${process.env.AUTH_GOOGLE_SECRET ? 'SET' : 'MISSING'}`
   );
 }
 if (!edgeAuthSecret) {
@@ -66,8 +89,8 @@ export const authConfig: NextAuthConfig = {
     // Note: These are placeholder configs for Edge Runtime
     // The actual authorize logic runs in the full auth.ts
     GoogleProvider({
-      clientId: edgeGoogleClientId as string,
-      clientSecret: edgeGoogleClientSecret as string,
+      clientId: edgeGoogleClientId,
+      clientSecret: edgeGoogleClientSecret,
       authorization: {
         params: {
           scope:

@@ -27,7 +27,7 @@ This file provides guidance for AI assistants working with this codebase.
 **Backend:**
 - NextAuth.js 5.0.0-beta.25 (authentication)
 - Prisma 6.4.1 (ORM)
-- PostgreSQL via Neon (serverless)
+- PostgreSQL via Supabase (serverless)
 - Google OAuth + YouTube API
 - Resend 6.9.1 (transactional emails)
 - bcryptjs 3.0.3 (password hashing)
@@ -364,7 +364,7 @@ Logger.error(LogCategory.AUTH, 'Token refresh failed', { error })
 2. **PKCE disabled** - State-only auth to avoid cookie loss in cold starts
 3. **Middleware for cleanup** - Removes stale PKCE cookies
 4. **Multiple session recovery** - Fallbacks: userId -> email -> recent user
-5. **Neon serverless PostgreSQL** - Edge runtime support
+5. **Supabase PostgreSQL** - Edge runtime support with connection pooling
 6. **bcryptjs over bcrypt** - Serverless/Vercel compatibility
 7. **Resend for emails** - Simple transactional email service
 8. **Rate limiting** - Protect auth endpoints from abuse

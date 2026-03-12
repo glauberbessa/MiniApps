@@ -5,7 +5,7 @@ Guia para configurar o sistema de autenticação com e-mail/senha na Vercel.
 ## Pré-requisitos
 
 - Projeto MiniApps já configurado na Vercel
-- Banco de dados PostgreSQL (Neon, Supabase, etc.) configurado
+- Banco de dados PostgreSQL (Supabase) configurado
 - Conta no Google Cloud para OAuth (já existente)
 
 ## Variáveis de Ambiente

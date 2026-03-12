@@ -4,24 +4,25 @@ Este guia explica como publicar o projeto em hospedagem gratuita com PostgreSQL 
 
 ## Opções de Hospedagem Gratuita
 
-### Opção 1: Vercel + Neon (Recomendado)
+### Opção 1: Vercel + Supabase (Recomendado)
 
 Esta é a combinação mais recomendada para projetos Next.js.
 
-#### Passo 1: Criar conta no Neon (PostgreSQL Gratuito)
+#### Passo 1: Criar conta no Supabase
 
-1. Acesse [neon.tech](https://neon.tech) e crie uma conta
-2. Crie um novo projeto
-3. Copie a connection string que será algo como:
+1. Acesse [supabase.com](https://supabase.com) e crie uma conta
+2. Crie um novo projeto (escolha uma senha forte)
+3. Vá em Settings > Database > Connection string
+4. Copie a URI (modo Session/Transaction pooling):
    ```
-   postgresql://usuario:senha@ep-xxxxx.us-east-2.aws.neon.tech/neondb?sslmode=require
+   postgresql://postgres.[project-ref]:[password]@aws-0-us-east-1.pooler.supabase.com:6543/postgres?sslmode=require
    ```
 
-**Limites do plano gratuito Neon:**
-- 512 MB de armazenamento
-- 1 projeto
-- 10 branches
-- Compute: 0.25 vCPU, 1 GB RAM
+**Limites do plano gratuito Supabase:**
+- 500 MB de banco de dados
+- 1 GB de armazenamento de arquivos
+- 2 GB de bandwidth
+- Pausa após 7 dias de inatividade
 
 #### Passo 2: Deploy no Vercel
 
@@ -30,7 +31,7 @@ Esta é a combinação mais recomendada para projetos Next.js.
 3. Importe o repositório `YTPlaylistManagerProWeb`
 4. Configure as variáveis de ambiente:
    ```
-   DATABASE_URL=<sua-connection-string-do-neon>
+   DATABASE_URL=<sua-connection-string-do-supabase>
    NEXTAUTH_URL=https://seu-projeto.vercel.app
    NEXTAUTH_SECRET=<gere-com-openssl-rand-base64-32>
    GOOGLE_CLIENT_ID=<seu-client-id>
@@ -46,23 +47,22 @@ Esta é a combinação mais recomendada para projetos Next.js.
 
 ---
 
-### Opção 2: Vercel + Supabase
+### Opção 2: Vercel + Neon (Alternativo)
 
-#### Passo 1: Criar conta no Supabase
+#### Passo 1: Criar conta no Neon
 
-1. Acesse [supabase.com](https://supabase.com) e crie uma conta
-2. Crie um novo projeto (escolha uma senha forte)
-3. Vá em Settings > Database > Connection string
-4. Copie a URI (modo Session/Transaction pooling para melhor performance):
+1. Acesse [neon.tech](https://neon.tech) e crie uma conta
+2. Crie um novo projeto
+3. Copie a connection string que será algo como:
    ```
-   postgresql://postgres.[project-ref]:[password]@aws-0-us-east-1.pooler.supabase.com:6543/postgres
+   postgresql://usuario:senha@ep-xxxxx.us-east-2.aws.neon.tech/neondb?sslmode=require
    ```
 
-**Limites do plano gratuito Supabase:**
-- 500 MB de banco de dados
-- 1 GB de armazenamento de arquivos
-- 2 GB de bandwidth
-- Pausa após 7 dias de inatividade
+**Limites do plano gratuito Neon:**
+- 512 MB de armazenamento
+- 1 projeto
+- 10 branches
+- Compute: 0.25 vCPU, 1 GB RAM
 
 #### Passo 2: Deploy no Vercel
 (Mesmo processo da Opção 1)
@@ -99,11 +99,11 @@ Railway oferece hospedagem + PostgreSQL em uma única plataforma.
 
 ---
 
-## Configuração Detalhada (Vercel + Neon)
+## Configuração Detalhada (Vercel + Supabase)
 
 ### 1. Preparar o Banco de Dados
 
-Após criar seu banco no Neon, execute as migrations do Prisma:
+Após criar seu banco no Supabase, execute as migrations do Prisma:
 
 ```bash
 # Localmente, configure a DATABASE_URL temporariamente
@@ -223,9 +223,10 @@ npx prisma studio
 
 ## Recomendação Final
 
-Para este projeto, recomendo **Vercel + Neon**:
-- Melhor integração com Next.js
-- PostgreSQL serverless sem cold starts
-- Fácil configuração
-- Plano gratuito generoso
+Para este projeto, recomendo **Vercel + Supabase**:
+- Melhor integração com Next.js e Prisma
+- PostgreSQL serverless com performance consistente
+- Conexão pooling nativa (port 6543)
+- Fácil configuração e dashboard intuitivo
+- Plano gratuito generoso (500 MB)
 - Deploy automático via GitHub

@@ -4,11 +4,40 @@ import { UI_TEXT } from "@/lib/i18n";
 import { signInWithGoogle } from "./actions";
 
 const authErrorMessages: Record<string, string> = {
+  // Database / Adapter errors
   AdapterError: "Erro de conexão com o banco de dados. Tente novamente em alguns instantes.",
+  MissingAdapter: "Erro de configuração do servidor. Contate o suporte.",
+
+  // OAuth flow errors (NextAuth v4 names)
   OAuthCallback: "Erro ao autenticar com o Google. Tente novamente.",
   OAuthSignin: "Erro ao iniciar autenticação com o Google.",
-  OAuthAccountNotLinked: "Esta conta já está vinculada a outro método de login.",
+  OAuthCreateAccount: "Erro ao criar conta com o Google. Tente novamente.",
+  OAuthAccountNotLinked: "Este e-mail já está vinculado a outro método de login. Faça login com e-mail e senha.",
+
+  // OAuth flow errors (Auth.js v5 names)
+  OAuthCallbackError: "Erro ao autenticar com o Google. Tente novamente.",
+  OAuthSignInError: "Erro ao iniciar autenticação com o Google.",
+  CallbackRouteError: "Erro no retorno da autenticação do Google. Tente novamente.",
+  AccountNotLinked: "Este e-mail já está vinculado a outro método de login. Faça login com e-mail e senha.",
+
+  // Access / Permission errors
   AccessDenied: "Acesso negado. Verifique as permissões da sua conta Google.",
+
+  // Configuration errors
+  Configuration: "Erro de configuração do servidor de autenticação. Contate o suporte.",
+  MissingSecret: "Erro de configuração do servidor. Contate o suporte.",
+  MissingAuthorize: "Erro de configuração do servidor. Contate o suporte.",
+
+  // Session errors
+  SessionRequired: "Sua sessão expirou. Faça login novamente.",
+
+  // Credential errors
+  CredentialsSignin: "E-mail ou senha incorretos.",
+
+  // Verification
+  Verification: "O link de verificação expirou ou já foi utilizado.",
+
+  // Generic fallback
   Default: "Ocorreu um erro na autenticação. Tente novamente.",
 };
 
@@ -134,7 +163,12 @@ export default async function LoginPage({
             role="alert"
           >
             <AlertCircle className="h-5 w-5 shrink-0 text-red-400 mt-0.5" />
-            <span>{errorMessage}</span>
+            <div className="flex flex-col gap-1">
+              <span>{errorMessage}</span>
+              {errorCode && (
+                <span className="text-xs text-red-400/60">Código: {errorCode}</span>
+              )}
+            </div>
           </div>
         )}
 

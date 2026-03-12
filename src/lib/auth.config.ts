@@ -26,6 +26,15 @@ export const authConfig: NextAuthConfig = {
     GoogleProvider({
       clientId: process.env.GOOGLE_CLIENT_ID!,
       clientSecret: process.env.GOOGLE_CLIENT_SECRET!,
+      authorization: {
+        params: {
+          scope:
+            "openid email profile https://www.googleapis.com/auth/youtube https://www.googleapis.com/auth/youtube.readonly",
+          access_type: "offline",
+          prompt: "consent",
+        },
+      },
+      checks: ["state"],
     }),
     CredentialsProvider({
       id: "credentials",

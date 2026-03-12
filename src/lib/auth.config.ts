@@ -3,23 +3,27 @@ import GoogleProvider from "next-auth/providers/google";
 import CredentialsProvider from "next-auth/providers/credentials";
 
 // ============================================================
-// EDGE RUNTIME: Google OAuth credential validation
+// EDGE RUNTIME: Environment variable compatibility for NextAuth v5
+// NextAuth v5 uses AUTH_SECRET and AUTH_URL internally, but many
+// users configure NEXTAUTH_SECRET and NEXTAUTH_URL (the v4 names).
+// We bridge them here so both work.
 // ============================================================
+if (!process.env.AUTH_SECRET && process.env.NEXTAUTH_SECRET) {
+  process.env.AUTH_SECRET = process.env.NEXTAUTH_SECRET;
+}
+if (!process.env.AUTH_URL && process.env.NEXTAUTH_URL) {
+  process.env.AUTH_URL = process.env.NEXTAUTH_URL;
+}
+
 const edgeGoogleClientId = process.env.GOOGLE_CLIENT_ID || '';
 const edgeGoogleClientSecret = process.env.GOOGLE_CLIENT_SECRET || '';
-
-console.log(`[AUTH_CONFIG_EDGE] ===== EDGE AUTH CONFIG INIT =====`);
-console.log(`[AUTH_CONFIG_EDGE] GOOGLE_CLIENT_ID: ${edgeGoogleClientId ? `SET (length=${edgeGoogleClientId.length}, prefix="${edgeGoogleClientId.substring(0, 12)}...")` : '❌ NOT SET - OAuth WILL FAIL'}`);
-console.log(`[AUTH_CONFIG_EDGE] GOOGLE_CLIENT_SECRET: ${edgeGoogleClientSecret ? `SET (length=${edgeGoogleClientSecret.length})` : '❌ NOT SET - OAuth WILL FAIL'}`);
-console.log(`[AUTH_CONFIG_EDGE] NODE_ENV: ${process.env.NODE_ENV}`);
-console.log(`[AUTH_CONFIG_EDGE] AUTH_SECRET: ${process.env.AUTH_SECRET ? 'SET' : 'NOT_SET'}`);
-console.log(`[AUTH_CONFIG_EDGE] NEXTAUTH_SECRET: ${process.env.NEXTAUTH_SECRET ? 'SET' : 'NOT_SET'}`);
-console.log(`[AUTH_CONFIG_EDGE] NEXTAUTH_URL: ${process.env.NEXTAUTH_URL || 'NOT_SET'}`);
+const edgeAuthSecret = process.env.AUTH_SECRET || process.env.NEXTAUTH_SECRET || '';
 
 if (!edgeGoogleClientId || !edgeGoogleClientSecret) {
-  console.error(`[AUTH_CONFIG_EDGE] ❌ CRITICAL: Missing Google OAuth credentials in Edge Runtime!`);
-  console.error(`[AUTH_CONFIG_EDGE] ❌ This WILL cause "Configuration" error on login.`);
-  console.error(`[AUTH_CONFIG_EDGE] ❌ Available env keys containing "GOOGLE": ${Object.keys(process.env).filter(k => k.includes('GOOGLE')).join(', ') || 'NONE'}`);
+  console.error(`[AUTH_CONFIG_EDGE] CRITICAL: Missing Google OAuth credentials. OAuth login will fail with "Configuration" error.`);
+}
+if (!edgeAuthSecret) {
+  console.error(`[AUTH_CONFIG_EDGE] CRITICAL: Missing AUTH_SECRET/NEXTAUTH_SECRET. Authentication will fail.`);
 }
 
 /**
@@ -32,6 +36,7 @@ if (!edgeGoogleClientId || !edgeGoogleClientSecret) {
  */
 export const authConfig: NextAuthConfig = {
   trustHost: true,
+  secret: edgeAuthSecret || undefined,
   session: {
     strategy: "jwt",
     maxAge: 30 * 24 * 60 * 60, // 30 days

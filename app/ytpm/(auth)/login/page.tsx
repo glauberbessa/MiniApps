@@ -24,8 +24,8 @@ const authErrorMessages: Record<string, string> = {
   AccessDenied: "Acesso negado. Verifique as permissões da sua conta Google.",
 
   // Configuration errors
-  Configuration: "Erro de configuração do servidor de autenticação. Contate o suporte.",
-  MissingSecret: "Erro de configuração do servidor. Contate o suporte.",
+  Configuration: "Erro de configuração do servidor de autenticação. Verifique se GOOGLE_CLIENT_ID, GOOGLE_CLIENT_SECRET, AUTH_SECRET e NEXTAUTH_URL estão configurados corretamente no Vercel (NEXTAUTH_URL não pode ser localhost em produção).",
+  MissingSecret: "Erro de configuração: AUTH_SECRET não está definido no servidor. Configure esta variável no Vercel.",
   MissingAuthorize: "Erro de configuração do servidor. Contate o suporte.",
 
   // Session errors

@@ -489,7 +489,7 @@ export function HomeGuest() {
             MINIAPPS
           </h1>
 
-          <p className="text-editorial-lg text-launcher-muted max-w-md mx-auto opacity-0 launcher-animate-unfold launcher-stagger-1">
+          <p className="text-editorial-lg text-launcher-muted mx-auto opacity-0 launcher-animate-unfold launcher-stagger-1 whitespace-nowrap">
             &ldquo;Sua central de aplicativos&rdquo;
           </p>
 

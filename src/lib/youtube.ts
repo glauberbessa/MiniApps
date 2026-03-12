@@ -31,7 +31,10 @@ export class YouTubeService {
     }
 
     try {
-      const oauth2Client = new google.auth.OAuth2();
+      const oauth2Client = new google.auth.OAuth2(
+        process.env.GOOGLE_CLIENT_ID,
+        process.env.GOOGLE_CLIENT_SECRET
+      );
       logger.debug("YOUTUBE_API", "OAuth2 client created for YouTubeService", {
         instanceId: this.instanceId,
       });

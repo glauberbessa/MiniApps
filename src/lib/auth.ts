@@ -15,66 +15,51 @@ import {
 } from "./rate-limit";
 
 // ============================================================
-// GOOGLE OAUTH CREDENTIAL VALIDATION
+// Environment variable compatibility for NextAuth v5
+// NextAuth v5 (@auth/core) uses AUTH_SECRET and AUTH_URL internally.
+// Bridge NEXTAUTH_SECRET → AUTH_SECRET and NEXTAUTH_URL → AUTH_URL
+// so both v4-style and v5-style env var names work.
 // ============================================================
-function validateGoogleCredentials(): { clientId: string; clientSecret: string } {
-  const clientId = process.env.GOOGLE_CLIENT_ID;
-  const clientSecret = process.env.GOOGLE_CLIENT_SECRET;
-
-  console.log(`[ROOT_AUTH_INIT] ===== GOOGLE OAUTH CREDENTIAL CHECK =====`);
-  console.log(`[ROOT_AUTH_INIT] GOOGLE_CLIENT_ID: ${clientId ? `SET (length=${clientId.length}, prefix="${clientId.substring(0, 12)}...")` : '❌ NOT SET'}`);
-  console.log(`[ROOT_AUTH_INIT] GOOGLE_CLIENT_SECRET: ${clientSecret ? `SET (length=${clientSecret.length}, prefix="${clientSecret.substring(0, 6)}...")` : '❌ NOT SET'}`);
-  console.log(`[ROOT_AUTH_INIT] NODE_ENV: ${process.env.NODE_ENV}`);
-  console.log(`[ROOT_AUTH_INIT] VERCEL: ${process.env.VERCEL || 'NOT_SET'}`);
-  console.log(`[ROOT_AUTH_INIT] NEXTAUTH_URL: ${process.env.NEXTAUTH_URL || 'NOT_SET'}`);
-  console.log(`[ROOT_AUTH_INIT] NEXT_PUBLIC_APP_URL: ${process.env.NEXT_PUBLIC_APP_URL || 'NOT_SET'}`);
-
-  if (!clientId) {
-    console.error(`[ROOT_AUTH_INIT] ❌ CRITICAL: GOOGLE_CLIENT_ID is missing! OAuth login WILL FAIL with "Configuration" error.`);
-    console.error(`[ROOT_AUTH_INIT] ❌ Set GOOGLE_CLIENT_ID in your .env or Vercel environment variables.`);
-    console.error(`[ROOT_AUTH_INIT] ❌ Available env keys containing "GOOGLE": ${Object.keys(process.env).filter(k => k.includes('GOOGLE')).join(', ') || 'NONE'}`);
-  }
-
-  if (!clientSecret) {
-    console.error(`[ROOT_AUTH_INIT] ❌ CRITICAL: GOOGLE_CLIENT_SECRET is missing! OAuth login WILL FAIL with "Configuration" error.`);
-    console.error(`[ROOT_AUTH_INIT] ❌ Set GOOGLE_CLIENT_SECRET in your .env or Vercel environment variables.`);
-  }
-
-  if (!clientId || !clientSecret) {
-    console.error(`[ROOT_AUTH_INIT] ❌ DUMP of all env keys (for debugging): ${Object.keys(process.env).sort().join(', ')}`);
-  }
-
-  // Return whatever we have (even if undefined cast to string) so NextAuth can show its own error too
-  return {
-    clientId: clientId || '',
-    clientSecret: clientSecret || '',
-  };
+if (!process.env.AUTH_SECRET && process.env.NEXTAUTH_SECRET) {
+  process.env.AUTH_SECRET = process.env.NEXTAUTH_SECRET;
+}
+if (!process.env.AUTH_URL && process.env.NEXTAUTH_URL) {
+  process.env.AUTH_URL = process.env.NEXTAUTH_URL;
 }
 
-const googleCredentials = validateGoogleCredentials();
+// ============================================================
+// GOOGLE OAUTH CREDENTIAL VALIDATION
+// ============================================================
+const googleCredentials = {
+  clientId: process.env.GOOGLE_CLIENT_ID || '',
+  clientSecret: process.env.GOOGLE_CLIENT_SECRET || '',
+};
+
+if (!googleCredentials.clientId || !googleCredentials.clientSecret) {
+  console.error(`[AUTH_INIT] CRITICAL: Missing Google OAuth credentials (GOOGLE_CLIENT_ID and/or GOOGLE_CLIENT_SECRET). OAuth login will fail.`);
+}
 
 // Get the auth secret with proper validation
 function getAuthSecret(): string {
-  const secret = process.env.AUTH_SECRET || process.env.NEXTAUTH_SECRET;
-
-  console.log(`[ROOT_AUTH_INIT] Checking secrets: AUTH_SECRET=${process.env.AUTH_SECRET ? 'SET' : 'NOT_SET'}, NEXTAUTH_SECRET=${process.env.NEXTAUTH_SECRET ? 'SET' : 'NOT_SET'}`);
+  // AUTH_SECRET is already bridged from NEXTAUTH_SECRET above if needed
+  const secret = process.env.AUTH_SECRET;
 
   if (secret) {
-    console.log(`[ROOT_AUTH_INIT] Using ${process.env.AUTH_SECRET ? 'AUTH_SECRET' : 'NEXTAUTH_SECRET'}`);
     return secret;
   }
 
-  // In production, we must have a secret - throw a clear error
+  // In production, we must have a secret
   if (process.env.NODE_ENV === "production" || process.env.VERCEL) {
     console.error(
-      "[Auth] CRITICAL: AUTH_SECRET or NEXTAUTH_SECRET environment variable is not set! " +
-      "Authentication will not work properly. Please set AUTH_SECRET in your Vercel environment variables."
+      "[AUTH_INIT] CRITICAL: Neither AUTH_SECRET nor NEXTAUTH_SECRET is set. " +
+      "Set AUTH_SECRET in your Vercel environment variables."
     );
+    // Use a deterministic fallback so JWTs survive across requests,
+    // but this is NOT secure - just prevents total breakage while debugging.
     const emergencyFallback = process.env.VERCEL_URL || process.env.VERCEL_GIT_COMMIT_SHA || "insecure-fallback-please-set-auth-secret";
     return `emergency-${emergencyFallback}`;
   }
 
-  console.warn("[Auth] Warning: No AUTH_SECRET set. Using development fallback.");
   return "development-secret-please-set-auth-secret-in-production";
 }
 
@@ -282,12 +267,6 @@ function withRetryAdapter(adapter: ReturnType<typeof PrismaAdapter>) {
   };
   return new Proxy(adapter, handler);
 }
-
-console.log(`[ROOT_AUTH_INIT] ===== STARTING NextAuth INITIALIZATION =====`);
-console.log(`[ROOT_AUTH_INIT] Auth secret source: ${process.env.AUTH_SECRET ? 'AUTH_SECRET' : process.env.NEXTAUTH_SECRET ? 'NEXTAUTH_SECRET' : 'FALLBACK'}`);
-console.log(`[ROOT_AUTH_INIT] Google clientId: ${googleCredentials.clientId ? `"${googleCredentials.clientId.substring(0, 12)}..." (length=${googleCredentials.clientId.length})` : '❌ EMPTY STRING'}`);
-console.log(`[ROOT_AUTH_INIT] Google clientSecret: ${googleCredentials.clientSecret ? `"${googleCredentials.clientSecret.substring(0, 6)}..." (length=${googleCredentials.clientSecret.length})` : '❌ EMPTY STRING'}`);
-console.log(`[ROOT_AUTH_INIT] Database URL: ${process.env.DATABASE_URL ? `SET (length=${process.env.DATABASE_URL.length})` : '❌ NOT SET'}`);
 
 export const { handlers, auth, signIn, signOut } = NextAuth({
   adapter: withRetryAdapter(PrismaAdapter(prisma)),

@@ -17,8 +17,8 @@ export const authConfig: NextAuthConfig = {
     maxAge: 30 * 24 * 60 * 60, // 30 days
   },
   pages: {
-    signIn: "/login",
-    error: "/login",
+    signIn: "/ytpm/login",
+    error: "/ytpm/login",
   },
   providers: [
     // Note: These are placeholder configs for Edge Runtime

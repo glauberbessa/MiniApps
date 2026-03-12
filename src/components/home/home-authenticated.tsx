@@ -123,7 +123,7 @@ function AppCard({ title, subtitle, description, icon: Icon, href, iconBg, glowC
       target={openInNewTab ? "_blank" : "_self"}
       rel={openInNewTab ? "noopener noreferrer" : undefined}
       aria-label={`${title} - ${description}`}
-      className="launcher-card-editorial group relative block p-8 md:p-10 focus-visible:outline-none opacity-0 launcher-animate-unfold"
+      className="launcher-card-editorial group relative block p-5 md:p-6 focus-visible:outline-none opacity-0 launcher-animate-unfold"
       onMouseEnter={() => setIsHovered(true)}
       onMouseLeave={() => setIsHovered(false)}
     >
@@ -150,14 +150,14 @@ function AppCard({ title, subtitle, description, icon: Icon, href, iconBg, glowC
 
       <div className="relative z-10">
         {/* Header do card */}
-        <div className="flex items-start gap-5 mb-6">
+        <div className="flex items-start gap-4 mb-3">
           <div className={`
-            relative w-16 h-16 rounded-xl flex items-center justify-center flex-shrink-0
+            relative w-12 h-12 rounded-xl flex items-center justify-center flex-shrink-0
             bg-gradient-to-br ${iconBg}
             shadow-lg transition-all duration-300
             ${isHovered ? `shadow-xl ${glowColor}` : ''}
           `}>
-            <Icon className="w-8 h-8 text-white" />
+            <Icon className="w-6 h-6 text-white" />
             <div className={`
               absolute inset-0 rounded-xl bg-white/20
               transition-opacity duration-300
@@ -177,14 +177,14 @@ function AppCard({ title, subtitle, description, icon: Icon, href, iconBg, glowC
           </div>
         </div>
 
-        <div className={`h-px mb-5 transition-all duration-300 ${isHovered ? 'bg-gradient-to-r from-transparent via-white/30 to-transparent' : 'bg-launcher-border'}`} aria-hidden="true" />
+        <div className={`h-px mb-3 transition-all duration-300 ${isHovered ? 'bg-gradient-to-r from-transparent via-white/30 to-transparent' : 'bg-launcher-border'}`} aria-hidden="true" />
 
-        <p className="text-ui text-launcher-muted leading-relaxed mb-6">
+        <p className="text-ui text-launcher-muted leading-relaxed mb-3">
           {description}
         </p>
 
         {features && (
-          <ul className="space-y-3 mb-8">
+          <ul className="space-y-1.5 mb-4">
             {features.map((feature, index) => (
               <li key={index} className="flex items-center gap-3 text-ui-sm">
                 <span className={`w-5 h-5 rounded-full flex items-center justify-center bg-gradient-to-br ${iconBg} flex-shrink-0`}>
@@ -242,7 +242,7 @@ function UserCard({ session }: { session: Session }) {
   }
 
   return (
-    <div className="launcher-card p-6 md:p-8 relative overflow-hidden">
+    <div className="launcher-card p-5 md:p-6 relative overflow-hidden">
       {/* Background decorativo */}
       <div className="absolute top-0 right-0 w-48 h-48 bg-gradient-to-bl from-emerald-500/5 to-transparent rounded-full -translate-y-1/2 translate-x-1/2" aria-hidden="true" />
 
@@ -360,23 +360,23 @@ export function HomeAuthenticated({ session }: HomeAuthenticatedProps) {
   const displayName = session.user?.name || session.user?.email?.split("@")[0] || "Usuário"
 
   return (
-    <div className="min-h-screen flex flex-col launcher-bg-mesh launcher-grain launcher-selection">
+    <div className="h-screen flex flex-col overflow-hidden launcher-bg-mesh launcher-grain launcher-selection">
       {/* Header */}
-      <header className="pt-16 pb-12 px-6 hero-launcher relative" role="banner">
+      <header className="pt-10 pb-6 px-6 hero-launcher relative" role="banner">
         <div className="absolute inset-0 overflow-hidden" aria-hidden="true">
           <div className="absolute top-1/4 left-1/4 w-96 h-96 bg-gradient-to-br from-white/[0.02] to-transparent rounded-full blur-3xl" />
           <div className="absolute bottom-1/4 right-1/4 w-64 h-64 bg-gradient-to-br from-white/[0.01] to-transparent rounded-full blur-2xl" />
         </div>
 
         <div className="max-w-4xl mx-auto text-center relative">
-          <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-launcher-surface border border-launcher-border mb-6 opacity-0 launcher-animate-unfold">
+          <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-launcher-surface border border-launcher-border mb-4 opacity-0 launcher-animate-unfold">
             <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
             <span className="text-data-sm text-launcher-muted tracking-wider uppercase">
               Bem-vindo de volta, {displayName.split(" ")[0]}
             </span>
           </div>
 
-          <h1 className="text-display-xl text-launcher-highlight mb-4 launcher-animate-title tracking-[0.15em]">
+          <h1 className="text-display-xl text-launcher-highlight mb-3 launcher-animate-title tracking-[0.15em]">
             MINIAPPS
           </h1>
 
@@ -384,7 +384,7 @@ export function HomeAuthenticated({ session }: HomeAuthenticatedProps) {
             &ldquo;Escolha um aplicativo para começar&rdquo;
           </p>
 
-          <div className="relative max-w-sm mx-auto mt-8 launcher-animate-line" aria-hidden="true">
+          <div className="relative max-w-sm mx-auto mt-6 launcher-animate-line" aria-hidden="true">
             <div className="h-px bg-gradient-to-r from-transparent via-launcher-border to-transparent" />
             <div className="absolute inset-0 h-px bg-gradient-to-r from-transparent via-white/20 to-transparent animate-pulse" />
           </div>
@@ -392,8 +392,8 @@ export function HomeAuthenticated({ session }: HomeAuthenticatedProps) {
       </header>
 
       {/* Conteúdo Principal */}
-      <main id="main-content" tabIndex={-1} className="flex-1 outline-none">
-        <section className="px-6 py-8">
+      <main id="main-content" tabIndex={-1} className="flex-1 min-h-0 outline-none">
+        <section className="px-6 py-4">
           <div className="max-w-6xl mx-auto">
             <div className="grid lg:grid-cols-3 gap-8">
               {/* Grid de Apps (2 colunas em desktop) */}
@@ -418,9 +418,9 @@ export function HomeAuthenticated({ session }: HomeAuthenticatedProps) {
       </main>
 
       {/* Footer */}
-      <footer className="py-10 px-6 border-t border-launcher-border/50 bg-gradient-to-t from-black/20 to-transparent" role="contentinfo">
+      <footer className="py-4 px-6 border-t border-launcher-border/50 bg-gradient-to-t from-black/20 to-transparent" role="contentinfo">
         <div className="max-w-5xl mx-auto">
-          <div className="flex flex-col md:flex-row justify-between items-center gap-8">
+          <div className="flex flex-col md:flex-row justify-between items-center gap-4">
             <div className="flex items-center gap-3">
               <span className="text-display-sm text-launcher-highlight tracking-[0.1em]">MINIAPPS</span>
               <span className="w-px h-4 bg-launcher-border" aria-hidden="true" />

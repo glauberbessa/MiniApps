@@ -56,11 +56,10 @@ export function VideoCard({
               <span className="text-xs text-muted-foreground">N/A</span>
             </div>
           )}
-        </div>
-
-        {/* Duration Badge */}
-        <div className="absolute bottom-1 right-1 bg-black/75 px-1.5 py-0.5 rounded text-xs font-medium text-white">
-          {formatDuration(video.durationInSeconds)}
+          {/* Duration Badge */}
+          <div className="absolute bottom-1 right-1 bg-black/75 px-1.5 py-0.5 rounded text-xs font-medium text-white">
+            {formatDuration(video.durationInSeconds)}
+          </div>
         </div>
       </div>
 

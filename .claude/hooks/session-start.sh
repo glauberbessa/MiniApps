@@ -2,7 +2,9 @@
 set -euo pipefail
 
 # SessionStart hook for Claude Code on the web
-# Installs Supabase CLI as a project dependency
+# Installs Supabase CLI as a project dependency (async mode)
+
+echo '{"async": true, "asyncTimeout": 300000}'
 
 # Only run in remote Claude Code environment
 if [ "${CLAUDE_CODE_REMOTE:-}" != "true" ]; then

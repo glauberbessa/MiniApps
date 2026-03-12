@@ -400,6 +400,7 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
         sameSite: "lax",
         path: "/",
         secure: useSecureCookies,
+        domain: process.env.AUTH_URL ? new URL(process.env.AUTH_URL).hostname : undefined,
         maxAge: 60 * 15,
       },
     },

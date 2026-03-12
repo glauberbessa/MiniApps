@@ -139,6 +139,7 @@ export const authConfig: NextAuthConfig = {
         sameSite: "lax",
         path: "/",
         secure: useSecureCookies,
+        domain: process.env.AUTH_URL ? new URL(process.env.AUTH_URL).hostname : undefined,
         maxAge: 60 * 15, // 15 minutes
       },
     },

@@ -60,7 +60,8 @@ export async function GET(request: NextRequest) {
       AUTH_GOOGLE_ID: process.env.AUTH_GOOGLE_ID ? "set" : "missing",
       GOOGLE_CLIENT_SECRET: process.env.GOOGLE_CLIENT_SECRET ? "set" : "missing",
       AUTH_GOOGLE_SECRET: process.env.AUTH_GOOGLE_SECRET ? "set" : "missing",
-      DATABASE_URL: process.env.DATABASE_URL ? "set" : "missing",
+      SUPABASE_URL: process.env.SUPABASE_URL ? "set" : "missing",
+      SUPABASE_SERVICE_ROLE_KEY: process.env.SUPABASE_SERVICE_ROLE_KEY ? "set" : "missing",
     },
     // Check for common URL configuration issues
     urlAnalysis: analyzeUrls(),
@@ -381,7 +382,7 @@ async function checkDatabaseStatus(): Promise<Record<string, unknown>> {
       guidance: missingTable
         ? [
             "Ensure all required tables exist in Supabase.",
-            "Confirm DATABASE_URL in Vercel points to the correct Supabase database.",
+            "Confirm SUPABASE_URL and SUPABASE_SERVICE_ROLE_KEY in Vercel point to the correct Supabase project.",
           ]
         : [],
     };
@@ -455,10 +456,13 @@ function generateAuthChecklist(
     };
   }
 
-  if (envVars?.DATABASE_URL === "set") {
-    checklist.database = { status: "ok", message: "Database URL is configured" };
+  if (envVars?.SUPABASE_URL === "set" && envVars?.SUPABASE_SERVICE_ROLE_KEY === "set") {
+    checklist.database = { status: "ok", message: "Supabase configuration is set" };
   } else {
-    checklist.database = { status: "error", message: "DATABASE_URL is not set" };
+    checklist.database = {
+      status: "error",
+      message: `Supabase configuration incomplete: SUPABASE_URL ${envVars?.SUPABASE_URL === "set" ? "✓" : "✗"}, SUPABASE_SERVICE_ROLE_KEY ${envVars?.SUPABASE_SERVICE_ROLE_KEY === "set" ? "✓" : "✗"}`,
+    };
   }
 
   const dbStatus = diagnostic.database as Record<string, unknown> | undefined;
@@ -468,7 +472,7 @@ function generateAuthChecklist(
       checklist.database = {
         status: "error",
         message: missingTable
-          ? `Database query failed: missing table ${missingTable}. Run prisma migrations against the production database.`
+          ? `Database query failed: missing table ${missingTable}. Ensure all tables are created in Supabase.`
           : `Database query failed: ${dbStatus.error ?? "Unknown error"}`,
       };
     }

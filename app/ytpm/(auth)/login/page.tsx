@@ -93,11 +93,12 @@ export default async function LoginPage({
     console.log(`[LOGIN_PAGE] GOOGLE_CLIENT_SECRET: ${process.env.GOOGLE_CLIENT_SECRET ? `SET (${process.env.GOOGLE_CLIENT_SECRET.length} chars)` : '❌ NOT SET'}`);
     console.log(`[LOGIN_PAGE] AUTH_SECRET: ${process.env.AUTH_SECRET ? 'SET' : 'NOT SET'}`);
     console.log(`[LOGIN_PAGE] NEXTAUTH_URL: ${process.env.NEXTAUTH_URL || 'NOT SET'}`);
-    console.log(`[LOGIN_PAGE] DATABASE_URL: ${process.env.DATABASE_URL ? 'SET' : '❌ NOT SET'}`);
+    console.log(`[LOGIN_PAGE] SUPABASE_URL: ${process.env.SUPABASE_URL ? 'SET' : '❌ NOT SET'}`);
+    console.log(`[LOGIN_PAGE] SUPABASE_SERVICE_ROLE_KEY: ${process.env.SUPABASE_SERVICE_ROLE_KEY ? 'SET' : '❌ NOT SET'}`);
     if (errorCode === 'Configuration') {
       console.error(`[LOGIN_PAGE] ❌ "Configuration" error in Auth.js v5 is a CATCH-ALL for any server-side error.`);
       console.error(`[LOGIN_PAGE] ❌ Common causes:`);
-      console.error(`[LOGIN_PAGE] ❌ 1. Database/adapter error (Prisma can't connect, schema mismatch, missing tables)`);
+      console.error(`[LOGIN_PAGE] ❌ 1. Supabase adapter error (missing SUPABASE_URL or SUPABASE_SERVICE_ROLE_KEY)`);
       console.error(`[LOGIN_PAGE] ❌ 2. State cookie validation failure (cookie lost during OAuth redirect)`);
       console.error(`[LOGIN_PAGE] ❌ 3. GOOGLE_CLIENT_ID or GOOGLE_CLIENT_SECRET is missing/empty`);
       console.error(`[LOGIN_PAGE] ❌ 4. AUTH_SECRET/NEXTAUTH_SECRET is missing`);

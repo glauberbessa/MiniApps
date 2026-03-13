@@ -25,8 +25,8 @@ This file provides guidance for AI assistants working with this codebase.
 - React Hook Form 7.50.1 + Zod 3.22.4 (forms)
 
 **Backend:**
-- NextAuth.js 5.0.0-beta.25 (authentication)
-- Prisma 6.4.1 (ORM)
+- NextAuth.js 5.0.0-beta.30 (authentication)
+- Supabase JS SDK 2.43.0 (database & auth)
 - PostgreSQL via Supabase (serverless)
 - Google OAuth + YouTube API
 - Resend 6.9.1 (transactional emails)
@@ -72,8 +72,9 @@ MiniApps/
 │   ├── lib/                  # Services & utilities
 │   │   ├── auth.ts           # NextAuth configuration
 │   │   ├── auth.config.ts    # Auth config (providers, callbacks)
+│   │   ├── supabase.ts       # Supabase JS SDK client
+│   │   ├── supabase-adapter.ts # NextAuth Supabase adapter
 │   │   ├── youtube.ts        # YouTubeService class
-│   │   ├── prisma.ts         # Prisma client singleton
 │   │   ├── quota.ts          # Quota management
 │   │   ├── logger.ts         # Structured logging
 │   │   ├── email.ts          # Email service (Resend)
@@ -86,9 +87,6 @@ MiniApps/
 │   ├── hooks/                # Custom React hooks
 │   ├── stores/               # Zustand stores
 │   └── types/                # TypeScript definitions
-├── prisma/
-│   ├── schema.prisma         # Database schema
-│   └── migrations/           # DB migrations
 ├── scripts/                  # Utility scripts
 ├── docs/                     # Documentation
 ├── YTPlaylistManagerProWeb/  # Standalone YTPM app
@@ -106,16 +104,11 @@ npm run dev              # Run launcher only (port 3000)
 npm run dev:all          # Run all 3 apps concurrently
 
 # Build & Production
-npm run build            # Generate Prisma + build Next.js
+npm run build            # Build Next.js
 npm start                # Production server
 
 # Code Quality
 npm run lint             # ESLint check
-
-# Database
-npm run db:push          # Push schema to database
-npm run db:migrate       # Run migrations
-npm run db:studio        # Open Prisma Studio
 ```
 
 ## Code Conventions
@@ -184,20 +177,22 @@ import { loginSchema } from '@/lib/validations/auth'
 
 **Key Files:**
 - `src/lib/auth.ts` - NextAuth configuration
-- `src/lib/auth.config.ts` - Providers and callbacks
+- `src/lib/auth.config.ts` - Auth providers and callbacks
+- `src/lib/supabase.ts` - Supabase JS SDK client
+- `src/lib/supabase-adapter.ts` - NextAuth Supabase adapter
 - `src/lib/password.ts` - Password hashing
 - `src/lib/tokens.ts` - Token generation
-- `src/lib/email.ts` - Email service
+- `src/lib/email.ts` - Email service (Resend)
 - `src/lib/rate-limit.ts` - Rate limiting
 - `src/lib/validations/auth.ts` - Zod schemas
-- `middleware.ts` - PKCE cookie cleanup
+- `middleware.ts` - Auth middleware for protected routes
 
 ### Auth Validation Schemas
 ```typescript
 import { loginSchema, registerSchema, forgotPasswordSchema, resetPasswordSchema, changePasswordSchema } from '@/lib/validations/auth'
 ```
 
-## Database Schema (Prisma)
+## Database Schema (Supabase PostgreSQL)
 
 **Core Models:**
 - `User` - User profile with authentication fields:
@@ -264,15 +259,16 @@ YouTubeService.transferVideos(accessToken, sourcePlaylistId, targetPlaylistId, v
 Required for operation:
 ```
 # NextAuth
-AUTH_SECRET=             # NextAuth secret
-NEXTAUTH_URL=            # Base URL for auth
+AUTH_SECRET=             # NextAuth JWT signing secret
+NEXTAUTH_URL=            # Base URL for auth callbacks
 
 # Google OAuth
 GOOGLE_CLIENT_ID=        # Google OAuth client ID
 GOOGLE_CLIENT_SECRET=    # Google OAuth client secret
 
-# Database
-DATABASE_URL=            # PostgreSQL connection string
+# Supabase (Database & Auth)
+SUPABASE_URL=            # Supabase project URL
+SUPABASE_SERVICE_ROLE_KEY= # Supabase service role key (admin access)
 
 # Email (Resend)
 RESEND_API_KEY=          # Resend API key (optional in dev)
@@ -391,9 +387,10 @@ Logger.error(LogCategory.AUTH, 'Token refresh failed', { error })
 4. Use `cn()` for Tailwind class merging
 
 ### Database Changes
-1. Modify `prisma/schema.prisma`
-2. Run `npm run db:push` for development
-3. Create migration for production: `npx prisma migrate dev`
+1. Design schema changes in Supabase dashboard or SQL editor
+2. Use Supabase CLI for migrations if needed: `supabase db pull` / `supabase db push`
+3. Update any TypeScript types in `src/types/` to match schema changes
+4. Test changes in development against Supabase dev database
 
 ### Adding Auth Validation
 1. Add schema to `src/lib/validations/auth.ts`

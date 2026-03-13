@@ -1,7 +1,7 @@
 import NextAuth from "next-auth";
 import GoogleProvider from "next-auth/providers/google";
-import { PrismaAdapter } from "@auth/prisma-adapter";
-import { prisma } from "./prisma";
+import { supabase } from "./supabase";
+import { SupabaseAdapter } from "./supabase-adapter";
 import { google } from "googleapis";
 import { logger } from "./logger";
 
@@ -136,7 +136,7 @@ function extractMissingTable(message: string): string | null {
 }
 
 export const { handlers, auth, signIn, signOut } = NextAuth({
-  adapter: PrismaAdapter(prisma),
+  adapter: SupabaseAdapter(supabase),
   trustHost: true, // Required for Vercel deployment
   secret: getAuthSecret(),
   debug: process.env.NODE_ENV === "development" || process.env.AUTH_DEBUG === "true",
@@ -224,11 +224,17 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
           console.log(`[AUTH_CALLBACK:signIn] YouTube Channel ID: ${channelId || 'NOT_FOUND'}`);
 
           if (channelId && user.email) {
-            await prisma.user.update({
-              where: { email: user.email },
-              data: { youtubeChannelId: channelId },
-            });
-            console.log(`[AUTH_CALLBACK:signIn] DB Updated with Channel ID`);
+            const { error } = await supabase
+              .from("User")
+              .update({ youtubeChannelId: channelId })
+              .eq("email", user.email);
+            if (error) {
+              logger.error("AUTH_CALLBACK", "Failed to update YouTube Channel ID in DB", error, {
+                userEmail: user.email,
+              });
+            } else {
+              console.log(`[AUTH_CALLBACK:signIn] DB Updated with Channel ID`);
+            }
           }
         } catch (error) {
           logger.error(
@@ -273,9 +279,12 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
       // If we still don't have userId but have email, try to fetch from DB
       if (!token.userId && token.email) {
         try {
-          const dbUser = await prisma.user.findUnique({
-            where: { email: token.email as string },
-          });
+          const { data: dbUser, error } = await supabase
+            .from("User")
+            .select("id")
+            .eq("email", token.email as string)
+            .single();
+          if (error && error.code !== "PGRST116") throw error;
           if (dbUser) {
             token.userId = dbUser.id;
             console.log(`[AUTH_CALLBACK:jwt] userId fetched from DB by email`);

@@ -5,6 +5,25 @@ import { randomUUID } from "crypto";
 export function SupabaseAdapter(supabase: SupabaseClient): Adapter {
   return {
     async createUser(data) {
+      // Check if user already exists by email (important for OAuth linking)
+      const { data: existingUser, error: existingError } = await supabase
+        .from("User")
+        .select()
+        .eq("email", data.email)
+        .single();
+
+      // If user exists, return existing user instead of creating duplicate
+      if (existingUser) {
+        console.log("[ADAPTER] createUser - Found existing user by email:", data.email);
+        return existingUser;
+      }
+
+      // Only throw if there's a real error (not "no rows found")
+      if (existingError && existingError.code !== "PGRST116") {
+        console.error("[ADAPTER] createUser - Error checking for existing user:", existingError);
+        throw existingError;
+      }
+
       const { data: user, error } = await supabase
         .from("User")
         .insert([
@@ -33,6 +52,7 @@ export function SupabaseAdapter(supabase: SupabaseClient): Adapter {
           details: error.details,
           hint: error.hint,
           status: error.status,
+          email: data.email,
         });
         throw error;
       }
@@ -104,6 +124,60 @@ export function SupabaseAdapter(supabase: SupabaseClient): Adapter {
     },
 
     async linkAccount(data) {
+      // Check if account already exists (important for re-linking or token refresh)
+      const { data: existingAccount, error: existingError } = await supabase
+        .from("Account")
+        .select()
+        .eq("provider", data.provider)
+        .eq("providerAccountId", data.providerAccountId)
+        .single();
+
+      // If account exists, update it with new tokens
+      if (existingAccount) {
+        console.log("[ADAPTER] linkAccount - Found existing account, updating tokens:", {
+          provider: data.provider,
+          providerAccountId: data.providerAccountId,
+        });
+
+        const { data: account, error: updateError } = await supabase
+          .from("Account")
+          .update({
+            userId: data.userId,
+            type: data.type,
+            refresh_token: data.refresh_token,
+            access_token: data.access_token,
+            expires_at: data.expires_at,
+            token_type: data.token_type,
+            scope: data.scope,
+            id_token: data.id_token,
+            session_state: data.session_state,
+          })
+          .eq("provider", data.provider)
+          .eq("providerAccountId", data.providerAccountId)
+          .select()
+          .single();
+
+        if (updateError) {
+          console.error("[ADAPTER] linkAccount UPDATE ERROR:", {
+            code: updateError.code,
+            message: updateError.message,
+            details: updateError.details,
+            hint: updateError.hint,
+            status: updateError.status,
+            provider: data.provider,
+          });
+          throw updateError;
+        }
+        return account;
+      }
+
+      // Only throw if there's a real error (not "no rows found")
+      if (existingError && existingError.code !== "PGRST116") {
+        console.error("[ADAPTER] linkAccount - Error checking for existing account:", existingError);
+        throw existingError;
+      }
+
+      // Create new account link
       const { data: account, error } = await supabase
         .from("Account")
         .insert([

@@ -1,4 +1,4 @@
-import { prisma } from "@/lib/prisma";
+import { supabase } from "@/lib/supabase";
 import { YouTubeService } from "@/lib/youtube";
 import { getQuotaStatus } from "@/lib/quota";
 import { logger } from "@/lib/logger";
@@ -29,14 +29,17 @@ export async function initExport(
   logger.info("API", "initExport START", { userId });
 
   // Verificar se já existe progresso
-  const existingCount = await prisma.exportProgress.count({
-    where: { userId },
-  });
+  const { data: existing, error: countError } = await supabase
+    .from("ExportProgress")
+    .select("id, status")
+    .eq("userId", userId);
+
+  if (countError && countError.code !== 'PGRST116') throw countError;
+
+  const existingCount = existing?.length || 0;
 
   if (existingCount > 0) {
-    const completed = await prisma.exportProgress.count({
-      where: { userId, status: "completed" },
-    });
+    const completed = existing?.filter((e) => e.status === "completed").length || 0;
     logger.info("API", "initExport - already initialized", {
       userId,
       existingCount,
@@ -87,17 +90,19 @@ export async function initExport(
   }));
 
   if (playlistData.length > 0) {
-    await prisma.exportProgress.createMany({
-      data: playlistData,
-      skipDuplicates: true,
-    });
+    const { error: playlistError } = await supabase
+      .from("ExportProgress")
+      .insert(playlistData);
+    // Ignore duplicate key errors
+    if (playlistError && playlistError.code !== '23505') throw playlistError;
   }
 
   if (channelData.length > 0) {
-    await prisma.exportProgress.createMany({
-      data: channelData,
-      skipDuplicates: true,
-    });
+    const { error: channelError } = await supabase
+      .from("ExportProgress")
+      .insert(channelData);
+    // Ignore duplicate key errors
+    if (channelError && channelError.code !== '23505') throw channelError;
   }
 
   logger.info("API", "initExport END", {
@@ -179,13 +184,20 @@ export async function processBatch(
   logger.info("API", "processBatch - Step 2: Finding next incomplete source", { userId });
   let progress;
   try {
-    progress = await prisma.exportProgress.findFirst({
-      where: {
-        userId,
-        status: { in: ["in_progress", "pending"] },
-      },
-      orderBy: [{ sourceType: "desc" }, { status: "asc" }, { createdAt: "asc" }],
-    });
+    const { data: progressList, error: dbError } = await supabase
+      .from("ExportProgress")
+      .select("*")
+      .eq("userId", userId)
+      .in("status", ["in_progress", "pending"])
+      .order("sourceType", { ascending: false })
+      .order("status", { ascending: true })
+      .order("createdAt", { ascending: true })
+      .limit(1);
+
+    if (dbError) throw dbError;
+
+    progress = progressList && progressList.length > 0 ? progressList[0] : null;
+
     logger.info("API", "processBatch - Step 2 complete: findFirst returned", {
       userId,
       found: !!progress,
@@ -236,10 +248,13 @@ export async function processBatch(
       sourceId: progress.sourceId,
     });
     try {
-      await prisma.exportProgress.update({
-        where: { id: progress.id },
-        data: { status: "in_progress" },
-      });
+      const { error: updateError } = await supabase
+        .from("ExportProgress")
+        .update({ status: "in_progress" })
+        .eq("id", progress.id);
+
+      if (updateError) throw updateError;
+
       logger.info("API", "processBatch - Step 3 complete: Status updated to in_progress", {
         userId,
         progressId: progress.id,
@@ -303,23 +318,29 @@ export async function processBatch(
       });
       const saveStartTime = Date.now();
       try {
-        const result = await prisma.exportedVideo.createMany({
-          data: page.videos.map((v) => ({
-            userId,
-            videoId: v.videoId,
-            title: v.title,
-            channelId: v.channelId || null,
-            channelTitle: v.channelTitle || null,
-            language: v.language || null,
-            sourceType: progress.sourceType,
-            sourceId: progress.sourceId,
-            sourceTitle: progress.sourceTitle,
-            publishedAt: v.publishedAt || null,
-            thumbnailUrl: v.thumbnailUrl || null,
-          })),
-          skipDuplicates: true,
-        });
-        videosImported = result.count;
+        const videoData = page.videos.map((v) => ({
+          userId,
+          videoId: v.videoId,
+          title: v.title,
+          channelId: v.channelId || null,
+          channelTitle: v.channelTitle || null,
+          language: v.language || null,
+          sourceType: progress.sourceType,
+          sourceId: progress.sourceId,
+          sourceTitle: progress.sourceTitle,
+          publishedAt: v.publishedAt || null,
+          thumbnailUrl: v.thumbnailUrl || null,
+        }));
+
+        const { data, error: insertError } = await supabase
+          .from("ExportedVideo")
+          .insert(videoData)
+          .select("id");
+
+        // Count inserted records (on duplicate key, Supabase may return different behavior)
+        if (insertError && insertError.code !== '23505') throw insertError;
+
+        videosImported = data?.length || 0;
         const saveElapsed = Date.now() - saveStartTime;
         logger.info("API", "processBatch - Step 5 complete: Videos saved to database", {
           userId,
@@ -363,16 +384,21 @@ export async function processBatch(
       newTotalItems: page.totalResults || progress.totalItems,
     });
     try {
-      await prisma.exportProgress.update({
-        where: { id: progress.id },
-        data: {
-          lastPageToken: page.nextPageToken,
-          importedItems: { increment: page.videos.length },
+      const newImportedItems = (progress.importedItems || 0) + page.videos.length;
+
+      const { error: updateError } = await supabase
+        .from("ExportProgress")
+        .update({
+          lastPageToken: page.nextPageToken || null,
+          importedItems: newImportedItems,
           totalItems: page.totalResults || progress.totalItems,
-          lastImportedAt: new Date(),
+          lastImportedAt: new Date().toISOString(),
           status: isCompleted ? "completed" : "in_progress",
-        },
-      });
+        })
+        .eq("id", progress.id);
+
+      if (updateError) throw updateError;
+
       logger.info("API", "processBatch - Step 6 complete: Progress updated", {
         userId,
         progressId: progress.id,
@@ -524,13 +550,16 @@ export async function processBatch(
 
       // Marcar como completed para pular para a próxima fonte
       try {
-        await prisma.exportProgress.update({
-          where: { id: progress.id },
-          data: {
+        const { error: skipUpdateError } = await supabase
+          .from("ExportProgress")
+          .update({
             status: "completed",
-            lastImportedAt: new Date(),
-          },
-        });
+            lastImportedAt: new Date().toISOString(),
+          })
+          .eq("id", progress.id);
+
+        if (skipUpdateError) throw skipUpdateError;
+
         logger.info("API", "processBatch - Marked skipped source as completed", {
           userId,
           sourceId: progress.sourceId,
@@ -547,13 +576,19 @@ export async function processBatch(
 
       // Buscar próxima fonte para processar
       logger.info("API", "processBatch - Finding next source after skip", { userId });
-      const nextProgress = await prisma.exportProgress.findFirst({
-        where: {
-          userId,
-          status: { in: ["in_progress", "pending"] },
-        },
-        orderBy: [{ sourceType: "desc" }, { status: "asc" }, { createdAt: "asc" }],
-      });
+      const { data: nextProgressList, error: nextError } = await supabase
+        .from("ExportProgress")
+        .select("*")
+        .eq("userId", userId)
+        .in("status", ["in_progress", "pending"])
+        .order("sourceType", { ascending: false })
+        .order("status", { ascending: true })
+        .order("createdAt", { ascending: true })
+        .limit(1);
+
+      if (nextError) throw nextError;
+
+      const nextProgress = nextProgressList && nextProgressList.length > 0 ? nextProgressList[0] : null;
 
       logger.info("API", "processBatch - Next source after skip", {
         userId,
@@ -605,36 +640,44 @@ export async function processBatch(
 
         let videosImported = 0;
         if (page.videos.length > 0) {
-          const result = await prisma.exportedVideo.createMany({
-            data: page.videos.map((v) => ({
-              userId,
-              videoId: v.videoId,
-              title: v.title,
-              channelId: v.channelId || null,
-              channelTitle: v.channelTitle || null,
-              language: v.language || null,
-              sourceType: nextProgress.sourceType,
-              sourceId: nextProgress.sourceId,
-              sourceTitle: nextProgress.sourceTitle,
-              publishedAt: v.publishedAt || null,
-              thumbnailUrl: v.thumbnailUrl || null,
-            })),
-            skipDuplicates: true,
-          });
-          videosImported = result.count;
+          const videoData = page.videos.map((v) => ({
+            userId,
+            videoId: v.videoId,
+            title: v.title,
+            channelId: v.channelId || null,
+            channelTitle: v.channelTitle || null,
+            language: v.language || null,
+            sourceType: nextProgress.sourceType,
+            sourceId: nextProgress.sourceId,
+            sourceTitle: nextProgress.sourceTitle,
+            publishedAt: v.publishedAt || null,
+            thumbnailUrl: v.thumbnailUrl || null,
+          }));
+
+          const { data, error: insertError } = await supabase
+            .from("ExportedVideo")
+            .insert(videoData)
+            .select("id");
+
+          if (insertError && insertError.code !== '23505') throw insertError;
+          videosImported = data?.length || 0;
         }
 
         const isCompleted = !page.nextPageToken;
-        await prisma.exportProgress.update({
-          where: { id: nextProgress.id },
-          data: {
-            lastPageToken: page.nextPageToken,
-            importedItems: { increment: page.videos.length },
+        const newImportedItems = (nextProgress.importedItems || 0) + page.videos.length;
+
+        const { error: updateError } = await supabase
+          .from("ExportProgress")
+          .update({
+            lastPageToken: page.nextPageToken || null,
+            importedItems: newImportedItems,
             totalItems: page.totalResults || nextProgress.totalItems,
-            lastImportedAt: new Date(),
+            lastImportedAt: new Date().toISOString(),
             status: isCompleted ? "completed" : "in_progress",
-          },
-        });
+          })
+          .eq("id", nextProgress.id);
+
+        if (updateError) throw updateError;
 
         const updatedQuota = await getQuotaStatus(userId);
 
@@ -745,28 +788,30 @@ export async function getExportStatus(
   logger.debug("API", "getExportStatus", { userId });
 
   const [
-    totalSources,
-    completedSources,
-    inProgressSources,
-    pendingSources,
-    totalVideosImported,
-    englishVideosCount,
-    lastImport,
+    { data: allSources, error: allSourcesError },
+    { data: completedSources, error: completedSourcesError },
+    { data: inProgressSources, error: inProgressSourcesError },
+    { data: pendingSources, error: pendingSourcesError },
+    { data: allVideos, error: allVideosError },
+    { data: englishVideos, error: englishVideosError },
+    { data: lastImportList, error: lastImportError },
   ] = await Promise.all([
-    prisma.exportProgress.count({ where: { userId } }),
-    prisma.exportProgress.count({ where: { userId, status: "completed" } }),
-    prisma.exportProgress.count({ where: { userId, status: "in_progress" } }),
-    prisma.exportProgress.count({ where: { userId, status: "pending" } }),
-    prisma.exportedVideo.count({ where: { userId } }),
-    prisma.exportedVideo.count({
-      where: { userId, language: { startsWith: "en" } },
-    }),
-    prisma.exportProgress.findFirst({
-      where: { userId, lastImportedAt: { not: null } },
-      orderBy: { lastImportedAt: "desc" },
-      select: { lastImportedAt: true },
-    }),
+    supabase.from("ExportProgress").select("id", { count: "exact" }).eq("userId", userId),
+    supabase.from("ExportProgress").select("id", { count: "exact" }).eq("userId", userId).eq("status", "completed"),
+    supabase.from("ExportProgress").select("id", { count: "exact" }).eq("userId", userId).eq("status", "in_progress"),
+    supabase.from("ExportProgress").select("id", { count: "exact" }).eq("userId", userId).eq("status", "pending"),
+    supabase.from("ExportedVideo").select("id", { count: "exact" }).eq("userId", userId),
+    supabase.from("ExportedVideo").select("id", { count: "exact" }).eq("userId", userId).like("language", "en%"),
+    supabase.from("ExportProgress").select("lastImportedAt").eq("userId", userId).not("lastImportedAt", "is", null).order("lastImportedAt", { ascending: false }).limit(1),
   ]);
+
+  if (allSourcesError) throw allSourcesError;
+  if (completedSourcesError) throw completedSourcesError;
+  if (inProgressSourcesError) throw inProgressSourcesError;
+  if (pendingSourcesError) throw pendingSourcesError;
+  if (allVideosError) throw allVideosError;
+  if (englishVideosError) throw englishVideosError;
+  if (lastImportError && lastImportError.code !== 'PGRST116') throw lastImportError;
 
   let quotaUsedToday = 0;
   try {
@@ -776,17 +821,25 @@ export async function getExportStatus(
     // Quota fetch pode falhar se não há registro para hoje
   }
 
+  const totalSources = allSources?.length || 0;
+  const completedCount = completedSources?.length || 0;
+  const inProgressCount = inProgressSources?.length || 0;
+  const pendingCount = pendingSources?.length || 0;
+  const totalVideosImported = allVideos?.length || 0;
+  const englishVideosCount = englishVideos?.length || 0;
+  const lastImport = lastImportList && lastImportList.length > 0 ? lastImportList[0] : null;
+
   return {
     totalSources,
-    completedSources,
-    inProgressSources,
-    pendingSources,
+    completedSources: completedCount,
+    inProgressSources: inProgressCount,
+    pendingSources: pendingCount,
     totalVideosImported,
     englishVideosCount,
     quotaUsedToday,
     quotaCeiling: QUOTA_CEILING,
-    lastImportedAt: lastImport?.lastImportedAt?.toISOString() || null,
-    hasIncompleteWork: inProgressSources > 0 || pendingSources > 0,
+    lastImportedAt: lastImport?.lastImportedAt ? new Date(lastImport.lastImportedAt).toISOString() : null,
+    hasIncompleteWork: inProgressCount > 0 || pendingCount > 0,
   };
 }
 
@@ -802,44 +855,31 @@ export async function getExportedVideos(
 }> {
   const page = options.page || 1;
   const limit = Math.min(options.limit || 100, 100000);
+  const skip = (page - 1) * limit;
 
-  const where: {
-    userId: string;
-    language?: { startsWith: string };
-  } = { userId };
+  let query = supabase
+    .from("ExportedVideo")
+    .select(
+      "id, videoId, title, channelId, channelTitle, language, sourceType, sourceId, sourceTitle, publishedAt, thumbnailUrl",
+      { count: "exact" }
+    )
+    .eq("userId", userId);
 
   if (options.language) {
-    where.language = { startsWith: options.language };
+    query = query.like("language", `${options.language}%`);
   }
 
-  const [videos, total] = await Promise.all([
-    prisma.exportedVideo.findMany({
-      where,
-      orderBy: { createdAt: "desc" },
-      skip: (page - 1) * limit,
-      take: limit,
-      select: {
-        id: true,
-        videoId: true,
-        title: true,
-        channelId: true,
-        channelTitle: true,
-        language: true,
-        sourceType: true,
-        sourceId: true,
-        sourceTitle: true,
-        publishedAt: true,
-        thumbnailUrl: true,
-      },
-    }),
-    prisma.exportedVideo.count({ where }),
-  ]);
+  const { data: videos, count: total, error: videosError } = await query
+    .order("createdAt", { ascending: false })
+    .range(skip, skip + limit - 1);
+
+  if (videosError) throw videosError;
 
   return {
-    videos,
-    total,
+    videos: videos || [],
+    total: total || 0,
     page,
     limit,
-    totalPages: Math.ceil(total / limit),
+    totalPages: Math.ceil((total || 0) / limit),
   };
 }

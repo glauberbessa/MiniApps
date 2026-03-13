@@ -6,7 +6,7 @@
  */
 
 import { NextRequest, NextResponse } from 'next/server'
-import { prisma } from '@/lib/prisma'
+import { supabase } from '@/lib/supabase'
 import { forgotPasswordSchema } from '@/lib/validations/auth'
 import { generateToken, getTokenExpiration } from '@/lib/tokens'
 import { sendPasswordResetEmail } from '@/lib/email'
@@ -35,15 +35,13 @@ export async function POST(request: NextRequest) {
     const { email } = result.data
 
     // Buscar usuário pelo e-mail
-    const user = await prisma.user.findUnique({
-      where: { email },
-      select: {
-        id: true,
-        email: true,
-        password: true,
-        isActive: true,
-      },
-    })
+    const { data: user, error: findError } = await supabase
+      .from('User')
+      .select('id, email, password, isActive')
+      .eq('email', email)
+      .single()
+
+    if (findError && findError.code !== 'PGRST116') throw findError
 
     // Se usuário não existir, retornar mensagem genérica (segurança)
     if (!user) {
@@ -69,13 +67,15 @@ export async function POST(request: NextRequest) {
     const expiresAt = getTokenExpiration(1) // 1 hora
 
     // Salvar token no usuário
-    await prisma.user.update({
-      where: { id: user.id },
-      data: {
+    const { error: updateError } = await supabase
+      .from('User')
+      .update({
         passwordResetToken: token,
-        passwordResetExpires: expiresAt,
-      },
-    })
+        passwordResetExpires: expiresAt.toISOString(),
+      })
+      .eq('id', user.id)
+
+    if (updateError) throw updateError
 
     logger.info('AUTH', 'Password reset token generated', {
       userId: user.id,

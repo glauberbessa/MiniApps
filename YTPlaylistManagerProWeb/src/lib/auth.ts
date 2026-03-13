@@ -1,7 +1,7 @@
 import NextAuth from "next-auth";
 import GoogleProvider from "next-auth/providers/google";
-import { PrismaAdapter } from "@auth/prisma-adapter";
-import { prisma } from "./prisma";
+import { supabase } from "./supabase";
+import { SupabaseAdapter } from "./supabase-adapter";
 import { google } from "googleapis";
 import { logger } from "./logger";
 
@@ -71,15 +71,21 @@ async function refreshAccessToken(account: {
     const elapsed = Date.now() - startTime;
 
     if (credentials.access_token) {
-      await prisma.account.update({
-        where: { id: account.id },
-        data: {
+      const { error } = await supabase
+        .from("Account")
+        .update({
           access_token: credentials.access_token,
           expires_at: credentials.expiry_date
             ? Math.floor(credentials.expiry_date / 1000)
             : null,
-        },
-      });
+        })
+        .eq("id", account.id);
+
+      if (error) {
+        logger.error("GOOGLE_OAUTH", "Failed to update account with new access token", error, {
+          accountId: account.id,
+        });
+      }
 
       return credentials.access_token;
     } else {
@@ -136,7 +142,7 @@ function extractMissingTable(message: string): string | null {
 }
 
 export const { handlers, auth, signIn, signOut } = NextAuth({
-  adapter: PrismaAdapter(prisma),
+  adapter: SupabaseAdapter(supabase),
   trustHost: true, // Required for Vercel deployment
   secret: getAuthSecret(),
   debug: process.env.NODE_ENV === "development" || process.env.AUTH_DEBUG === "true",
@@ -224,11 +230,17 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
           console.log(`[AUTH_CALLBACK:signIn] YouTube Channel ID: ${channelId || 'NOT_FOUND'}`);
 
           if (channelId && user.email) {
-            await prisma.user.update({
-              where: { email: user.email },
-              data: { youtubeChannelId: channelId },
-            });
-            console.log(`[AUTH_CALLBACK:signIn] DB Updated with Channel ID`);
+            const { error } = await supabase
+              .from("User")
+              .update({ youtubeChannelId: channelId })
+              .eq("email", user.email);
+            if (error) {
+              logger.error("AUTH_CALLBACK", "Failed to update YouTube Channel ID in DB", error, {
+                userEmail: user.email,
+              });
+            } else {
+              console.log(`[AUTH_CALLBACK:signIn] DB Updated with Channel ID`);
+            }
           }
         } catch (error) {
           logger.error(
@@ -273,9 +285,12 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
       // If we still don't have userId but have email, try to fetch from DB
       if (!token.userId && token.email) {
         try {
-          const dbUser = await prisma.user.findUnique({
-            where: { email: token.email as string },
-          });
+          const { data: dbUser, error } = await supabase
+            .from("User")
+            .select("id")
+            .eq("email", token.email as string)
+            .single();
+          if (error && error.code !== "PGRST116") throw error;
           if (dbUser) {
             token.userId = dbUser.id;
             console.log(`[AUTH_CALLBACK:jwt] userId fetched from DB by email`);
@@ -304,12 +319,14 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
           console.log(`[AUTH_CALLBACK:jwt] Token expired, attempting refresh...`);
           try {
             // Find the account in DB to get its ID for update
-            const dbAccount = await prisma.account.findFirst({
-              where: {
-                providerAccountId: token.accountId as string,
-                provider: "google",
-              },
-            });
+            const { data: dbAccount, error: accountError } = await supabase
+              .from("Account")
+              .select("id")
+              .eq("providerAccountId", token.accountId as string)
+              .eq("provider", "google")
+              .single();
+
+            if (accountError && accountError.code !== "PGRST116") throw accountError;
 
             if (dbAccount) {
               const newAccessToken = await refreshAccessToken({
@@ -358,12 +375,35 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
       // Helper function to fetch user with account data
       async function fetchUserWithAccount(whereClause: { id?: string; email?: string }) {
         try {
-          const user = await prisma.user.findFirst({
-            where: whereClause,
-            include: { accounts: true },
-          });
+          let query = supabase.from("User").select("id, email, youtubeChannelId, updatedAt");
 
-          return user;
+          if (whereClause.id) {
+            query = query.eq("id", whereClause.id);
+          } else if (whereClause.email) {
+            query = query.eq("email", whereClause.email);
+          } else {
+            return null;
+          }
+
+          const { data: user, error } = await query.single();
+          if (error && error.code !== "PGRST116") throw error;
+
+          if (user) {
+            // Fetch associated accounts
+            const { data: accounts, error: accountsError } = await supabase
+              .from("Account")
+              .select("id, access_token, refresh_token, expires_at, provider")
+              .eq("userId", user.id);
+
+            if (accountsError && accountsError.code !== "PGRST116") throw accountsError;
+
+            return {
+              ...user,
+              accounts: accounts || [],
+            };
+          }
+
+          return null;
         } catch (error) {
           logger.error(
             "DATABASE",
@@ -453,39 +493,53 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
       // STRATEGY 3: Last resort - try to find any recent user with Google account
       try {
         console.log(`[AUTH_CALLBACK:session] Last resort strategy...`);
-        const recentUser = await prisma.user.findFirst({
-          where: {
-            accounts: {
-              some: {
-                provider: "google",
-              },
-            },
-          },
-          include: { accounts: true },
-          orderBy: { updatedAt: "desc" },
-        });
 
-        if (recentUser) {
-          session.user.id = recentUser.id;
-          session.user.youtubeChannelId = recentUser.youtubeChannelId;
+        // Find a user with a Google account
+        const { data: recentUsers, error: usersError } = await supabase
+          .from("User")
+          .select("id, youtubeChannelId, updatedAt")
+          .order("updatedAt", { ascending: false })
+          .limit(10);
 
-          const account = recentUser.accounts[0];
-          if (account?.access_token) {
-            const now = Math.floor(Date.now() / 1000);
-            const isExpired = (account.expires_at || 0) < now - 60;
+        if (usersError && usersError.code !== "PGRST116") throw usersError;
 
-            if (isExpired && account.refresh_token) {
-              const newToken = await refreshAccessToken({
-                id: account.id,
-                refresh_token: account.refresh_token,
-              });
-              session.accessToken = newToken ?? account.access_token ?? null;
-            } else {
-              session.accessToken = account.access_token;
+        if (recentUsers && recentUsers.length > 0) {
+          // Check which users have Google accounts
+          for (const user of recentUsers) {
+            const { data: googleAccount, error: accountError } = await supabase
+              .from("Account")
+              .select("id, access_token, refresh_token, expires_at")
+              .eq("userId", user.id)
+              .eq("provider", "google")
+              .limit(1);
+
+            if (accountError && accountError.code !== "PGRST116") throw accountError;
+
+            if (googleAccount && googleAccount.length > 0) {
+              const recentUser = user;
+              const account = googleAccount[0];
+
+              session.user.id = recentUser.id;
+              session.user.youtubeChannelId = recentUser.youtubeChannelId;
+
+              if (account?.access_token) {
+                const now = Math.floor(Date.now() / 1000);
+                const isExpired = (account.expires_at || 0) < now - 60;
+
+                if (isExpired && account.refresh_token) {
+                  const newToken = await refreshAccessToken({
+                    id: account.id,
+                    refresh_token: account.refresh_token,
+                  });
+                  session.accessToken = newToken ?? account.access_token ?? null;
+                } else {
+                  session.accessToken = account.access_token;
+                }
+              }
+
+              return session;
             }
           }
-
-          return session;
         }
       } catch (error) {
         logger.error(
@@ -503,18 +557,24 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
       // Atualizar tokens quando o usuário faz login novamente
       if (account && user.id) {
         try {
-          const result = await prisma.account.updateMany({
-            where: {
-              userId: user.id,
-              provider: account.provider,
-            },
-            data: {
+          const { error } = await supabase
+            .from("Account")
+            .update({
               access_token: account.access_token,
               refresh_token: account.refresh_token,
               expires_at: account.expires_at,
-            },
-          });
-          void result;
+            })
+            .eq("userId", user.id)
+            .eq("provider", account.provider);
+
+          if (error) {
+            logger.error(
+              "DATABASE",
+              "Failed to update account tokens on signIn",
+              error,
+              { userId: user.id, provider: account.provider }
+            );
+          }
         } catch (error) {
           logger.error(
             "DATABASE",

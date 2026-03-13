@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import { auth } from "@/lib/auth";
-import { prisma } from "@/lib/prisma";
+import { supabase } from "@/lib/supabase";
 
 export const dynamic = "force-dynamic";
 
@@ -27,15 +27,27 @@ export async function GET() {
 
     if (email) {
       try {
-        const user = await prisma.user.findUnique({
-          where: { email },
-          include: { accounts: { where: { provider: "google" } } },
-        });
-        if (user) {
-          dbInfo = {
-            userUpdated: user.updatedAt,
-            hasRefreshToken: !!user.accounts[0]?.refresh_token,
-          };
+        const { data: users, error: userError } = await supabase
+          .from("User")
+          .select("id, updatedAt")
+          .eq("email", email)
+          .limit(1);
+
+        if (!userError && users && users.length > 0) {
+          const userId = users[0].id;
+          const { data: accounts, error: accountError } = await supabase
+            .from("Account")
+            .select("refresh_token")
+            .eq("userId", userId)
+            .eq("provider", "google")
+            .limit(1);
+
+          if (!accountError && accounts && accounts.length > 0) {
+            dbInfo = {
+              userUpdated: users[0].updatedAt,
+              hasRefreshToken: !!accounts[0]?.refresh_token,
+            };
+          }
         }
       } catch (err) {
         // DB error

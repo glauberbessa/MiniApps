@@ -4,7 +4,7 @@ import { redirect } from "next/navigation"
 import { ArrowLeft, AlertCircle } from "lucide-react"
 
 import { auth } from "@/lib/auth"
-import { prisma } from "@/lib/prisma"
+import { supabase } from "@/lib/supabase"
 import {
   Card,
   CardContent,
@@ -23,11 +23,13 @@ export default async function AlterarSenhaPage() {
   }
 
   // Verificar se o usuário tem senha (pode ser apenas OAuth)
-  const user = await prisma.user.findUnique({
-    where: { email: session.user.email },
-    select: { password: true },
-  })
+  const { data: users, error } = await supabase
+    .from("User")
+    .select("password")
+    .eq("email", session.user.email)
+    .limit(1)
 
+  const user = error || !users || users.length === 0 ? null : users[0]
   const hasPassword = !!user?.password
 
   return (

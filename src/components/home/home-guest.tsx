@@ -501,7 +501,7 @@ export function HomeGuest() {
       </header>
 
       {/* Conteúdo Principal */}
-      <main id="main-content" tabIndex={-1} className="flex-1 min-h-0 outline-none">
+      <main id="main-content" tabIndex={-1} className="flex-1 min-h-0 outline-none overflow-auto">
         {/* Layout com Apps e Login */}
         <section className="px-6 py-4">
           <div className="max-w-6xl mx-auto">

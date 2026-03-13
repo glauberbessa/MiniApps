@@ -466,7 +466,7 @@ function generateAuthChecklist(
       checklist.database = {
         status: "error",
         message: missingTable
-          ? `Database query failed: missing table ${missingTable}. Run prisma migrations against the production database.`
+          ? `Database query failed: missing table ${missingTable}. Create the table in Supabase via the dashboard or SQL migrations.`
           : `Database query failed: ${dbStatus.error ?? "Unknown error"}`,
       };
     }

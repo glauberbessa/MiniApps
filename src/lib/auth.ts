@@ -283,23 +283,46 @@ function withRetryAdapter(adapter: ReturnType<typeof PrismaAdapter>) {
     return /connection|timeout|ECONNREFUSED|ECONNRESET|socket|fetch failed|Can't reach database/i.test(msg);
   };
 
+  // Exponential backoff delays: 500ms, 2s, 4s
+  const getRetryDelay = (attempt: number): number => {
+    const delays = [500, 2000, 4000];
+    return delays[Math.min(attempt, delays.length - 1)];
+  };
+
   const handler: ProxyHandler<typeof adapter> = {
     get(target, prop: string) {
       const original = target[prop as keyof typeof target];
       if (typeof original !== "function") return original;
 
       return async (...args: unknown[]) => {
-        try {
-          return await (original as (...a: unknown[]) => Promise<unknown>).apply(target, args);
-        } catch (error) {
-          if (!isTransientError(error)) throw error;
+        let lastError: unknown;
+        const maxRetries = 3;
 
-          logger.warn("DATABASE", `Adapter method "${prop}" failed with transient error, retrying once...`, {
-            error: error instanceof Error ? error.message : String(error),
-          });
-          await new Promise((r) => setTimeout(r, 500));
-          return await (original as (...a: unknown[]) => Promise<unknown>).apply(target, args);
+        for (let attempt = 0; attempt < maxRetries; attempt++) {
+          try {
+            return await (original as (...a: unknown[]) => Promise<unknown>).apply(target, args);
+          } catch (error) {
+            lastError = error;
+
+            if (!isTransientError(error)) {
+              throw error;
+            }
+
+            if (attempt < maxRetries - 1) {
+              const delay = getRetryDelay(attempt);
+              logger.warn("DATABASE", `Adapter method "${prop}" failed with transient error (attempt ${attempt + 1}/${maxRetries}), retrying in ${delay}ms...`, {
+                error: error instanceof Error ? error.message : String(error),
+              });
+              await new Promise((r) => setTimeout(r, delay));
+            } else {
+              logger.error("DATABASE", `Adapter method "${prop}" failed after ${maxRetries} attempts`, {
+                error: error instanceof Error ? error.message : String(error),
+              });
+            }
+          }
         }
+
+        throw lastError;
       };
     },
   };

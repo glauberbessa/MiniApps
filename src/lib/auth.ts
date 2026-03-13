@@ -1112,7 +1112,7 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
             expiresAt: account.expires_at,
           });
 
-          const { error: updateError, data: updatedAccounts } = await supabase
+          const { error: updateError } = await supabase
             .from("Account")
             .update({
               access_token: account.access_token,
@@ -1131,7 +1131,6 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
             logger.info("AUTH", "signIn EVENT - Account tokens updated", {
               userId: user.id,
               provider: account.provider,
-              updatedCount: updatedAccounts?.length ?? 0,
             });
           }
         } catch (error) {

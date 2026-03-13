@@ -51,7 +51,6 @@ export function SupabaseAdapter(supabase: SupabaseClient): Adapter {
           message: error.message,
           details: error.details,
           hint: error.hint,
-          status: error.status,
           email: data.email,
         });
         throw error;
@@ -163,7 +162,6 @@ export function SupabaseAdapter(supabase: SupabaseClient): Adapter {
             message: updateError.message,
             details: updateError.details,
             hint: updateError.hint,
-            status: updateError.status,
             provider: data.provider,
           });
           throw updateError;
@@ -205,7 +203,6 @@ export function SupabaseAdapter(supabase: SupabaseClient): Adapter {
           message: error.message,
           details: error.details,
           hint: error.hint,
-          status: error.status,
           provider: data.provider,
         });
         throw error;

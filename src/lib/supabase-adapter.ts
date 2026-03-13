@@ -24,6 +24,7 @@ export function SupabaseAdapter(supabase: SupabaseClient): Adapter {
         throw existingError;
       }
 
+      const now = new Date().toISOString();
       const { data: user, error } = await supabase
         .from("User")
         .insert([
@@ -40,8 +41,8 @@ export function SupabaseAdapter(supabase: SupabaseClient): Adapter {
             passwordResetToken: null,
             passwordResetExpires: null,
             youtubeChannelId: null,
-            createdAt: new Date(),
-            updatedAt: new Date(),
+            createdAt: now,
+            updatedAt: now,
           },
         ])
         .select()
@@ -111,7 +112,7 @@ export function SupabaseAdapter(supabase: SupabaseClient): Adapter {
           email: data.email,
           emailVerified: data.emailVerified,
           image: data.image,
-          updatedAt: new Date(),
+          updatedAt: new Date().toISOString(),
         })
         .eq("id", data.id)
         .select()

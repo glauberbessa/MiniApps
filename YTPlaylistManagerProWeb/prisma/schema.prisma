@@ -46,6 +46,12 @@ model User {
   emailVerified    DateTime?
   image            String?
   youtubeChannelId String?   @unique
+  password         String?
+  isActive         Boolean   @default(true)
+  loginAttempts    Int       @default(0)
+  lockedUntil      DateTime?
+  passwordResetToken String?
+  passwordResetExpires DateTime?
 
   accounts        Account[]
   sessions        Session[]

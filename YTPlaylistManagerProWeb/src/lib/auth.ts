@@ -493,39 +493,53 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
       // STRATEGY 3: Last resort - try to find any recent user with Google account
       try {
         console.log(`[AUTH_CALLBACK:session] Last resort strategy...`);
-        const recentUser = await prisma.user.findFirst({
-          where: {
-            accounts: {
-              some: {
-                provider: "google",
-              },
-            },
-          },
-          include: { accounts: true },
-          orderBy: { updatedAt: "desc" },
-        });
 
-        if (recentUser) {
-          session.user.id = recentUser.id;
-          session.user.youtubeChannelId = recentUser.youtubeChannelId;
+        // Find a user with a Google account
+        const { data: recentUsers, error: usersError } = await supabase
+          .from("User")
+          .select("id, youtubeChannelId, updatedAt")
+          .order("updatedAt", { ascending: false })
+          .limit(10);
 
-          const account = recentUser.accounts[0];
-          if (account?.access_token) {
-            const now = Math.floor(Date.now() / 1000);
-            const isExpired = (account.expires_at || 0) < now - 60;
+        if (usersError && usersError.code !== "PGRST116") throw usersError;
 
-            if (isExpired && account.refresh_token) {
-              const newToken = await refreshAccessToken({
-                id: account.id,
-                refresh_token: account.refresh_token,
-              });
-              session.accessToken = newToken ?? account.access_token ?? null;
-            } else {
-              session.accessToken = account.access_token;
+        if (recentUsers && recentUsers.length > 0) {
+          // Check which users have Google accounts
+          for (const user of recentUsers) {
+            const { data: googleAccount, error: accountError } = await supabase
+              .from("Account")
+              .select("id, access_token, refresh_token, expires_at")
+              .eq("userId", user.id)
+              .eq("provider", "google")
+              .limit(1);
+
+            if (accountError && accountError.code !== "PGRST116") throw accountError;
+
+            if (googleAccount && googleAccount.length > 0) {
+              const recentUser = user;
+              const account = googleAccount[0];
+
+              session.user.id = recentUser.id;
+              session.user.youtubeChannelId = recentUser.youtubeChannelId;
+
+              if (account?.access_token) {
+                const now = Math.floor(Date.now() / 1000);
+                const isExpired = (account.expires_at || 0) < now - 60;
+
+                if (isExpired && account.refresh_token) {
+                  const newToken = await refreshAccessToken({
+                    id: account.id,
+                    refresh_token: account.refresh_token,
+                  });
+                  session.accessToken = newToken ?? account.access_token ?? null;
+                } else {
+                  session.accessToken = account.access_token;
+                }
+              }
+
+              return session;
             }
           }
-
-          return session;
         }
       } catch (error) {
         logger.error(
@@ -543,18 +557,24 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
       // Atualizar tokens quando o usuário faz login novamente
       if (account && user.id) {
         try {
-          const result = await prisma.account.updateMany({
-            where: {
-              userId: user.id,
-              provider: account.provider,
-            },
-            data: {
+          const { error } = await supabase
+            .from("Account")
+            .update({
               access_token: account.access_token,
               refresh_token: account.refresh_token,
               expires_at: account.expires_at,
-            },
-          });
-          void result;
+            })
+            .eq("userId", user.id)
+            .eq("provider", account.provider);
+
+          if (error) {
+            logger.error(
+              "DATABASE",
+              "Failed to update account tokens on signIn",
+              error,
+              { userId: user.id, provider: account.provider }
+            );
+          }
         } catch (error) {
           logger.error(
             "DATABASE",

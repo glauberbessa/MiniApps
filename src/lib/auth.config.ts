@@ -81,10 +81,10 @@ const cookiePrefix = useSecureCookies ? "__Secure-" : "";
 /**
  * NextAuth configuration for Edge Runtime (middleware).
  *
- * This config does NOT include the Prisma adapter or any Node.js-only dependencies.
+ * This config does NOT include the Supabase adapter or any Node.js-only dependencies.
  * It's used by the middleware for route protection.
  *
- * The full auth.ts config extends this and adds the Prisma adapter.
+ * The full auth.ts config extends this and adds the Supabase adapter.
  *
  * IMPORTANT: Cookie names MUST match auth.ts to prevent state/CSRF
  * validation failures during the OAuth callback.

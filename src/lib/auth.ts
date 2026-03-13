@@ -304,11 +304,11 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
       // Check for missing table in the cause chain
       const missingTable = extractMissingTable(causeChain.message);
       if (missingTable) {
-        logger.critical("DATABASE", "Missing Prisma table detected during auth", causeChain.rootError, {
+        logger.critical("DATABASE", "Missing Supabase table detected during auth", causeChain.rootError, {
           missingTable,
           isVercel: !!process.env.VERCEL,
-          hasDatabaseUrl: !!process.env.DATABASE_URL,
-          guidance: "Run `prisma migrate deploy` (or `prisma db push`) against the production database and confirm DATABASE_URL points to that database.",
+          hasSupabaseUrl: !!process.env.SUPABASE_URL,
+          guidance: "Ensure the required table exists in your Supabase project. Create it via the Supabase dashboard or run SQL migrations. Confirm SUPABASE_URL and SUPABASE_SERVICE_ROLE_KEY are correctly set.",
         });
       }
 
@@ -318,8 +318,8 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
         logger.critical("DATABASE", "Missing database column detected - schema out of sync", causeChain.rootError, {
           missingColumn,
           isVercel: !!process.env.VERCEL,
-          hasDatabaseUrl: !!process.env.DATABASE_URL,
-          guidance: "The Prisma schema has columns that don't exist in the database. Run `prisma migrate deploy` (or `prisma db push`) against the production database to add the missing columns.",
+          hasSupabaseUrl: !!process.env.SUPABASE_URL,
+          guidance: "The database schema has columns that don't exist or are missing. Add them via the Supabase dashboard table editor or run SQL migrations to add the missing column.",
         });
       }
     },

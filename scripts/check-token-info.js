@@ -1,18 +1,30 @@
-const { PrismaClient } = require('@prisma/client');
-const prisma = new PrismaClient();
+const { createClient } = require('@supabase/supabase-js');
 const https = require('https');
 
-async function main() {
-    const account = await prisma.account.findFirst({
-        where: { provider: 'google' }
-    });
+const supabase = createClient(
+    process.env.SUPABASE_URL || '',
+    process.env.SUPABASE_SERVICE_ROLE_KEY || ''
+);
 
-    if (!account || !account.access_token) {
+async function main() {
+    // Fetch first Google account
+    const { data: accounts, error } = await supabase
+        .from('Account')
+        .select('access_token')
+        .eq('provider', 'google')
+        .limit(1);
+
+    if (error) {
+        console.error('Error fetching account:', error);
+        process.exit(1);
+    }
+
+    if (!accounts || accounts.length === 0 || !accounts[0].access_token) {
         console.log('No account found');
         return;
     }
 
-    const token = account.access_token;
+    const token = accounts[0].access_token;
     console.log(`Checking token: ${token.substring(0, 10)}...`);
 
     const url = `https://oauth2.googleapis.com/tokeninfo?access_token=${token}`;

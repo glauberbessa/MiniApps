@@ -387,9 +387,9 @@ async function checkDatabaseStatus(): Promise<Record<string, unknown>> {
 }
 
 function extractMissingTable(message: string): string | null {
-  const prismaMatch = message.match(/The table `([^`]+)` does not exist/i);
-  if (prismaMatch?.[1]) {
-    return prismaMatch[1];
+  const tableErrorMatch = message.match(/The table `([^`]+)` does not exist/i);
+  if (tableErrorMatch?.[1]) {
+    return tableErrorMatch[1];
   }
   const relationMatch = message.match(/relation \"([^\"]+)\" does not exist/i);
   if (relationMatch?.[1]) {
@@ -466,7 +466,7 @@ function generateAuthChecklist(
       checklist.database = {
         status: "error",
         message: missingTable
-          ? `Database query failed: missing table ${missingTable}. Run prisma migrations against the production database.`
+          ? `Database query failed: missing table ${missingTable}. Create the table in Supabase via the dashboard or SQL migrations.`
           : `Database query failed: ${dbStatus.error ?? "Unknown error"}`,
       };
     }

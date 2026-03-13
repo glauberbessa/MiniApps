@@ -1,8 +1,7 @@
-import { PrismaClient } from "@prisma/client";
+import { createClient } from "@supabase/supabase-js";
 import { spawnSync } from "node:child_process";
 import process from "node:process";
 
-const INITIAL_MIGRATION = "20260117000000_init";
 const PRIMARY_TABLE = "Account";
 
 function runCommand(command) {
@@ -19,36 +18,38 @@ function runCommand(command) {
 }
 
 async function checkTableExists() {
-  const prisma = new PrismaClient();
-  try {
-    const result = await prisma.$queryRaw`
-      SELECT EXISTS (
-        SELECT 1
-        FROM information_schema.tables
-        WHERE table_schema = 'public'
-          AND table_name = ${PRIMARY_TABLE}
-      ) AS "exists";
-    `;
+  const supabase = createClient(
+    process.env.SUPABASE_URL || "",
+    process.env.SUPABASE_SERVICE_ROLE_KEY || ""
+  );
 
-    if (Array.isArray(result) && result.length > 0) {
-      return result[0]?.exists === true;
+  try {
+    // Try to query the table with a simple select to verify it exists
+    const { error } = await supabase.from(PRIMARY_TABLE).select("id", { count: "exact", head: true });
+
+    if (error) {
+      if (error.message.includes("does not exist") || error.code === "PGRST116") {
+        return false;
+      }
+      throw error;
     }
 
+    return true;
+  } catch (error) {
+    console.error("Error checking table:", error);
     return false;
-  } finally {
-    await prisma.$disconnect();
   }
 }
 
 async function main() {
   if (process.env.VERCEL && process.env.SKIP_DB_MIGRATIONS === "1") {
-    console.log("Detected Vercel environment with SKIP_DB_MIGRATIONS=1. Skipping database migrations.");
+    console.log("Detected Vercel environment with SKIP_DB_MIGRATIONS=1. Skipping database checks.");
     return;
   }
 
-  if (!process.env.DATABASE_URL) {
-    console.log("DATABASE_URL is not set. Skipping database migrations.");
-    console.log("Migrations will be applied when the application starts or via manual deploy.");
+  if (!process.env.SUPABASE_URL || !process.env.SUPABASE_SERVICE_ROLE_KEY) {
+    console.log("SUPABASE_URL or SUPABASE_SERVICE_ROLE_KEY is not set. Skipping database checks.");
+    console.log("Ensure Supabase credentials are configured in your environment.");
     return;
   }
 
@@ -57,74 +58,13 @@ async function main() {
 
   if (!tableExists) {
     console.log(
-      `Table '${PRIMARY_TABLE}' was not found. Creating schema via Prisma migrations...`,
+      `WARNING: Table '${PRIMARY_TABLE}' was not found in Supabase.`,
     );
+    console.log("Please ensure all required tables exist in your Supabase project.");
+    console.log("You can create them using the Supabase dashboard or via SQL migrations.");
   } else {
-    console.log(`Table '${PRIMARY_TABLE}' exists. Applying pending migrations...`);
+    console.log(`✓ Table '${PRIMARY_TABLE}' exists. Database schema is ready.`);
   }
-
-  const migrateResult = runCommand("npx prisma migrate deploy");
-
-  if (migrateResult.status === 0) {
-    console.log("Migrations applied successfully.");
-    return;
-  }
-
-  const output = migrateResult.output;
-
-  if (output.includes("P3005")) {
-    console.log("");
-    console.log(
-      "Detected P3005 error: Database schema is not empty but has no migration history.",
-    );
-    console.log("Baselining database by marking initial migration as applied...");
-    runCommand(`npx prisma migrate resolve --applied "${INITIAL_MIGRATION}"`);
-
-    console.log("Running remaining migrations...");
-    runCommand("npx prisma migrate deploy");
-
-    console.log("Database migration completed successfully.");
-    return;
-  }
-
-  if (output.includes("already been applied")) {
-    console.log("All migrations have already been applied.");
-    return;
-  }
-
-  if (output.includes("does not exist")) {
-    console.log("");
-    console.log("Database tables don't exist. Attempting to create schema...");
-    runCommand("npx prisma db push --accept-data-loss");
-
-    console.log("Marking initial migration as applied...");
-    runCommand(`npx prisma migrate resolve --applied "${INITIAL_MIGRATION}"`);
-
-    console.log("Database schema created successfully.");
-    return;
-  }
-
-  if (
-    output.includes("42P07") ||
-    output.includes("already exists") ||
-    output.includes("relação")
-  ) {
-    console.log("");
-    console.log("Detected existing table error. Baselining initial migration...");
-    runCommand(`npx prisma migrate resolve --applied "${INITIAL_MIGRATION}"`);
-
-    console.log("Running remaining migrations...");
-    runCommand("npx prisma migrate deploy");
-
-    console.log("Database migration completed successfully.");
-    return;
-  }
-
-  console.error("");
-  console.error(
-    `Migration failed with unexpected error. Exit code: ${migrateResult.status}`,
-  );
-  process.exit(migrateResult.status ?? 1);
 }
 
 main().catch((error) => {

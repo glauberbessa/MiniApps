@@ -130,9 +130,9 @@ function extractAuthErrorMessage(messages: unknown[]): string {
 }
 
 function extractMissingTable(message: string): string | null {
-  const prismaMatch = message.match(/The table `([^`]+)` does not exist/i);
-  if (prismaMatch?.[1]) {
-    return prismaMatch[1];
+  const tableErrorMatch = message.match(/The table `([^`]+)` does not exist/i);
+  if (tableErrorMatch?.[1]) {
+    return tableErrorMatch[1];
   }
   const relationMatch = message.match(/relation \"([^\"]+)\" does not exist/i);
   if (relationMatch?.[1]) {
@@ -151,11 +151,11 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
       const combinedMessage = extractAuthErrorMessage(message);
       const missingTable = extractMissingTable(combinedMessage);
       if (missingTable) {
-        logger.critical("DATABASE", "Missing Prisma table detected during auth", undefined, {
+        logger.critical("DATABASE", "Missing Supabase table detected during auth", undefined, {
           missingTable,
           isVercel: !!process.env.VERCEL,
-          hasDatabaseUrl: !!process.env.DATABASE_URL,
-          guidance: "Run `prisma migrate deploy` (or `prisma db push`) against the production database and confirm DATABASE_URL points to that database.",
+          hasSupabaseUrl: !!process.env.SUPABASE_URL,
+          guidance: "Ensure the required table exists in your Supabase project. Create it via the Supabase dashboard or run SQL migrations. Confirm SUPABASE_URL and SUPABASE_SERVICE_ROLE_KEY are correctly set.",
         });
       }
     },

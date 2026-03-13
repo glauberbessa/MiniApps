@@ -390,9 +390,9 @@ async function checkDatabaseStatus(): Promise<Record<string, unknown>> {
 }
 
 function extractMissingTable(message: string): string | null {
-  const prismaMatch = message.match(/The table `([^`]+)` does not exist/i);
-  if (prismaMatch?.[1]) {
-    return prismaMatch[1];
+  const tableErrorMatch = message.match(/The table `([^`]+)` does not exist/i);
+  if (tableErrorMatch?.[1]) {
+    return tableErrorMatch[1];
   }
   const relationMatch = message.match(/relation \"([^\"]+)\" does not exist/i);
   if (relationMatch?.[1]) {

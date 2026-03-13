@@ -2,6 +2,8 @@ import { supabase } from "./supabase";
 import { QUOTA_COSTS, DAILY_QUOTA_LIMIT, QuotaStatus, QuotaHistoryItem } from "@/types/quota";
 import { logger } from "./logger";
 import { toDateOnly, throwIfError, PGSQL_ERROR_CODES } from "./supabase-utils";
+import { quotaCache } from "./quota-cache";
+import { withRetry } from "./supabase-retry";
 
 export async function trackQuotaUsage(
   userId: string,
@@ -55,6 +57,9 @@ export async function trackQuotaUsage(
       throw selectError;
     }
 
+    // Invalidate cache since quota was updated
+    quotaCache.invalidate(userId);
+
     logger.debug("YOUTUBE_API", "trackQuotaUsage - Recorded successfully", {
       userId,
       endpoint,
@@ -73,17 +78,30 @@ export async function trackQuotaUsage(
 export async function getQuotaStatus(userId: string): Promise<QuotaStatus> {
   logger.debug("YOUTUBE_API", "getQuotaStatus called", { userId });
 
+  // Check cache first
+  const cached = quotaCache.get(userId);
+  if (cached) {
+    logger.debug("YOUTUBE_API", "getQuotaStatus from cache", { userId });
+    return cached;
+  }
+
   const today = new Date();
   today.setHours(0, 0, 0, 0);
   const dateStr = toDateOnly(today);
 
   try {
-    const { data: quota, error } = await supabase
-      .from("QuotaHistory")
-      .select("consumedUnits")
-      .eq("userId", userId)
-      .eq("date", dateStr)
-      .single();
+    const { data: quota, error } = await withRetry(
+      async () => {
+        const result = await supabase
+          .from("QuotaHistory")
+          .select("consumedUnits")
+          .eq("userId", userId)
+          .eq("date", dateStr)
+          .single();
+        return result;
+      },
+      { maxRetries: 2 }
+    );
 
     throwIfError(error, [PGSQL_ERROR_CODES.NO_ROWS]);
 
@@ -96,6 +114,9 @@ export async function getQuotaStatus(userId: string): Promise<QuotaStatus> {
       remainingUnits: dailyLimit - consumedUnits,
       percentUsed: (consumedUnits / dailyLimit) * 100,
     };
+
+    // Cache the result
+    quotaCache.set(userId, status, 60000); // 60 second TTL
 
     logger.debug("YOUTUBE_API", "getQuotaStatus result", {
       userId,

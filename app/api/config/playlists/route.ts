@@ -1,6 +1,9 @@
 import { NextRequest, NextResponse } from "next/server";
 import { auth } from "@/lib/auth";
 import { supabase } from "@/lib/supabase";
+import { throwIfError, PGSQL_ERROR_CODES } from "@/lib/supabase-utils";
+import { validateConfigs, PlaylistConfigInputSchema } from "@/lib/supabase-validation";
+import { withRetry } from "@/lib/supabase-retry";
 
 export const dynamic = "force-dynamic";
 
@@ -18,7 +21,7 @@ export async function GET() {
       .eq("userId", session.user.id)
       .order("title", { ascending: true });
 
-    if (error) throw error;
+    throwIfError(error);
 
     return NextResponse.json(configs || []);
   } catch (error) {
@@ -40,6 +43,7 @@ export async function PUT(request: NextRequest) {
 
     const body = await request.json();
 
+    // Validate input
     if (!Array.isArray(body)) {
       return NextResponse.json(
         { error: "Formato inválido" },
@@ -47,53 +51,41 @@ export async function PUT(request: NextRequest) {
       );
     }
 
-    // Atualizar ou criar configurações
-    const results = await Promise.all(
-      body.map(async (config: { playlistId: string; title: string; isEnabled: boolean }) => {
-        // Primeiro, tenta buscar o registro existente
-        const { data: existing, error: findError } = await supabase
+    try {
+      validateConfigs(PlaylistConfigInputSchema, body);
+    } catch (validationError) {
+      return NextResponse.json(
+        { error: "Dados inválidos: " + String(validationError) },
+        { status: 400 }
+      );
+    }
+
+    // Upsert configurations (no N+1 queries!)
+    // Use upsert to eliminate select → insert/update pattern
+    const results = await withRetry(
+      async () => {
+        const { data, error } = await supabase
           .from("PlaylistConfig")
-          .select("id")
-          .eq("userId", session.user.id)
-          .eq("playlistId", config.playlistId)
-          .single();
-
-        if (findError && findError.code !== "PGRST116") throw findError;
-
-        if (existing) {
-          // Atualizar
-          const { data, error } = await supabase
-            .from("PlaylistConfig")
-            .update({
-              title: config.title,
-              isEnabled: config.isEnabled,
-            })
-            .eq("id", existing.id)
-            .select()
-            .single();
-
-          if (error) throw error;
-          return data;
-        } else {
-          // Criar novo
-          const { data, error } = await supabase
-            .from("PlaylistConfig")
-            .insert({
+          .upsert(
+            body.map(config => ({
               userId: session.user.id,
               playlistId: config.playlistId,
               title: config.title,
               isEnabled: config.isEnabled,
-            })
-            .select()
-            .single();
+            })),
+            {
+              onConflict: "userId,playlistId", // Composite unique constraint
+            }
+          )
+          .select();
 
-          if (error) throw error;
-          return data;
-        }
-      })
+        throwIfError(error);
+        return data;
+      },
+      { maxRetries: 3 }
     );
 
-    return NextResponse.json(results);
+    return NextResponse.json(results || []);
   } catch (error) {
     console.error("Erro ao salvar configurações de playlists:", error);
     return NextResponse.json(

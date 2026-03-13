@@ -1,6 +1,7 @@
 import { SupabaseClient } from "@supabase/supabase-js";
 import { Adapter } from "next-auth/adapters";
 import { randomUUID } from "crypto";
+import { throwIfError, PGSQL_ERROR_CODES, toISOString } from "./supabase-utils";
 
 export function SupabaseAdapter(supabase: SupabaseClient): Adapter {
   return {
@@ -24,6 +25,7 @@ export function SupabaseAdapter(supabase: SupabaseClient): Adapter {
         throw existingError;
       }
 
+      const now = new Date().toISOString();
       const { data: user, error } = await supabase
         .from("User")
         .insert([
@@ -40,8 +42,8 @@ export function SupabaseAdapter(supabase: SupabaseClient): Adapter {
             passwordResetToken: null,
             passwordResetExpires: null,
             youtubeChannelId: null,
-            createdAt: new Date(),
-            updatedAt: new Date(),
+            createdAt: now,
+            updatedAt: now,
           },
         ])
         .select()
@@ -67,7 +69,7 @@ export function SupabaseAdapter(supabase: SupabaseClient): Adapter {
         .eq("id", id)
         .single();
 
-      if (error && error.code !== "PGRST116") throw error;
+      throwIfError(error, [PGSQL_ERROR_CODES.NO_ROWS]);
       return user || null;
     },
 
@@ -78,7 +80,7 @@ export function SupabaseAdapter(supabase: SupabaseClient): Adapter {
         .eq("email", email)
         .single();
 
-      if (error && error.code !== "PGRST116") throw error;
+      throwIfError(error, [PGSQL_ERROR_CODES.NO_ROWS]);
       return user || null;
     },
 
@@ -90,7 +92,7 @@ export function SupabaseAdapter(supabase: SupabaseClient): Adapter {
         .eq("providerAccountId", providerAccountId)
         .single();
 
-      if (accountError && accountError.code !== "PGRST116") throw accountError;
+      throwIfError(accountError, [PGSQL_ERROR_CODES.NO_ROWS]);
       if (!account) return null;
 
       const { data: user, error: userError } = await supabase
@@ -99,7 +101,7 @@ export function SupabaseAdapter(supabase: SupabaseClient): Adapter {
         .eq("id", account.userId)
         .single();
 
-      if (userError && userError.code !== "PGRST116") throw userError;
+      throwIfError(userError, [PGSQL_ERROR_CODES.NO_ROWS]);
       return user || null;
     },
 
@@ -111,7 +113,7 @@ export function SupabaseAdapter(supabase: SupabaseClient): Adapter {
           email: data.email,
           emailVerified: data.emailVerified,
           image: data.image,
-          updatedAt: new Date(),
+          updatedAt: toISOString(new Date()),
         })
         .eq("id", data.id)
         .select()
@@ -173,10 +175,7 @@ export function SupabaseAdapter(supabase: SupabaseClient): Adapter {
       }
 
       // Only throw if there's a real error (not "no rows found")
-      if (existingError && existingError.code !== "PGRST116") {
-        console.error("[ADAPTER] linkAccount - Error checking for existing account:", existingError);
-        throw existingError;
-      }
+      throwIfError(existingError, [PGSQL_ERROR_CODES.NO_ROWS]);
 
       // Create new account link
       const { data: account, error } = await supabase
@@ -246,8 +245,7 @@ export function SupabaseAdapter(supabase: SupabaseClient): Adapter {
         .eq("sessionToken", sessionToken)
         .single();
 
-      if (sessionError && sessionError.code !== "PGRST116")
-        throw sessionError;
+      throwIfError(sessionError, [PGSQL_ERROR_CODES.NO_ROWS]);
       if (!session) return null;
 
       const { data: user, error: userError } = await supabase
@@ -256,7 +254,7 @@ export function SupabaseAdapter(supabase: SupabaseClient): Adapter {
         .eq("id", session.userId)
         .single();
 
-      if (userError && userError.code !== "PGRST116") throw userError;
+      throwIfError(userError, [PGSQL_ERROR_CODES.NO_ROWS]);
       if (!user) return null;
 
       return { session, user };
@@ -309,7 +307,7 @@ export function SupabaseAdapter(supabase: SupabaseClient): Adapter {
         .eq("token", token)
         .single();
 
-      if (error && error.code !== "PGRST116") throw error;
+      throwIfError(error, [PGSQL_ERROR_CODES.NO_ROWS]);
 
       if (verificationToken) {
         await supabase

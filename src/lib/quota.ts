@@ -1,6 +1,9 @@
 import { supabase } from "./supabase";
 import { QUOTA_COSTS, DAILY_QUOTA_LIMIT, QuotaStatus, QuotaHistoryItem } from "@/types/quota";
 import { logger } from "./logger";
+import { toDateOnly, throwIfError, PGSQL_ERROR_CODES } from "./supabase-utils";
+import { quotaCache } from "./quota-cache";
+import { withRetry } from "./supabase-retry";
 
 export async function trackQuotaUsage(
   userId: string,
@@ -10,6 +13,7 @@ export async function trackQuotaUsage(
   const cost = (QUOTA_COSTS[endpoint] || 0) * multiplier;
   const today = new Date();
   today.setHours(0, 0, 0, 0);
+  const dateStr = toDateOnly(today);
 
   logger.debug("YOUTUBE_API", "trackQuotaUsage", {
     userId,
@@ -25,7 +29,7 @@ export async function trackQuotaUsage(
       .from("QuotaHistory")
       .select("consumedUnits")
       .eq("userId", userId)
-      .eq("date", today.toISOString().split('T')[0])
+      .eq("date", dateStr)
       .single();
 
     if (existing) {
@@ -34,16 +38,16 @@ export async function trackQuotaUsage(
         .from("QuotaHistory")
         .update({ consumedUnits: existing.consumedUnits + cost })
         .eq("userId", userId)
-        .eq("date", today.toISOString().split('T')[0]);
+        .eq("date", dateStr);
 
       if (updateError) throw updateError;
-    } else if (selectError && selectError.code === 'PGRST116') {
+    } else if (selectError && selectError.code === PGSQL_ERROR_CODES.NO_ROWS) {
       // Record doesn't exist, create it
       const { error: insertError } = await supabase
         .from("QuotaHistory")
         .insert({
           userId,
-          date: today.toISOString().split('T')[0],
+          date: dateStr,
           consumedUnits: cost,
           dailyLimit: DAILY_QUOTA_LIMIT,
         });
@@ -52,6 +56,9 @@ export async function trackQuotaUsage(
     } else if (selectError) {
       throw selectError;
     }
+
+    // Invalidate cache since quota was updated
+    quotaCache.invalidate(userId);
 
     logger.debug("YOUTUBE_API", "trackQuotaUsage - Recorded successfully", {
       userId,
@@ -71,18 +78,32 @@ export async function trackQuotaUsage(
 export async function getQuotaStatus(userId: string): Promise<QuotaStatus> {
   logger.debug("YOUTUBE_API", "getQuotaStatus called", { userId });
 
+  // Check cache first
+  const cached = quotaCache.get(userId);
+  if (cached) {
+    logger.debug("YOUTUBE_API", "getQuotaStatus from cache", { userId });
+    return cached;
+  }
+
   const today = new Date();
   today.setHours(0, 0, 0, 0);
+  const dateStr = toDateOnly(today);
 
   try {
-    const { data: quota, error } = await supabase
-      .from("QuotaHistory")
-      .select("consumedUnits")
-      .eq("userId", userId)
-      .eq("date", today.toISOString().split('T')[0])
-      .single();
+    const { data: quota, error } = await withRetry(
+      async () => {
+        const result = await supabase
+          .from("QuotaHistory")
+          .select("consumedUnits")
+          .eq("userId", userId)
+          .eq("date", dateStr)
+          .single();
+        return result;
+      },
+      { maxRetries: 2 }
+    );
 
-    if (error && error.code !== 'PGRST116') throw error;
+    throwIfError(error, [PGSQL_ERROR_CODES.NO_ROWS]);
 
     const consumedUnits = quota?.consumedUnits || 0;
     const dailyLimit = DAILY_QUOTA_LIMIT;
@@ -93,6 +114,9 @@ export async function getQuotaStatus(userId: string): Promise<QuotaStatus> {
       remainingUnits: dailyLimit - consumedUnits,
       percentUsed: (consumedUnits / dailyLimit) * 100,
     };
+
+    // Cache the result
+    quotaCache.set(userId, status, 60000); // 60 second TTL
 
     logger.debug("YOUTUBE_API", "getQuotaStatus result", {
       userId,
@@ -144,13 +168,14 @@ export async function getQuotaHistory(
   const startDate = new Date();
   startDate.setDate(startDate.getDate() - days);
   startDate.setHours(0, 0, 0, 0);
+  const startDateStr = toDateOnly(startDate);
 
   try {
     const { data: history, error } = await supabase
       .from("QuotaHistory")
       .select("date, consumedUnits, dailyLimit")
       .eq("userId", userId)
-      .gte("date", startDate.toISOString().split('T')[0])
+      .gte("date", startDateStr)
       .order("date", { ascending: false });
 
     if (error) throw error;

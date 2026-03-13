@@ -375,12 +375,35 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
       // Helper function to fetch user with account data
       async function fetchUserWithAccount(whereClause: { id?: string; email?: string }) {
         try {
-          const user = await prisma.user.findFirst({
-            where: whereClause,
-            include: { accounts: true },
-          });
+          let query = supabase.from("User").select("id, email, youtubeChannelId, updatedAt");
 
-          return user;
+          if (whereClause.id) {
+            query = query.eq("id", whereClause.id);
+          } else if (whereClause.email) {
+            query = query.eq("email", whereClause.email);
+          } else {
+            return null;
+          }
+
+          const { data: user, error } = await query.single();
+          if (error && error.code !== "PGRST116") throw error;
+
+          if (user) {
+            // Fetch associated accounts
+            const { data: accounts, error: accountsError } = await supabase
+              .from("Account")
+              .select("id, access_token, refresh_token, expires_at, provider")
+              .eq("userId", user.id);
+
+            if (accountsError && accountsError.code !== "PGRST116") throw accountsError;
+
+            return {
+              ...user,
+              accounts: accounts || [],
+            };
+          }
+
+          return null;
         } catch (error) {
           logger.error(
             "DATABASE",

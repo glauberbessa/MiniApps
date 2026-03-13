@@ -3,6 +3,7 @@ import { YouTubeService } from "@/lib/youtube";
 import { getQuotaStatus } from "@/lib/quota";
 import { logger } from "@/lib/logger";
 import { DAILY_QUOTA_LIMIT } from "@/types/quota";
+import { throwIfError, PGSQL_ERROR_CODES } from "@/lib/supabase-utils";
 import type {
   ExportInitResult,
   ExportBatchResult,
@@ -34,7 +35,7 @@ export async function initExport(
     .select("id, status")
     .eq("userId", userId);
 
-  if (countError && countError.code !== 'PGRST116') throw countError;
+  throwIfError(countError, [PGSQL_ERROR_CODES.NO_ROWS]);
 
   const existingCount = existing?.length || 0;
 
@@ -94,7 +95,7 @@ export async function initExport(
       .from("ExportProgress")
       .insert(playlistData);
     // Ignore duplicate key errors
-    if (playlistError && playlistError.code !== '23505') throw playlistError;
+    throwIfError(playlistError, [PGSQL_ERROR_CODES.DUPLICATE_KEY]);
   }
 
   if (channelData.length > 0) {
@@ -102,7 +103,7 @@ export async function initExport(
       .from("ExportProgress")
       .insert(channelData);
     // Ignore duplicate key errors
-    if (channelError && channelError.code !== '23505') throw channelError;
+    throwIfError(channelError, [PGSQL_ERROR_CODES.DUPLICATE_KEY]);
   }
 
   logger.info("API", "initExport END", {
@@ -338,7 +339,7 @@ export async function processBatch(
           .select("id");
 
         // Count inserted records (on duplicate key, Supabase may return different behavior)
-        if (insertError && insertError.code !== '23505') throw insertError;
+        throwIfError(insertError, [PGSQL_ERROR_CODES.DUPLICATE_KEY]);
 
         videosImported = data?.length || 0;
         const saveElapsed = Date.now() - saveStartTime;
@@ -659,7 +660,7 @@ export async function processBatch(
             .insert(videoData)
             .select("id");
 
-          if (insertError && insertError.code !== '23505') throw insertError;
+          throwIfError(insertError, [PGSQL_ERROR_CODES.DUPLICATE_KEY]);
           videosImported = data?.length || 0;
         }
 
@@ -787,31 +788,48 @@ export async function getExportStatus(
 ): Promise<ExportStatusResult> {
   logger.debug("API", "getExportStatus", { userId });
 
+  // Reduce from 7 queries to 3 by fetching data and counting in memory
+  // This is more efficient for typical export scenarios with < 1000 items
   const [
-    { data: allSources, error: allSourcesError },
-    { data: completedSources, error: completedSourcesError },
-    { data: inProgressSources, error: inProgressSourcesError },
-    { data: pendingSources, error: pendingSourcesError },
-    { data: allVideos, error: allVideosError },
-    { data: englishVideos, error: englishVideosError },
+    { data: allProgress, error: progressError },
+    { data: allVideosCounts, error: videosError },
     { data: lastImportList, error: lastImportError },
   ] = await Promise.all([
-    supabase.from("ExportProgress").select("id", { count: "exact" }).eq("userId", userId),
-    supabase.from("ExportProgress").select("id", { count: "exact" }).eq("userId", userId).eq("status", "completed"),
-    supabase.from("ExportProgress").select("id", { count: "exact" }).eq("userId", userId).eq("status", "in_progress"),
-    supabase.from("ExportProgress").select("id", { count: "exact" }).eq("userId", userId).eq("status", "pending"),
-    supabase.from("ExportedVideo").select("id", { count: "exact" }).eq("userId", userId),
-    supabase.from("ExportedVideo").select("id", { count: "exact" }).eq("userId", userId).like("language", "en%"),
-    supabase.from("ExportProgress").select("lastImportedAt").eq("userId", userId).not("lastImportedAt", "is", null).order("lastImportedAt", { ascending: false }).limit(1),
+    // Single query for all progress items, count by status in memory
+    supabase
+      .from("ExportProgress")
+      .select("id, status, lastImportedAt")
+      .eq("userId", userId),
+    // Single count query for all videos
+    supabase
+      .from("ExportedVideo")
+      .select("id, language", { count: "exact" })
+      .eq("userId", userId),
+    // Get most recent import
+    supabase
+      .from("ExportProgress")
+      .select("lastImportedAt")
+      .eq("userId", userId)
+      .not("lastImportedAt", "is", null)
+      .order("lastImportedAt", { ascending: false })
+      .limit(1),
   ]);
 
-  if (allSourcesError) throw allSourcesError;
-  if (completedSourcesError) throw completedSourcesError;
-  if (inProgressSourcesError) throw inProgressSourcesError;
-  if (pendingSourcesError) throw pendingSourcesError;
-  if (allVideosError) throw allVideosError;
-  if (englishVideosError) throw englishVideosError;
-  if (lastImportError && lastImportError.code !== 'PGRST116') throw lastImportError;
+  if (progressError) throw progressError;
+  if (videosError) throw videosError;
+  throwIfError(lastImportError, [PGSQL_ERROR_CODES.NO_ROWS]);
+
+  // Count statuses in memory (O(n) is acceptable for typical small datasets)
+  const completedCount = (allProgress || []).filter(p => p.status === "completed").length;
+  const inProgressCount = (allProgress || []).filter(p => p.status === "in_progress").length;
+  const pendingCount = (allProgress || []).filter(p => p.status === "pending").length;
+  const totalSources = allProgress?.length || 0;
+
+  // Count videos (use count from response header if available, otherwise array length)
+  const totalVideosImported = allVideosCounts?.length || 0;
+  const englishVideosCount = (allVideosCounts || []).filter(
+    v => v.language && v.language.startsWith('en')
+  ).length;
 
   let quotaUsedToday = 0;
   try {
@@ -821,12 +839,6 @@ export async function getExportStatus(
     // Quota fetch pode falhar se não há registro para hoje
   }
 
-  const totalSources = allSources?.length || 0;
-  const completedCount = completedSources?.length || 0;
-  const inProgressCount = inProgressSources?.length || 0;
-  const pendingCount = pendingSources?.length || 0;
-  const totalVideosImported = allVideos?.length || 0;
-  const englishVideosCount = englishVideos?.length || 0;
   const lastImport = lastImportList && lastImportList.length > 0 ? lastImportList[0] : null;
 
   return {

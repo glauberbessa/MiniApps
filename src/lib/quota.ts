@@ -1,6 +1,7 @@
 import { supabase } from "./supabase";
 import { QUOTA_COSTS, DAILY_QUOTA_LIMIT, QuotaStatus, QuotaHistoryItem } from "@/types/quota";
 import { logger } from "./logger";
+import { toDateOnly, throwIfError, PGSQL_ERROR_CODES } from "./supabase-utils";
 
 export async function trackQuotaUsage(
   userId: string,
@@ -10,6 +11,7 @@ export async function trackQuotaUsage(
   const cost = (QUOTA_COSTS[endpoint] || 0) * multiplier;
   const today = new Date();
   today.setHours(0, 0, 0, 0);
+  const dateStr = toDateOnly(today);
 
   logger.debug("YOUTUBE_API", "trackQuotaUsage", {
     userId,
@@ -25,7 +27,7 @@ export async function trackQuotaUsage(
       .from("QuotaHistory")
       .select("consumedUnits")
       .eq("userId", userId)
-      .eq("date", today.toISOString().split('T')[0])
+      .eq("date", dateStr)
       .single();
 
     if (existing) {
@@ -34,16 +36,16 @@ export async function trackQuotaUsage(
         .from("QuotaHistory")
         .update({ consumedUnits: existing.consumedUnits + cost })
         .eq("userId", userId)
-        .eq("date", today.toISOString().split('T')[0]);
+        .eq("date", dateStr);
 
       if (updateError) throw updateError;
-    } else if (selectError && selectError.code === 'PGRST116') {
+    } else if (selectError && selectError.code === PGSQL_ERROR_CODES.NO_ROWS) {
       // Record doesn't exist, create it
       const { error: insertError } = await supabase
         .from("QuotaHistory")
         .insert({
           userId,
-          date: today.toISOString().split('T')[0],
+          date: dateStr,
           consumedUnits: cost,
           dailyLimit: DAILY_QUOTA_LIMIT,
         });
@@ -73,16 +75,17 @@ export async function getQuotaStatus(userId: string): Promise<QuotaStatus> {
 
   const today = new Date();
   today.setHours(0, 0, 0, 0);
+  const dateStr = toDateOnly(today);
 
   try {
     const { data: quota, error } = await supabase
       .from("QuotaHistory")
       .select("consumedUnits")
       .eq("userId", userId)
-      .eq("date", today.toISOString().split('T')[0])
+      .eq("date", dateStr)
       .single();
 
-    if (error && error.code !== 'PGRST116') throw error;
+    throwIfError(error, [PGSQL_ERROR_CODES.NO_ROWS]);
 
     const consumedUnits = quota?.consumedUnits || 0;
     const dailyLimit = DAILY_QUOTA_LIMIT;
@@ -144,13 +147,14 @@ export async function getQuotaHistory(
   const startDate = new Date();
   startDate.setDate(startDate.getDate() - days);
   startDate.setHours(0, 0, 0, 0);
+  const startDateStr = toDateOnly(startDate);
 
   try {
     const { data: history, error } = await supabase
       .from("QuotaHistory")
       .select("date, consumedUnits, dailyLimit")
       .eq("userId", userId)
-      .gte("date", startDate.toISOString().split('T')[0])
+      .gte("date", startDateStr)
       .order("date", { ascending: false });
 
     if (error) throw error;

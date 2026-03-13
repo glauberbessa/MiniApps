@@ -55,13 +55,14 @@ model User {
   passwordResetToken   String?   @unique
   passwordResetExpires DateTime?
 
-  accounts        Account[]
-  sessions        Session[]
-  playlistConfigs PlaylistConfig[]
-  channelConfigs  ChannelConfig[]
-  quotaHistories  QuotaHistory[]
-  exportedVideos  ExportedVideo[]
-  exportProgress  ExportProgress[]
+  accounts          Account[]
+  sessions          Session[]
+  playlistConfigs   PlaylistConfig[]
+  channelConfigs    ChannelConfig[]
+  quotaHistories    QuotaHistory[]
+  exportedVideos    ExportedVideo[]
+  exportProgress    ExportProgress[]
+  exportAutoResume  ExportAutoResume?
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
@@ -176,4 +177,22 @@ model ExportProgress {
   @@unique([userId, sourceType, sourceId])
   @@index([userId])
   @@index([userId, status])
+}
+
+model ExportAutoResume {
+  id            String    @id @default(cuid())
+  userId        String    @unique
+  status        String    @default("active") // "active" | "paused"
+  pausedReason  String?   // "quota_exceeded"
+  pausedUntil   DateTime?
+  lastAttempt   DateTime?
+  nextAttempt   DateTime?
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([userId])
+  @@index([status])
 }

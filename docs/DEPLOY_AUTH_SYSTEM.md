@@ -16,7 +16,8 @@ Configure estas variáveis no painel da Vercel em **Settings > Environment Varia
 
 | Variável | Descrição | Exemplo |
 |----------|-----------|---------|
-| `DATABASE_URL` | URL de conexão PostgreSQL | `postgresql://user:pass@host:5432/db` |
+| `SUPABASE_URL` | URL do projeto Supabase | `https://xxxx.supabase.co` |
+| `SUPABASE_SERVICE_ROLE_KEY` | Chave de serviço Supabase (para servidor) | `eyJhbGciOiJIUzI1NiIs...` |
 | `AUTH_SECRET` | Segredo para JWT (32+ caracteres) | Gere com `openssl rand -base64 32` |
 | `NEXTAUTH_URL` | URL base do app | `https://miniapps.vercel.app` |
 | `GOOGLE_CLIENT_ID` | ID do cliente OAuth Google | `xxx.apps.googleusercontent.com` |
@@ -60,35 +61,46 @@ Para usar seu próprio domínio:
 
 ## Configurar Banco de Dados
 
-### Migrar Schema
+### Configurar Supabase
 
-O schema do Prisma precisa ser aplicado ao banco de dados de produção.
+O sistema de autenticação usa Supabase PostgreSQL para armazenar dados de usuários e sessões.
 
-#### Opção 1: Via Vercel (Recomendado)
+#### Passo 1: Criar Projeto Supabase
 
-A aplicação aplica migrações automaticamente na inicialização se `DATABASE_URL` estiver configurada.
+1. Acesse [supabase.com](https://supabase.com) e crie uma conta
+2. Crie um novo projeto (escolha uma senha forte)
+3. Vá em **Settings > API** para copiar as credenciais:
+   - `SUPABASE_URL` - URL do projeto
+   - `SUPABASE_SERVICE_ROLE_KEY` - Chave de serviço (use a anon key para cliente)
 
-#### Opção 2: Manualmente
+#### Passo 2: Criar Tabelas
 
-```bash
-# Configure DATABASE_URL localmente apontando para produção
-export DATABASE_URL="postgresql://..."
+A aplicação automaticamente verifica e cria as tabelas necessárias na inicialização. As tabelas criadas são:
 
-# Aplique o schema
-npx prisma db push
-```
+- **User** - Usuários com autenticação (email/senha e OAuth)
+- **Account** - Contas OAuth vinculadas (Google, etc)
+- **Session** - Sessões de usuários
+- **VerificationToken** - Tokens para reset de senha
+- **PlaylistConfig** - Configurações de playlists (YTPM)
+- **ChannelConfig** - Configurações de canais (YTPM)
+- **QuotaHistory** - Histórico de quota de API (YTPM)
 
-### Campos Adicionados ao User
+#### Passo 3: Configurar Variáveis no Vercel
+
+Configure `SUPABASE_URL` e `SUPABASE_SERVICE_ROLE_KEY` no painel da Vercel em **Settings > Environment Variables**.
+
+### Campos do Usuário
 
 O sistema de autenticação adiciona estes campos ao modelo User:
 
-```prisma
-password             String?   // Hash bcrypt da senha
-isActive             Boolean   @default(true)
-loginAttempts        Int       @default(0)
-lockedUntil          DateTime?
-passwordResetToken   String?   @unique
-passwordResetExpires DateTime?
+```sql
+password             TEXT        -- Hash bcrypt da senha
+isActive             BOOLEAN     -- Status da conta (padrão: true)
+loginAttempts        INTEGER     -- Contador de tentativas falhadas (padrão: 0)
+lockedUntil          TIMESTAMP   -- Data até quando a conta está bloqueada
+passwordResetToken   TEXT UNIQUE -- Token para reset de senha
+passwordResetExpires TIMESTAMP   -- Expiração do token de reset
+youtubeChannelId     TEXT UNIQUE -- Canal YouTube associado (para YTPM)
 ```
 
 ## Rotas da Aplicação

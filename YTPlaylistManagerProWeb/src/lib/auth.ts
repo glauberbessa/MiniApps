@@ -313,12 +313,14 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
           console.log(`[AUTH_CALLBACK:jwt] Token expired, attempting refresh...`);
           try {
             // Find the account in DB to get its ID for update
-            const dbAccount = await prisma.account.findFirst({
-              where: {
-                providerAccountId: token.accountId as string,
-                provider: "google",
-              },
-            });
+            const { data: dbAccount, error: accountError } = await supabase
+              .from("Account")
+              .select("id")
+              .eq("providerAccountId", token.accountId as string)
+              .eq("provider", "google")
+              .single();
+
+            if (accountError && accountError.code !== "PGRST116") throw accountError;
 
             if (dbAccount) {
               const newAccessToken = await refreshAccessToken({

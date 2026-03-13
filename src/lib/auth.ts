@@ -231,9 +231,9 @@ const useSecureCookies = process.env.NODE_ENV === "production";
 const cookiePrefix = useSecureCookies ? "__Secure-" : "";
 
 function extractMissingTable(message: string): string | null {
-  const prismaMatch = message.match(/The table `([^`]+)` does not exist/i);
-  if (prismaMatch?.[1]) {
-    return prismaMatch[1];
+  const tableMatch = message.match(/The table `([^`]+)` does not exist/i);
+  if (tableMatch?.[1]) {
+    return tableMatch[1];
   }
   const relationMatch = message.match(/relation \"([^\"]+)\" does not exist/i);
   if (relationMatch?.[1]) {
@@ -246,6 +246,11 @@ function extractMissingColumn(message: string): string | null {
   const columnMatch = message.match(/The column `([^`]+)` does not exist/i);
   if (columnMatch?.[1]) {
     return columnMatch[1];
+  }
+  // Also check for PostgreSQL error format
+  const pgMatch = message.match(/column \"([^\"]+)\" does not exist/i);
+  if (pgMatch?.[1]) {
+    return pgMatch[1];
   }
   return null;
 }

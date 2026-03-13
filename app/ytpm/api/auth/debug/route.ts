@@ -17,7 +17,8 @@ export async function GET() {
           hasNextAuthSecret: !!process.env.NEXTAUTH_SECRET,
           hasGoogleClientId: !!process.env.GOOGLE_CLIENT_ID,
           hasGoogleClientSecret: !!process.env.GOOGLE_CLIENT_SECRET,
-          hasDatabaseUrl: !!process.env.DATABASE_URL,
+          hasSupabaseUrl: !!process.env.SUPABASE_URL,
+          hasSupabaseServiceRoleKey: !!process.env.SUPABASE_SERVICE_ROLE_KEY,
         },
       });
     }

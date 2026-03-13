@@ -346,7 +346,8 @@ export function logEnvironmentInfo(): void {
     NEXTAUTH_SECRET: process.env.NEXTAUTH_SECRET ? "[SET]" : "[NOT SET]",
     GOOGLE_CLIENT_ID: process.env.GOOGLE_CLIENT_ID ? "[SET]" : "[NOT SET]",
     GOOGLE_CLIENT_SECRET: process.env.GOOGLE_CLIENT_SECRET ? "[SET]" : "[NOT SET]",
-    DATABASE_URL: process.env.DATABASE_URL ? "[SET]" : "[NOT SET]",
+    SUPABASE_URL: process.env.SUPABASE_URL ? "[SET]" : "[NOT SET]",
+    SUPABASE_SERVICE_ROLE_KEY: process.env.SUPABASE_SERVICE_ROLE_KEY ? "[SET]" : "[NOT SET]",
   };
 
   logger.info("SYSTEM", "Environment Configuration", env);

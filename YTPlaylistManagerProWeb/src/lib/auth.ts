@@ -71,15 +71,21 @@ async function refreshAccessToken(account: {
     const elapsed = Date.now() - startTime;
 
     if (credentials.access_token) {
-      await prisma.account.update({
-        where: { id: account.id },
-        data: {
+      const { error } = await supabase
+        .from("Account")
+        .update({
           access_token: credentials.access_token,
           expires_at: credentials.expiry_date
             ? Math.floor(credentials.expiry_date / 1000)
             : null,
-        },
-      });
+        })
+        .eq("id", account.id);
+
+      if (error) {
+        logger.error("GOOGLE_OAUTH", "Failed to update account with new access token", error, {
+          accountId: account.id,
+        });
+      }
 
       return credentials.access_token;
     } else {

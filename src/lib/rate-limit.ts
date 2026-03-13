@@ -3,7 +3,7 @@
  * Protege contra ataques de força bruta
  */
 
-import { prisma } from '@/lib/prisma'
+import { supabase } from '@/lib/supabase'
 import { logger } from '@/lib/logger'
 
 // Configurações
@@ -22,27 +22,32 @@ interface RateLimitResult {
  * @returns Resultado indicando se a tentativa é permitida
  */
 export async function checkLoginAttempts(userId: string): Promise<RateLimitResult> {
-  const user = await prisma.user.findUnique({
-    where: { id: userId },
-    select: { loginAttempts: true, lockedUntil: true },
-  })
+  const { data: user, error } = await supabase
+    .from('User')
+    .select('loginAttempts, lockedUntil')
+    .eq('id', userId)
+    .single()
+
+  if (error && error.code !== 'PGRST116') throw error
 
   if (!user) {
     return { allowed: true, attemptsRemaining: MAX_LOGIN_ATTEMPTS, lockedUntil: null }
   }
 
+  const lockedUntil = user.lockedUntil ? new Date(user.lockedUntil) : null
+
   // Verificar se está bloqueado
-  if (user.lockedUntil && user.lockedUntil > new Date()) {
+  if (lockedUntil && lockedUntil > new Date()) {
     logger.warn('AUTH', 'Login blocked - too many attempts', { userId })
     return {
       allowed: false,
       attemptsRemaining: 0,
-      lockedUntil: user.lockedUntil,
+      lockedUntil,
     }
   }
 
   // Se o bloqueio expirou, resetar tentativas
-  if (user.lockedUntil && user.lockedUntil <= new Date()) {
+  if (lockedUntil && lockedUntil <= new Date()) {
     await resetLoginAttempts(userId)
     return { allowed: true, attemptsRemaining: MAX_LOGIN_ATTEMPTS, lockedUntil: null }
   }
@@ -62,23 +67,37 @@ export async function checkLoginAttempts(userId: string): Promise<RateLimitResul
  * @returns Novo número de tentativas
  */
 export async function incrementLoginAttempts(userId: string): Promise<number> {
-  const user = await prisma.user.update({
-    where: { id: userId },
-    data: {
-      loginAttempts: { increment: 1 },
-    },
-    select: { loginAttempts: true },
-  })
+  // Get current attempts
+  const { data: currentUser, error: getError } = await supabase
+    .from('User')
+    .select('loginAttempts')
+    .eq('id', userId)
+    .single()
+
+  if (getError && getError.code !== 'PGRST116') throw getError
+
+  const currentAttempts = currentUser?.loginAttempts ?? 0
+  const newAttempts = currentAttempts + 1
+
+  // Update attempts
+  const { error: updateError } = await supabase
+    .from('User')
+    .update({ loginAttempts: newAttempts })
+    .eq('id', userId)
+
+  if (updateError) throw updateError
 
   // Se excedeu o limite, bloquear
-  if (user.loginAttempts >= MAX_LOGIN_ATTEMPTS) {
+  if (newAttempts >= MAX_LOGIN_ATTEMPTS) {
     const lockedUntil = new Date()
     lockedUntil.setMinutes(lockedUntil.getMinutes() + LOCKOUT_DURATION_MINUTES)
 
-    await prisma.user.update({
-      where: { id: userId },
-      data: { lockedUntil },
-    })
+    const { error: lockError } = await supabase
+      .from('User')
+      .update({ lockedUntil: lockedUntil.toISOString() })
+      .eq('id', userId)
+
+    if (lockError) throw lockError
 
     logger.warn('AUTH', 'User locked due to too many login attempts', {
       userId,
@@ -86,7 +105,7 @@ export async function incrementLoginAttempts(userId: string): Promise<number> {
     })
   }
 
-  return user.loginAttempts
+  return newAttempts
 }
 
 /**
@@ -94,13 +113,15 @@ export async function incrementLoginAttempts(userId: string): Promise<number> {
  * @param userId - ID do usuário
  */
 export async function resetLoginAttempts(userId: string): Promise<void> {
-  await prisma.user.update({
-    where: { id: userId },
-    data: {
+  const { error } = await supabase
+    .from('User')
+    .update({
       loginAttempts: 0,
       lockedUntil: null,
-    },
-  })
+    })
+    .eq('id', userId)
+
+  if (error) throw error
 }
 
 /**

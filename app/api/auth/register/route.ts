@@ -4,7 +4,7 @@
  */
 
 import { NextRequest, NextResponse } from 'next/server'
-import { prisma } from '@/lib/prisma'
+import { supabase } from '@/lib/supabase'
 import { hashPassword } from '@/lib/password'
 import { registerSchema } from '@/lib/validations/auth'
 import { sendWelcomeEmail } from '@/lib/email'
@@ -29,10 +29,13 @@ export async function POST(request: NextRequest) {
     const { name, email, password } = result.data
 
     // Verificar se e-mail já existe
-    const existingUser = await prisma.user.findUnique({
-      where: { email },
-      select: { id: true },
-    })
+    const { data: existingUser, error: findError } = await supabase
+      .from('User')
+      .select('id')
+      .eq('email', email)
+      .single()
+
+    if (findError && findError.code !== 'PGRST116') throw findError
 
     if (existingUser) {
       logger.warn('AUTH', 'Registration attempt with existing email', { email })
@@ -46,20 +49,18 @@ export async function POST(request: NextRequest) {
     const hashedPassword = await hashPassword(password)
 
     // Criar usuário
-    const user = await prisma.user.create({
-      data: {
+    const { data: user, error: createError } = await supabase
+      .from('User')
+      .insert({
         name,
         email,
         password: hashedPassword,
         isActive: true,
-      },
-      select: {
-        id: true,
-        name: true,
-        email: true,
-        createdAt: true,
-      },
-    })
+      })
+      .select('id, name, email, createdAt')
+      .single()
+
+    if (createError) throw createError
 
     logger.info('AUTH', 'New user registered', {
       userId: user.id,

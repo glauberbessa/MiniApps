@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { auth } from "@/lib/auth";
-import { prisma } from "@/lib/prisma";
+import { supabase } from "@/lib/supabase";
 
 export const dynamic = "force-dynamic";
 
@@ -12,12 +12,15 @@ export async function GET() {
       return NextResponse.json({ error: "Não autorizado" }, { status: 401 });
     }
 
-    const configs = await prisma.channelConfig.findMany({
-      where: { userId: session.user.id },
-      orderBy: { title: "asc" },
-    });
+    const { data: configs, error } = await supabase
+      .from("ChannelConfig")
+      .select("*")
+      .eq("userId", session.user.id)
+      .order("title", { ascending: true });
 
-    return NextResponse.json(configs);
+    if (error) throw error;
+
+    return NextResponse.json(configs || []);
   } catch (error) {
     console.error("Erro ao buscar configurações de canais:", error);
     return NextResponse.json(
@@ -47,24 +50,46 @@ export async function PUT(request: NextRequest) {
     // Atualizar ou criar configurações
     const results = await Promise.all(
       body.map(async (config: { channelId: string; title: string; isEnabled: boolean }) => {
-        return prisma.channelConfig.upsert({
-          where: {
-            userId_channelId: {
+        // Primeiro, tenta buscar o registro existente
+        const { data: existing, error: findError } = await supabase
+          .from("ChannelConfig")
+          .select("id")
+          .eq("userId", session.user.id)
+          .eq("channelId", config.channelId)
+          .single();
+
+        if (findError && findError.code !== "PGRST116") throw findError;
+
+        if (existing) {
+          // Atualizar
+          const { data, error } = await supabase
+            .from("ChannelConfig")
+            .update({
+              title: config.title,
+              isEnabled: config.isEnabled,
+            })
+            .eq("id", existing.id)
+            .select()
+            .single();
+
+          if (error) throw error;
+          return data;
+        } else {
+          // Criar novo
+          const { data, error } = await supabase
+            .from("ChannelConfig")
+            .insert({
               userId: session.user.id,
               channelId: config.channelId,
-            },
-          },
-          update: {
-            title: config.title,
-            isEnabled: config.isEnabled,
-          },
-          create: {
-            userId: session.user.id,
-            channelId: config.channelId,
-            title: config.title,
-            isEnabled: config.isEnabled,
-          },
-        });
+              title: config.title,
+              isEnabled: config.isEnabled,
+            })
+            .select()
+            .single();
+
+          if (error) throw error;
+          return data;
+        }
       })
     );
 

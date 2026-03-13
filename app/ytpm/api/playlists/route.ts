@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 import { auth } from "@/lib/auth";
 import { YouTubeService } from "@/lib/youtube";
-import { prisma } from "@/lib/prisma";
+import { supabase } from "@/lib/supabase";
 import { logger, generateTraceId, setTraceId, clearTraceId } from "@/lib/logger";
 
 export const dynamic = "force-dynamic";
@@ -86,20 +86,24 @@ export async function GET() {
     // Buscar configurações das playlists
     logger.info("API", "Fetching playlist configs from database", { traceId });
     const dbStartTime = Date.now();
-    const configs = await prisma.playlistConfig.findMany({
-      where: { userId: session.user.id },
-    });
+    const { data: configs, error: configError } = await supabase
+      .from("PlaylistConfig")
+      .select("*")
+      .eq("userId", session.user.id);
+
+    if (configError) throw configError;
+
     const dbElapsed = Date.now() - dbStartTime;
 
     logger.database("Fetch playlist configs", true, {
       traceId,
-      configCount: configs.length,
+      configCount: (configs || []).length,
       elapsed: `${dbElapsed}ms`,
     });
 
     // Mesclar playlists com configurações
     const playlistsWithConfig = playlists.map((playlist) => {
-      const config = configs.find((c) => c.playlistId === playlist.id);
+      const config = (configs || []).find((c) => c.playlistId === playlist.id);
       return {
         ...playlist,
         config: config

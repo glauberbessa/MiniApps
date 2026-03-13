@@ -3,7 +3,7 @@ import Link from "next/link"
 import { redirect } from "next/navigation"
 
 import { auth } from "@/lib/auth"
-import { prisma } from "@/lib/prisma"
+import { supabase } from "@/lib/supabase"
 import {
   Card,
   CardContent,
@@ -27,14 +27,15 @@ export default async function RedefinirSenhaPage({ params }: RedefinirSenhaPageP
   }
 
   // Verificar se o token é válido
-  const user = await prisma.user.findFirst({
-    where: {
-      passwordResetToken: token,
-      passwordResetExpires: {
-        gt: new Date(),
-      },
-    },
-  })
+  const now = new Date()
+  const { data: users, error } = await supabase
+    .from("User")
+    .select("*")
+    .eq("passwordResetToken", token)
+    .gt("passwordResetExpires", now.toISOString())
+    .limit(1)
+
+  const user = error || !users || users.length === 0 ? null : users[0]
 
   if (!user) {
     return (

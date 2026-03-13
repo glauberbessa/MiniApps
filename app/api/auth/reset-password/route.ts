@@ -6,7 +6,7 @@
  */
 
 import { NextRequest, NextResponse } from 'next/server'
-import { prisma } from '@/lib/prisma'
+import { supabase } from '@/lib/supabase'
 import { resetPasswordSchema } from '@/lib/validations/auth'
 import { hashPassword } from '@/lib/password'
 import { isTokenExpired } from '@/lib/tokens'
@@ -32,17 +32,13 @@ export async function POST(request: NextRequest) {
     const { token, password } = result.data
 
     // Buscar usuário pelo token
-    const user = await prisma.user.findFirst({
-      where: {
-        passwordResetToken: token,
-      },
-      select: {
-        id: true,
-        email: true,
-        isActive: true,
-        passwordResetExpires: true,
-      },
-    })
+    const { data: user, error: findError } = await supabase
+      .from('User')
+      .select('id, email, isActive, passwordResetExpires')
+      .eq('passwordResetToken', token)
+      .single()
+
+    if (findError && findError.code !== 'PGRST116') throw findError
 
     // Token não encontrado
     if (!user) {
@@ -67,10 +63,11 @@ export async function POST(request: NextRequest) {
     }
 
     // Verificar se token expirou
-    if (isTokenExpired(user.passwordResetExpires)) {
+    const expiresDate = user.passwordResetExpires ? new Date(user.passwordResetExpires) : null
+    if (isTokenExpired(expiresDate)) {
       logger.warn('AUTH', 'Password reset attempt with expired token', {
         userId: user.id,
-        expiredAt: user.passwordResetExpires?.toISOString(),
+        expiredAt: expiresDate?.toISOString(),
       })
       return NextResponse.json(
         { error: 'Link de recuperação expirado. Solicite um novo.' },
@@ -82,14 +79,16 @@ export async function POST(request: NextRequest) {
     const hashedPassword = await hashPassword(password)
 
     // Atualizar senha e limpar token
-    await prisma.user.update({
-      where: { id: user.id },
-      data: {
+    const { error: updateError } = await supabase
+      .from('User')
+      .update({
         password: hashedPassword,
         passwordResetToken: null,
         passwordResetExpires: null,
-      },
-    })
+      })
+      .eq('id', user.id)
+
+    if (updateError) throw updateError
 
     // Resetar tentativas de login (caso estivesse bloqueado)
     await resetLoginAttempts(user.id)

@@ -6,7 +6,7 @@
  */
 
 import { NextRequest, NextResponse } from 'next/server'
-import { prisma } from '@/lib/prisma'
+import { supabase } from '@/lib/supabase'
 import { auth } from '@/lib/auth'
 import { changePasswordSchema } from '@/lib/validations/auth'
 import { hashPassword, verifyPassword } from '@/lib/password'
@@ -41,15 +41,13 @@ export async function POST(request: NextRequest) {
     const userId = session.user.id
 
     // Buscar usuário com senha atual
-    const user = await prisma.user.findUnique({
-      where: { id: userId },
-      select: {
-        id: true,
-        email: true,
-        password: true,
-        isActive: true,
-      },
-    })
+    const { data: user, error: findError } = await supabase
+      .from('User')
+      .select('id, email, password, isActive')
+      .eq('id', userId)
+      .single()
+
+    if (findError && findError.code !== 'PGRST116') throw findError
 
     // Usuário não encontrado (situação improvável se sessão é válida)
     if (!user) {
@@ -101,12 +99,14 @@ export async function POST(request: NextRequest) {
     const hashedNewPassword = await hashPassword(newPassword)
 
     // Atualizar senha
-    await prisma.user.update({
-      where: { id: userId },
-      data: {
+    const { error: updateError } = await supabase
+      .from('User')
+      .update({
         password: hashedNewPassword,
-      },
-    })
+      })
+      .eq('id', userId)
+
+    if (updateError) throw updateError
 
     logger.info('AUTH', 'Password changed successfully', {
       userId,

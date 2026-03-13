@@ -1,4 +1,4 @@
-import { prisma } from "./prisma";
+import { supabase } from "./supabase";
 import { QUOTA_COSTS, DAILY_QUOTA_LIMIT, QuotaStatus, QuotaHistoryItem } from "@/types/quota";
 import { logger } from "./logger";
 
@@ -20,23 +20,38 @@ export async function trackQuotaUsage(
   });
 
   try {
-    await prisma.quotaHistory.upsert({
-      where: {
-        userId_date: {
+    // Try to find existing quota record
+    const { data: existing, error: selectError } = await supabase
+      .from("QuotaHistory")
+      .select("consumedUnits")
+      .eq("userId", userId)
+      .eq("date", today.toISOString().split('T')[0])
+      .single();
+
+    if (existing) {
+      // Update existing record
+      const { error: updateError } = await supabase
+        .from("QuotaHistory")
+        .update({ consumedUnits: existing.consumedUnits + cost })
+        .eq("userId", userId)
+        .eq("date", today.toISOString().split('T')[0]);
+
+      if (updateError) throw updateError;
+    } else if (selectError && selectError.code === 'PGRST116') {
+      // Record doesn't exist, create it
+      const { error: insertError } = await supabase
+        .from("QuotaHistory")
+        .insert({
           userId,
-          date: today,
-        },
-      },
-      update: {
-        consumedUnits: { increment: cost },
-      },
-      create: {
-        userId,
-        date: today,
-        consumedUnits: cost,
-        dailyLimit: DAILY_QUOTA_LIMIT,
-      },
-    });
+          date: today.toISOString().split('T')[0],
+          consumedUnits: cost,
+          dailyLimit: DAILY_QUOTA_LIMIT,
+        });
+
+      if (insertError) throw insertError;
+    } else if (selectError) {
+      throw selectError;
+    }
 
     logger.debug("YOUTUBE_API", "trackQuotaUsage - Recorded successfully", {
       userId,
@@ -60,14 +75,14 @@ export async function getQuotaStatus(userId: string): Promise<QuotaStatus> {
   today.setHours(0, 0, 0, 0);
 
   try {
-    const quota = await prisma.quotaHistory.findUnique({
-      where: {
-        userId_date: {
-          userId,
-          date: today,
-        },
-      },
-    });
+    const { data: quota, error } = await supabase
+      .from("QuotaHistory")
+      .select("consumedUnits")
+      .eq("userId", userId)
+      .eq("date", today.toISOString().split('T')[0])
+      .single();
+
+    if (error && error.code !== 'PGRST116') throw error;
 
     const consumedUnits = quota?.consumedUnits || 0;
     const dailyLimit = DAILY_QUOTA_LIMIT;
@@ -131,26 +146,23 @@ export async function getQuotaHistory(
   startDate.setHours(0, 0, 0, 0);
 
   try {
-    const history = await prisma.quotaHistory.findMany({
-      where: {
-        userId,
-        date: {
-          gte: startDate,
-        },
-      },
-      orderBy: {
-        date: "desc",
-      },
-    });
+    const { data: history, error } = await supabase
+      .from("QuotaHistory")
+      .select("date, consumedUnits, dailyLimit")
+      .eq("userId", userId)
+      .gte("date", startDate.toISOString().split('T')[0])
+      .order("date", { ascending: false });
+
+    if (error) throw error;
 
     logger.debug("YOUTUBE_API", "getQuotaHistory result", {
       userId,
       days,
-      recordsFound: history.length,
+      recordsFound: (history || []).length,
     });
 
-    return history.map((item) => ({
-      date: item.date.toISOString(),
+    return (history || []).map((item) => ({
+      date: new Date(item.date).toISOString(),
       consumedUnits: item.consumedUnits,
       dailyLimit: item.dailyLimit,
     }));

@@ -40,6 +40,8 @@ export function SupabaseAdapter(supabase: SupabaseClient): Adapter {
             passwordResetToken: null,
             passwordResetExpires: null,
             youtubeChannelId: null,
+            createdAt: new Date(),
+            updatedAt: new Date(),
           },
         ])
         .select()
@@ -109,6 +111,7 @@ export function SupabaseAdapter(supabase: SupabaseClient): Adapter {
           email: data.email,
           emailVerified: data.emailVerified,
           image: data.image,
+          updatedAt: new Date(),
         })
         .eq("id", data.id)
         .select()

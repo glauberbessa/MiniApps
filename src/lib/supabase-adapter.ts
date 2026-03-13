@@ -26,7 +26,16 @@ export function SupabaseAdapter(supabase: SupabaseClient): Adapter {
         .select()
         .single();
 
-      if (error) throw error;
+      if (error) {
+        console.error("[ADAPTER] createUser ERROR:", {
+          code: error.code,
+          message: error.message,
+          details: error.details,
+          hint: error.hint,
+          status: error.status,
+        });
+        throw error;
+      }
       return user;
     },
 
@@ -116,7 +125,17 @@ export function SupabaseAdapter(supabase: SupabaseClient): Adapter {
         .select()
         .single();
 
-      if (error) throw error;
+      if (error) {
+        console.error("[ADAPTER] linkAccount ERROR:", {
+          code: error.code,
+          message: error.message,
+          details: error.details,
+          hint: error.hint,
+          status: error.status,
+          provider: data.provider,
+        });
+        throw error;
+      }
       return account;
     },
 

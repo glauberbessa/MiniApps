@@ -151,11 +151,11 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
       const combinedMessage = extractAuthErrorMessage(message);
       const missingTable = extractMissingTable(combinedMessage);
       if (missingTable) {
-        logger.critical("DATABASE", "Missing Prisma table detected during auth", undefined, {
+        logger.critical("DATABASE", "Missing Supabase table detected during auth", undefined, {
           missingTable,
           isVercel: !!process.env.VERCEL,
-          hasDatabaseUrl: !!process.env.DATABASE_URL,
-          guidance: "Run `prisma migrate deploy` (or `prisma db push`) against the production database and confirm DATABASE_URL points to that database.",
+          hasSupabaseUrl: !!process.env.SUPABASE_URL,
+          guidance: "Ensure the required table exists in your Supabase project. Create it via the Supabase dashboard or run SQL migrations. Confirm SUPABASE_URL and SUPABASE_SERVICE_ROLE_KEY are correctly set.",
         });
       }
     },

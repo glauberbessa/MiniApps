@@ -1,5 +1,6 @@
 import { SupabaseClient } from "@supabase/supabase-js";
 import { Adapter } from "next-auth/adapters";
+import { randomUUID } from "crypto";
 
 export function SupabaseAdapter(supabase: SupabaseClient): Adapter {
   return {
@@ -8,6 +9,7 @@ export function SupabaseAdapter(supabase: SupabaseClient): Adapter {
         .from("User")
         .insert([
           {
+            id: randomUUID(),
             name: data.name,
             email: data.email,
             emailVerified: data.emailVerified,
@@ -90,6 +92,7 @@ export function SupabaseAdapter(supabase: SupabaseClient): Adapter {
         .from("Account")
         .insert([
           {
+            id: randomUUID(),
             userId: data.userId,
             type: data.type,
             provider: data.provider,
@@ -123,6 +126,7 @@ export function SupabaseAdapter(supabase: SupabaseClient): Adapter {
         .from("Session")
         .insert([
           {
+            id: randomUUID(),
             sessionToken: data.sessionToken,
             userId: data.userId,
             expires: data.expires,
@@ -180,6 +184,7 @@ export function SupabaseAdapter(supabase: SupabaseClient): Adapter {
     },
 
     async createVerificationToken(data) {
+      // VerificationToken doesn't need an id - it uses (identifier, token) as composite key
       const { data: token, error } = await supabase
         .from("VerificationToken")
         .insert([

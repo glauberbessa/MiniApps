@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 import { auth } from "@/lib/auth";
 import { YouTubeService } from "@/lib/youtube";
-import { prisma } from "@/lib/prisma";
+import { supabase } from "@/lib/supabase";
 
 export const dynamic = "force-dynamic";
 
@@ -21,13 +21,16 @@ export async function GET() {
     const channels = await youtubeService.getSubscribedChannels();
 
     // Buscar configurações dos canais
-    const configs = await prisma.channelConfig.findMany({
-      where: { userId: session.user.id },
-    });
+    const { data: configs, error: configError } = await supabase
+      .from("ChannelConfig")
+      .select("*")
+      .eq("userId", session.user.id);
+
+    if (configError) throw configError;
 
     // Mesclar canais com configurações
     const channelsWithConfig = channels.map((channel) => {
-      const config = configs.find((c) => c.channelId === channel.id);
+      const config = (configs || []).find((c) => c.channelId === channel.id);
       return {
         ...channel,
         config: config
@@ -36,7 +39,7 @@ export async function GET() {
               channelId: config.channelId,
               title: config.title,
               isEnabled: config.isEnabled,
-              subscriptionDate: config.subscriptionDate?.toISOString(),
+              subscriptionDate: config.subscriptionDate ? new Date(config.subscriptionDate).toISOString() : undefined,
               totalDurationSeconds: config.totalDurationSeconds,
             }
           : undefined,

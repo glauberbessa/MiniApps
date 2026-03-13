@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 import { auth } from "@/lib/auth";
 import { YouTubeService } from "@/lib/youtube";
-import { prisma } from "@/lib/prisma";
+import { supabase } from "@/lib/supabase";
 import { logger, generateTraceId, setTraceId, clearTraceId } from "@/lib/logger";
 
 export const dynamic = "force-dynamic";

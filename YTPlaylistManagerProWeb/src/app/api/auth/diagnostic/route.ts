@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { auth } from "@/lib/auth";
-import { prisma } from "@/lib/prisma";
+import { supabase } from "@/lib/supabase";
 import {
   getStoredLogs,
   getLogSummary,
@@ -308,32 +308,44 @@ async function checkDatabaseStatus(): Promise<Record<string, unknown>> {
   const startTime = Date.now();
 
   try {
-    // Test connection with a simple query
-    const userCount = await prisma.user.count();
-    const accountCount = await prisma.account.count();
-    const sessionCount = await prisma.session.count();
+    // Test connection with simple count queries
+    const { count: userCount, error: userCountError } = await supabase
+      .from("User")
+      .select("id", { count: "exact" });
+
+    if (userCountError) throw userCountError;
+
+    const { count: accountCount, error: accountCountError } = await supabase
+      .from("Account")
+      .select("id", { count: "exact" });
+
+    if (accountCountError) throw accountCountError;
+
+    const { count: sessionCount, error: sessionCountError } = await supabase
+      .from("Session")
+      .select("id", { count: "exact" });
+
+    if (sessionCountError) throw sessionCountError;
 
     // Get recent accounts to check OAuth data
-    const recentAccounts = await prisma.account.findMany({
-      take: 5,
-      orderBy: { id: "desc" },
-      select: {
-        id: true,
-        provider: true,
-        providerAccountId: true,
-        access_token: true,
-        refresh_token: true,
-        expires_at: true,
-        userId: true,
-        user: {
-          select: {
-            email: true,
-          },
-        },
-      },
-    });
+    const { data: recentAccounts, error: accountsError } = await supabase
+      .from("Account")
+      .select(`
+        id,
+        provider,
+        providerAccountId,
+        access_token,
+        refresh_token,
+        expires_at,
+        userId,
+        User!inner(email)
+      `)
+      .order("id", { ascending: false })
+      .limit(5);
 
-    const accountsAnalysis = recentAccounts.map((acc) => ({
+    if (accountsError) throw accountsError;
+
+    const accountsAnalysis = (recentAccounts || []).map((acc: any) => ({
       provider: acc.provider,
       hasAccessToken: !!acc.access_token,
       accessTokenLength: acc.access_token?.length || 0,
@@ -343,16 +355,16 @@ async function checkDatabaseStatus(): Promise<Record<string, unknown>> {
       isExpired: acc.expires_at
         ? acc.expires_at < Math.floor(Date.now() / 1000)
         : null,
-      userEmail: acc.user?.email || null,
+      userEmail: acc.User?.email || null,
     }));
 
     return {
       connected: true,
       latency: `${Date.now() - startTime}ms`,
       counts: {
-        users: userCount,
-        accounts: accountCount,
-        sessions: sessionCount,
+        users: userCount || 0,
+        accounts: accountCount || 0,
+        sessions: sessionCount || 0,
       },
       recentAccounts: accountsAnalysis,
     };
@@ -366,8 +378,8 @@ async function checkDatabaseStatus(): Promise<Record<string, unknown>> {
       missingTable,
       guidance: missingTable
         ? [
-            "Run `prisma migrate deploy` (recommended for production) against the target database.",
-            "Confirm DATABASE_URL in Vercel points to the database you migrated.",
+            "Run `npm run db:push` or `npm run db:migrate` to ensure database schema is properly set up.",
+            "Confirm DATABASE_URL in Vercel points to the correct database.",
           ]
         : [],
     };

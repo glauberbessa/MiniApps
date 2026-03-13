@@ -14,6 +14,13 @@ export function SupabaseAdapter(supabase: SupabaseClient): Adapter {
             email: data.email,
             emailVerified: data.emailVerified,
             image: data.image,
+            password: null, // OAuth users don't have passwords
+            isActive: true, // New users are active by default
+            loginAttempts: 0, // Reset login attempts counter
+            lockedUntil: null, // Not locked initially
+            passwordResetToken: null,
+            passwordResetExpires: null,
+            youtubeChannelId: null,
           },
         ])
         .select()

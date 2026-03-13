@@ -361,17 +361,6 @@
   }
 }
 
-/* Pulse nos corners durante scan */
-@keyframes scanner-corners-pulse {
-  0%, 100% {
-    opacity: 0.5;
-    filter: brightness(1);
-  }
-  50% {
-    opacity: 1;
-    filter: brightness(1.5);
-  }
-}
 
 /* Bounce suave para botões */
 @keyframes scanner-bounce {
@@ -562,15 +551,6 @@
 /* Estado scanning */
 .scanner-state-scanning .scanner-viewfinder::before {
   animation: scanner-corners-pulse 1s ease-in-out infinite;
-}
-
-@keyframes scanner-corners-pulse {
-  0%, 100% {
-    opacity: 0.5;
-  }
-  50% {
-    opacity: 1;
-  }
 }
 
 /* Estado success */

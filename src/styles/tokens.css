@@ -197,39 +197,8 @@
   --z-toast: 400;
 
   /* ==========================================
-   * THEME COLORS (Light Mode Default)
+   * THEME COLORS (Dark Mode Default)
    * ========================================== */
-  --background: var(--color-gray-50);
-  --foreground: var(--color-gray-900);
-  --card: 0 0% 100%;
-  --card-foreground: var(--color-gray-900);
-  --popover: 0 0% 100%;
-  --popover-foreground: var(--color-gray-900);
-  --primary: var(--color-primary-500);
-  --primary-foreground: 0 0% 100%;
-  --secondary: var(--color-gray-100);
-  --secondary-foreground: var(--color-gray-900);
-  --muted: var(--color-gray-100);
-  --muted-foreground: var(--color-gray-500);
-  --accent: var(--color-gray-100);
-  --accent-foreground: var(--color-gray-900);
-  --destructive: var(--color-error-500);
-  --destructive-foreground: 0 0% 100%;
-  --success: var(--color-success-500);
-  --success-foreground: 0 0% 100%;
-  --warning: var(--color-warning-500);
-  --warning-foreground: var(--color-gray-900);
-  --info: var(--color-info-500);
-  --info-foreground: 0 0% 100%;
-  --border: var(--color-gray-200);
-  --input: var(--color-gray-200);
-  --ring: var(--color-primary-500);
-}
-
-/* ==========================================
- * DARK MODE THEME
- * ========================================== */
-.dark {
   --background: var(--color-gray-950);
   --foreground: var(--color-gray-50);
   --card: var(--color-gray-900);
@@ -256,10 +225,48 @@
   --input: var(--color-gray-800);
   --ring: var(--color-primary-400);
 
-  /* Dark mode shadows */
+  /* Dark mode shadows (default) */
   --shadow-sm: 0 1px 2px 0 rgb(0 0 0 / 0.3);
   --shadow: 0 1px 3px 0 rgb(0 0 0 / 0.4), 0 1px 2px -1px rgb(0 0 0 / 0.3);
   --shadow-md: 0 4px 6px -1px rgb(0 0 0 / 0.4), 0 2px 4px -2px rgb(0 0 0 / 0.3);
   --shadow-lg: 0 10px 15px -3px rgb(0 0 0 / 0.4), 0 4px 6px -4px rgb(0 0 0 / 0.3);
   --shadow-xl: 0 20px 25px -5px rgb(0 0 0 / 0.4), 0 8px 10px -6px rgb(0 0 0 / 0.3);
+}
+
+/* ==========================================
+ * LIGHT MODE THEME (Optional)
+ * ========================================== */
+.light {
+  --background: var(--color-gray-50);
+  --foreground: var(--color-gray-900);
+  --card: 0 0% 100%;
+  --card-foreground: var(--color-gray-900);
+  --popover: 0 0% 100%;
+  --popover-foreground: var(--color-gray-900);
+  --primary: var(--color-primary-500);
+  --primary-foreground: 0 0% 100%;
+  --secondary: var(--color-gray-100);
+  --secondary-foreground: var(--color-gray-900);
+  --muted: var(--color-gray-100);
+  --muted-foreground: var(--color-gray-500);
+  --accent: var(--color-gray-100);
+  --accent-foreground: var(--color-gray-900);
+  --destructive: var(--color-error-500);
+  --destructive-foreground: 0 0% 100%;
+  --success: var(--color-success-500);
+  --success-foreground: 0 0% 100%;
+  --warning: var(--color-warning-500);
+  --warning-foreground: var(--color-gray-900);
+  --info: var(--color-info-500);
+  --info-foreground: 0 0% 100%;
+  --border: var(--color-gray-200);
+  --input: var(--color-gray-200);
+  --ring: var(--color-primary-500);
+
+  /* Light mode shadows */
+  --shadow-sm: 0 1px 2px 0 rgb(0 0 0 / 0.05);
+  --shadow: 0 1px 3px 0 rgb(0 0 0 / 0.1), 0 1px 2px -1px rgb(0 0 0 / 0.1);
+  --shadow-md: 0 4px 6px -1px rgb(0 0 0 / 0.1), 0 2px 4px -2px rgb(0 0 0 / 0.1);
+  --shadow-lg: 0 10px 15px -3px rgb(0 0 0 / 0.1), 0 4px 6px -4px rgb(0 0 0 / 0.1);
+  --shadow-xl: 0 20px 25px -5px rgb(0 0 0 / 0.1), 0 8px 10px -6px rgb(0 0 0 / 0.1);
 }

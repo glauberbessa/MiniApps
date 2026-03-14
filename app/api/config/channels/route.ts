@@ -85,6 +85,7 @@ export async function PUT(request: NextRequest) {
               channelId: config.channelId,
               title: config.title,
               isEnabled: config.isEnabled,
+              updatedAt: new Date().toISOString(),
             })),
             {
               onConflict: "userId,channelId",

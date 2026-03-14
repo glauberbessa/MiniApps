@@ -85,6 +85,7 @@ export async function PUT(request: NextRequest) {
               playlistId: config.playlistId,
               title: config.title,
               isEnabled: config.isEnabled,
+              updatedAt: new Date().toISOString(),
             })),
             {
               onConflict: "userId,playlistId",

@@ -360,7 +360,7 @@ export function HomeAuthenticated({ session }: HomeAuthenticatedProps) {
   const displayName = session.user?.name || session.user?.email?.split("@")[0] || "Usuário"
 
   return (
-    <div className="h-screen flex flex-col overflow-hidden launcher-bg-mesh launcher-grain launcher-selection">
+    <div className="min-h-screen flex flex-col overflow-y-auto launcher-bg-mesh launcher-grain launcher-selection">
       {/* Header */}
       <header className="pt-10 pb-6 px-6 hero-launcher relative" role="banner">
         <div className="absolute inset-0 overflow-hidden" aria-hidden="true">

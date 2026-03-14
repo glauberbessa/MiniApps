@@ -112,11 +112,9 @@ export default function ConfigPlaylistsPage() {
   };
 
   const handleToggle = (playlistId: string, enabled: boolean) => {
-    setEnabledMap((prev) => {
-      const nextMap = { ...prev, [playlistId]: enabled };
-      handleSave(nextMap);
-      return nextMap;
-    });
+    const nextMap = { ...enabledMap, [playlistId]: enabled };
+    setEnabledMap(nextMap);
+    handleSave(nextMap);
   };
 
   const filteredPlaylists = playlists?.filter((p) => {

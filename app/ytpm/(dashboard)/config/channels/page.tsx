@@ -120,11 +120,9 @@ export default function ConfigChannelsPage() {
   };
 
   const handleToggle = (channelId: string, enabled: boolean) => {
-    setEnabledMap((prev) => {
-      const nextMap = { ...prev, [channelId]: enabled };
-      persistConfigs(nextMap);
-      return nextMap;
-    });
+    const nextMap = { ...enabledMap, [channelId]: enabled };
+    setEnabledMap(nextMap);
+    persistConfigs(nextMap);
   };
 
   const handleEnableAll = () => {

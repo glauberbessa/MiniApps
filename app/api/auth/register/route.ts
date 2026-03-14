@@ -49,6 +49,7 @@ export async function POST(request: NextRequest) {
     const hashedPassword = await hashPassword(password)
 
     // Criar usuário
+    const now = new Date().toISOString()
     const { data: user, error: createError } = await supabase
       .from('User')
       .insert({
@@ -56,6 +57,9 @@ export async function POST(request: NextRequest) {
         email,
         password: hashedPassword,
         isActive: true,
+        loginAttempts: 0,
+        createdAt: now,
+        updatedAt: now,
       })
       .select('id, name, email, createdAt')
       .single()

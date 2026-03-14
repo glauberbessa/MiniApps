@@ -26,26 +26,34 @@ export function SupabaseAdapter(supabase: SupabaseClient): Adapter {
       }
 
       const now = new Date().toISOString();
+      const userId = (data as any).id || randomUUID();
+      const insertPayload = {
+        id: userId,
+        name: data.name,
+        email: data.email,
+        emailVerified: data.emailVerified,
+        image: data.image,
+        password: null, // OAuth users don't have passwords
+        isActive: true, // New users are active by default
+        loginAttempts: 0, // Reset login attempts counter
+        lockedUntil: null, // Not locked initially
+        passwordResetToken: null,
+        passwordResetExpires: null,
+        youtubeChannelId: null,
+        createdAt: now,
+        updatedAt: now,
+      };
+
+      console.log("[ADAPTER] createUser - Inserting user:", {
+        id: userId,
+        email: data.email,
+        hasUpdatedAt: !!insertPayload.updatedAt,
+        updatedAtValue: insertPayload.updatedAt,
+      });
+
       const { data: user, error } = await supabase
         .from("User")
-        .insert([
-          {
-            id: randomUUID(),
-            name: data.name,
-            email: data.email,
-            emailVerified: data.emailVerified,
-            image: data.image,
-            password: null, // OAuth users don't have passwords
-            isActive: true, // New users are active by default
-            loginAttempts: 0, // Reset login attempts counter
-            lockedUntil: null, // Not locked initially
-            passwordResetToken: null,
-            passwordResetExpires: null,
-            youtubeChannelId: null,
-            createdAt: now,
-            updatedAt: now,
-          },
-        ])
+        .insert([insertPayload])
         .select()
         .single();
 
@@ -56,6 +64,7 @@ export function SupabaseAdapter(supabase: SupabaseClient): Adapter {
           details: error.details,
           hint: error.hint,
           email: data.email,
+          insertPayloadKeys: Object.keys(insertPayload),
         });
         throw error;
       }
